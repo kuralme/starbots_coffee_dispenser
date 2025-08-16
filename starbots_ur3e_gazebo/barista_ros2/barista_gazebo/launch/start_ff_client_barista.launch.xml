@@ -1,0 +1,23 @@
+<?xml version='1.0' ?>
+<launch>
+
+
+  <arg name="barista_name" default="barista_X"/>
+
+
+  <node name="$(var barista_name)_free_fleet_client_node" pkg="free_fleet_client_ros2"
+      exec="free_fleet_client_ros2" output="both">
+    <param name="fleet_name" value="barista"/>
+    <param name="robot_name" value="$(var barista_name)"/>
+    <param name="robot_model" value="barista"/>
+    <param name="level_name" value="L1"/>
+    <param name="dds_domain" value="42"/>
+    <param name="max_dist_to_first_waypoint" value="10.0"/>
+    <param name="map_frame" value="map"/>
+    <param name="robot_frame" value="$(var barista_name)/base_footprint"/>
+    <param name="battery_state_topic" value="/$(var barista_name)/battery_state"/>
+    <param name="nav2_server_name" value="/$(var barista_name)/navigate_to_pose"/>
+    <param name="use_sim_time" value="True"/>
+  </node>
+
+</launch>

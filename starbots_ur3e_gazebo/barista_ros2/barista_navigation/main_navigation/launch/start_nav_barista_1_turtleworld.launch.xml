@@ -1,0 +1,11 @@
+<?xml version='1.0' ?>
+
+<launch>
+    <include file="$(find-pkg-share localization_server)/launch/barista_1_localization_turtleworld.launch.py"/>
+    
+    <include file="$(find-pkg-share path_planner_server)/launch/barista_1_pathplanner.launch.py"/>
+    
+    <!-- <include file="$(find-pkg-share main_navigation)/launch/start_navigation_rviz.launch.xml"/>
+     -->
+
+</launch>

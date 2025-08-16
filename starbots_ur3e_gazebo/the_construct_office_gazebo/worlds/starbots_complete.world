@@ -1,0 +1,109 @@
+<sdf version="1.7">
+  <world name="world">
+    <scene>
+      <ambient>0.8 0.8 0.8 1.0</ambient>
+      <background>0 0 0</background>
+      <grid>false</grid>
+    </scene>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <gui>
+      <camera name="gui_camera">
+        <pose>4.11873 -12.7554 9.02279 0 0.812 -0.450002</pose>
+      </camera>
+    </gui>
+    
+    <model name="door_cafeteria">
+      <pose>13.459129316830579 -13.296819125933453 0.0 0 0 0.00034506554875947566</pose>
+      <link name="right">
+        <pose>0 0 1.01 0 0 0</pose>
+        <visual name="right_visual">
+          <geometry>
+            <box>
+              <size>1.5409707459290378 0.03 2.0</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.5 0.25 0 0.6</ambient>
+            <diffuse>0.5 0.25 0 0.6</diffuse>
+          </material>
+        </visual>
+        <collision name="right_collision">
+          <geometry>
+            <box>
+              <size>1.5409707459290378 0.03 2.0</size>
+            </box>
+          </geometry>
+          <surface>
+            <contact>
+              <collide_bitmask>0x02</collide_bitmask>
+            </contact>
+          </surface>
+        </collision>
+        <inertial>
+          <mass>50.0</mass>
+          <inertia>
+            <ixx>16.670416666666668</ixx>
+            <iyy>26.56079516587123</iyy>
+            <izz>9.897878499204564</izz>
+          </inertia>
+        </inertial>
+      </link>
+      <joint name="right_joint" type="revolute">
+        <parent>world</parent>
+        <child>right</child>
+        <axis>
+          <xyz>0 0 -1</xyz>
+          <limit>
+            <lower>0</lower>
+            <upper>1.57</upper>
+          </limit>
+        </axis>
+        <pose>0.7754853729645189 0 0 0 0 0</pose>
+      </joint>
+    </model>
+    
+    <include>
+      <name>starbots_complete_L1</name>
+      <uri>model://starbots_complete_L1</uri>
+      <pose>0 0 0.0 0 0 0</pose>
+    </include>
+
+        <!-- ADDED ELEMENTS for charging simulated system -->
+    <plugin name="gazebo_ros_state" filename="libgazebo_ros_state.so">
+      <ros>
+        <namespace>/gazebo</namespace>
+      </ros>
+      <update_rate>5.0</update_rate>
+    </plugin>
+
+
+
+    <model name="starbots_bartender_dispenser">
+      <static>1</static>
+      <include>
+        <uri>model://starbots_bartender_dispenser</uri>
+      </include>
+      <pose>14.2 -18.2 0.5 0 0 0</pose>
+    </model>
+
+    <model name="portable_cup_2">
+      <static>0</static>
+      <include>
+        <uri>model://portable_cup_2</uri>
+      </include>
+      <pose>14.16 -18.19 1.025 1.57 0 0</pose>
+    </model>
+
+    <model name="coffee_machine">
+      <static>1</static>
+      <include>
+        <uri>model://coffee_machine</uri>
+      </include>
+      <pose>14.0 -17.7 1.0 0 0 1.57</pose>
+    </model>
+
+
+  </world>
+</sdf>

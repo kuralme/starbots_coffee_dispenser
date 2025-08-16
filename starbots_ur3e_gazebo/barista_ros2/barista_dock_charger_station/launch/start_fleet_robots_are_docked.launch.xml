@@ -1,0 +1,12 @@
+<launch>
+
+    <arg name="fleet_name" default="barista"/>
+    <arg name="fleet_robots_number" default="2"/>
+
+
+    <node pkg="barista_dock_charger_station" exec="start_fleet_robots_are_docked.py" name="$(var fleet_name)_fleet_robots_are_docked_node">
+        <param name="fleet_name" value="$(var fleet_name)"/>
+        <param name="fleet_robots_number" value="$(var fleet_robots_number)"/>
+    </node>
+
+</launch>

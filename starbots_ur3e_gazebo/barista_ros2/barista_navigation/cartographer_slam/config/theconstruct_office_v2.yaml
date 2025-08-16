@@ -1,0 +1,7 @@
+image: theconstruct_office_v2.pgm
+resolution: 0.020000
+origin: [0.000000, -20.50000, 0.000000]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
+

@@ -1,0 +1,13 @@
+<?xml version='1.0' ?>
+
+<launch>
+    <include file="$(find-pkg-share localization_server)/launch/barista_2_localization.launch.py"/>
+    
+    <include file="$(find-pkg-share path_planner_server)/launch/barista_2_pathplanner.launch.py"/>
+    
+    <include file="$(find-pkg-share main_navigation)/launch/start_rviz.launch.py">
+        <arg name="use_sim_time" value="true"/>
+        <arg name="rviz_config_dir" value="$(find-pkg-share main_navigation)/rviz/navigation.rviz" />
+    </include>
+
+</launch>

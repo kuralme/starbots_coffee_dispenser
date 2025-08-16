@@ -1,0 +1,13 @@
+<?xml version='1.0' ?>
+<launch>
+
+  
+  <include file="$(find-pkg-share barista_dock_charger_station)/launch/barista_1_charge_server_v3.launch.xml">
+    <arg name="robot_name" value="barista_1"/>
+  </include>
+  <include file="$(find-pkg-share barista_dock_charger_station)/launch/barista_2_charge_server_v3.launch.xml">
+    <arg name="robot_name" value="barista_2"/>
+  </include>
+
+
+</launch>

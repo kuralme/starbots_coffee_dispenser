@@ -1,0 +1,11 @@
+<?xml version='1.0' ?>
+<launch>
+
+  <!-- Start FF Server -->
+  <include file="$(find-pkg-share barista_gazebo)/launch/ff_server_barista_fleet.launch.xml"/>
+
+  <include file="$(find-pkg-share barista_gazebo)/launch/start_ff_client_barista.launch.xml">
+    <arg name="barista_name" value="barista_1"/>
+  </include>
+
+</launch>

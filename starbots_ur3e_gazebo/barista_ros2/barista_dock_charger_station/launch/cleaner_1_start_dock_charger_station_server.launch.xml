@@ -1,0 +1,12 @@
+<?xml version='1.0' ?>
+<launch>
+
+  
+  <include file="$(find-pkg-share barista_dock_charger_station)/launch/start_dock_charger_station_server.launch.xml">
+    <arg name="robot_name" value="cleaner_1"/>
+    <arg name="max_dock_distance_param" value="0.7"/>
+    <arg name="undock_distance_param" value="0.4"/>
+  </include>
+
+
+</launch>

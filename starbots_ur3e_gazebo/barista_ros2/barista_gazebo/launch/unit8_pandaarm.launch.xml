@@ -1,0 +1,8 @@
+<?xml version='1.0' ?>
+<launch>
+  
+  <include file="$(find-pkg-share barista_gazebo)/launch/start_world_panda_arm.launch.py"/>
+  <include file="$(find-pkg-share barista_gazebo)/launch/start_barista_1_stuff.launch.xml"/>
+  <include file="$(find-pkg-share panda_robot_bringup)/launch/main_panda_rmf_inactive.launch.xml"/>
+
+</launch>

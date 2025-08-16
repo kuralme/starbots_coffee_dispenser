@@ -1,0 +1,9 @@
+<?xml version='1.0' ?>
+
+<launch>
+    <include file="$(find-pkg-share barista_gazebo)/launch/start_rviz_basic_systems.launch.py">
+        <arg name="use_sim_time" value="true"/>
+        <arg name="rviz_config_dir" value="$(find-pkg-share barista_gazebo)/rviz/basic_systems.rviz" />
+    </include>
+
+</launch>

@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <model name="human_worker">
+    <static>true</static>
+    <link name="link">
+      <pose>0 0 0.01 0 0 0</pose>
+      
+      <visual name="visual_human_worker">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://human_worker/meshes/constructionworker.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+
+  </model>
+</sdf>

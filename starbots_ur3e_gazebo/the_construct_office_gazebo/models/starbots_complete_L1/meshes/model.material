@@ -1,0 +1,364 @@
+material floor_1_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_1_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_2_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_3_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_2_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_3_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_4_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_5_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_4_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_5_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_6_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_6_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_7_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_7_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_8_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_8_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_9_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_10_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_9_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_11_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_12_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_10_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_13_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material wall_1_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture default.png
+			}
+		}
+	}
+}
+material floor_11_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_12_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material floor_13_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture blue_linoleum.png
+			}
+		}
+	}
+}
+material wall_1_Diffuse
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture default.png
+			}
+		}
+	}
+}

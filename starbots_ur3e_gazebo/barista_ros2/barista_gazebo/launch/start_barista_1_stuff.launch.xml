@@ -1,0 +1,11 @@
+<?xml version='1.0' ?>
+<launch>
+
+    <!-- Barista Stuff -->
+    <include file="$(find-pkg-share barista_gazebo)/launch/barista_1_turtleworld.launch.py"/>
+    <include file="$(find-pkg-share main_navigation)/launch/start_nav_barista_1_turtleworld.launch.xml"/>
+    <include file="$(find-pkg-share barista_gazebo)/launch/one_barista_bat_system.launch.xml"/>
+    <include file="$(find-pkg-share barista_gazebo)/launch/start_free_fleet_barista_1.launch.xml"/>
+    
+
+</launch>

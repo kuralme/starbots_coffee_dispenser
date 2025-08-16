@@ -1,0 +1,10 @@
+<launch>
+
+  <arg name="robot_name" default="barista_2"/>  
+
+  <node pkg="barista_dock_charger_station" exec="barista_dock_node_v3.py" name="$(var robot_name)_charge_server">
+      <param name="robot_name" value="$(var robot_name)"/>
+
+  </node>
+
+</launch>

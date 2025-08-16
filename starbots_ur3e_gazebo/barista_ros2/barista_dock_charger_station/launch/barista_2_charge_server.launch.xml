@@ -1,0 +1,16 @@
+<?xml version='1.0' ?>
+<launch>
+
+  
+  <include file="$(find-pkg-share barista_dock_charger_station)/launch/barista_charge_server.launch.xml">
+    <arg name="robot_name" value="barista_2"/>
+    <arg name="fov" value="360.0"/>
+    <arg name="a_P" value="0.9"/>
+    <arg name="a_D" value="0.05"/>
+    <arg name="l_P" value="0.9"/>
+    <arg name="l_D" value="0.05"/>
+
+  </include>
+
+
+</launch>

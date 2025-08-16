@@ -1,0 +1,16 @@
+<launch>
+
+    <arg name="robot_name" default="robot_X"/>
+    <arg name="max_dock_distance_param" default="0.0"/>
+    <arg name="dock_distance_param" default="0.0"/>
+    <arg name="undock_distance_param" default="0.0"/>
+
+
+    <node pkg="barista_dock_charger_station" exec="start_dock_charger_station_server.py" name="$(var robot_name)_dock_charger_station_node">
+        <param name="robot_name" value="$(var robot_name)"/>
+        <param name="max_dock_distance_param" value="$(var max_dock_distance_param)"/>
+        <param name="dock_distance_param" value="$(var dock_distance_param)"/>
+        <param name="undock_distance_param" value="$(var undock_distance_param)"/>        
+    </node>
+
+</launch>

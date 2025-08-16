@@ -1,0 +1,12 @@
+<?xml version='1.0' ?>
+
+<launch>
+
+    <arg name="name_of_rviz_file" default="$(find-pkg-share main_navigation)/rviz/baristas_turtleE_starbots.rviz"/>
+
+    <include file="$(find-pkg-share main_navigation)/launch/start_rviz.launch.py">
+        <arg name="use_sim_time" value="true"/>
+        <arg name="rviz_config_dir" value="$(var name_of_rviz_file)" />
+    </include>
+
+</launch>

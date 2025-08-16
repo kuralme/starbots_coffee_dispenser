@@ -1,0 +1,12 @@
+<launch>
+
+  <arg name="robot_name" default="barista_1"/>  
+
+
+  <node pkg="barista_table_finder" exec="table_finder.py" name="$(var robot_name)_align_server">
+      <param name="robot_name" value="$(var robot_name)"/>
+  </node>
+
+
+
+</launch>

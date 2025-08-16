@@ -1,0 +1,9 @@
+<?xml version='1.0' ?>
+
+<launch>
+    <include file="$(find-pkg-share localization_server)/launch/localization_1_2_mule_turtleworld.launch.py"/>
+    
+    <include file="$(find-pkg-share path_planner_server)/launch/pathplanner_with_mule.launch.py"/>
+    
+
+</launch>

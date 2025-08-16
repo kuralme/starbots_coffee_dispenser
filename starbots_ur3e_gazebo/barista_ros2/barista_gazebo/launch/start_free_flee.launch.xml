@@ -1,0 +1,14 @@
+<?xml version='1.0' ?>
+<launch>
+
+  <!-- Start FF Server -->
+  <include file="$(find-pkg-share barista_gazebo)/launch/ff_server_barista_fleet.launch.xml"/>
+
+  <!-- Start the clients for each barista-->
+  <include file="$(find-pkg-share barista_gazebo)/launch/start_multiple_ff_clients.launch.xml"/>
+
+  <!-- Launch the battery simulator -->
+  <include file="$(find-pkg-share barista_gazebo)/launch/start_multiple_sim_battery.launch.xml"/>
+
+
+</launch>

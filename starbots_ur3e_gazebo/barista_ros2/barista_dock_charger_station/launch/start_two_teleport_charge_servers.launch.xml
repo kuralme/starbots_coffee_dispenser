@@ -1,0 +1,9 @@
+<?xml version='1.0' ?>
+<launch>
+
+  
+  <include file="$(find-pkg-share barista_dock_charger_station)/launch/barista_1_start_dock_charger_station_server.launch.xml"/>
+  <include file="$(find-pkg-share barista_dock_charger_station)/launch/barista_2_start_dock_charger_station_server.launch.xml"/>
+
+
+</launch>

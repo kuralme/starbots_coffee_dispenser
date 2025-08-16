@@ -1,0 +1,9 @@
+# goal
+bool start
+---
+# result
+bool complete
+---
+# feedback
+float32 front
+float32 right

@@ -1,0 +1,23 @@
+<launch>
+
+    <arg name="robot_name" default="robot_X"/>
+    <arg name="fov" default="0.0"/>
+    <arg name="a_P" default="0.0"/>
+    <arg name="a_D" default="0.0"/>
+    <arg name="l_P" default="0.0"/>
+    <arg name="l_D" default="0.0"/>
+
+
+    
+
+    <node pkg="barista_dock_charger_station" exec="barista_dock_node.py" name="$(var robot_name)_charge_server">
+        <param name="robot_name" value="$(var robot_name)"/>
+        <param name="fov" value="$(var robot_name)"/>
+        <param name="a_P" value="$(var a_P)"/>
+        <param name="a_D" value="$(var a_D)"/>
+        <param name="l_P" value="$(var l_P)"/>
+        <param name="l_D" value="$(var l_D)"/>
+
+    </node>
+
+</launch>

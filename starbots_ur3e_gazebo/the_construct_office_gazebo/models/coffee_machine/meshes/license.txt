@@ -1,0 +1,11 @@
+Model Information:
+* title:	Black& White4 Compact
+* source:	https://sketchfab.com/3d-models/black-white4-compact-0e814974f6754f97abf2e7673311efa2
+* author:	Kreutergarten (https://sketchfab.com/Kreutergarten)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Black& White4 Compact" (https://sketchfab.com/3d-models/black-white4-compact-0e814974f6754f97abf2e7673311efa2) by Kreutergarten (https://sketchfab.com/Kreutergarten) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
