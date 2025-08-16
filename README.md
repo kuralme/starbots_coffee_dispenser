@@ -48,6 +48,11 @@ This system is built on ROS 2 and offers modular launch files to execute the ful
     colcon build && source install/setup.bash
     ```
 
+4. Start the Starbots Coffee Simulation
+    ```bash
+    ros2 launch the_construct_office_gazebo starbots_ur3e.launch.xml
+    ```
+
 ## Running the Pick & Place Task
 
 ### Test the Setup
@@ -74,13 +79,22 @@ Before running the main Pick and Place task, ensure your environment is correctl
     ```
     You should see a stream of messages showing joint positions, velocities, etc.
 
-- Ensure your camera is publishing expected topics:
+- Ensure both camera are publishing the expected topics:
     ```bash
-    ros2 topic list | grep camera
+    ros2 topic list | grep depth_sensor
     ```
-    This should return a list of camera-related topics (e.g., /camera/color/image_raw, /camera/depth/points, etc.).
+    This should return a list of camera-related topics (e.g., /camera_depth_sensor/depth/image_raw, /wrist_rgbd_depth_sensor/depth/image_raw, etc.).
 
 ### Simulation
 
+- Launch the MoveIt2 planning node:
+    ```bash
+    ros2 launch ur3e_sim_moveit_config move_group.launch.py
+    ```
+
+- Launch RViz for visualization, also can give commands via Moveit2 plugin:
+    ```bash
+    ros2 launch ur3e_sim_moveit_config moveit_rviz.launch.py
+    ```
 
 ### Real Robot
