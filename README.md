@@ -97,4 +97,8 @@ Before running the main Pick and Place task, ensure your environment is correctl
     ros2 launch ur3e_sim_moveit_config moveit_rviz.launch.py
     ```
 
+- Launch the object detection node, extracts table surface and cup from coffee table camera point cloud data:
+    ```bash
+    ros2 launch object_detection object_detection.launch.py
+    ```
 ### Real Robot
