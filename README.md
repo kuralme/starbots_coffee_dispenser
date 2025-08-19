@@ -87,18 +87,26 @@ Before running the main Pick and Place task, ensure your environment is correctl
 
 ### Simulation
 
-- Launch the MoveIt2 planning node:
-    ```bash
-    ros2 launch ur3e_sim_moveit_config move_group.launch.py
-    ```
+Launch the individual nodes:
 
-- Launch RViz for visualization, also can give commands via Moveit2 plugin:
-    ```bash
-    ros2 launch ur3e_sim_moveit_config moveit_rviz.launch.py
-    ```
+MoveIt2 planning node:
+```bash
+ros2 launch ur3e_sim_moveit_config move_group.launch.py
+```
 
-- Launch the object detection node, extracts table surface and cup from coffee table camera point cloud data:
-    ```bash
-    ros2 launch object_detection object_detection.launch.py
-    ```
+(Optional) RViz for visualization, also can give commands via Moveit2 plugin:
+```bash
+ros2 launch ur3e_sim_moveit_config moveit_rviz.launch.py
+```
+
+Object detection node, extracts table surface and cup from coffee table camera point cloud data:
+```bash
+ros2 launch object_detection object_detection.launch.py
+```
+---
+**The full pick and place pipeline:**
+```bash
+ros2 launch ur3e_manipulation pick_and_place_perception.launch.py
+```
+
 ### Real Robot
