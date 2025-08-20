@@ -93,8 +93,8 @@ public:
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
     float objX = this->obj_pose_.position.x;
-    float objY = this->obj_pose_.position.y - .02;
-    float objZ = this->obj_pose_.position.z + .2;
+    float objY = this->obj_pose_.position.y - 0.015;
+    float objZ = this->obj_pose_.position.z + .3;
 
     RCLCPP_INFO(LOGGER, "Planning and Executing Pick And Place...");
 
@@ -109,8 +109,9 @@ public:
 
     // Approach to pre-grasp position
     RCLCPP_INFO(LOGGER, "Preparing Pregrasp Position...");
-    RCLCPP_INFO(LOGGER, "Setting Goal Pose: [%.3f, %.3f, 0.261]", objX, objY);
-    setup_goal_pose_target(+objX, +objY, +objY, -1.000, +0.000, +0.000, +0.000);
+    RCLCPP_INFO(LOGGER, "Setting Goal Pose: [%.3f, %.3f, %.3f]", objX, objY,
+                objZ);
+    setup_goal_pose_target(+objX, +objY, +objZ, -1.000, +0.000, +0.000, +0.000);
     // setup_arm_named_pose("pregrasp");
     RCLCPP_INFO(LOGGER, "Planning Goal Pose Trajectory...");
     plan_trajectory_kinematics();
@@ -127,16 +128,16 @@ public:
     execute_trajectory_gripper();
     RCLCPP_INFO(LOGGER, "Gripper Opened");
 
-    return;
-
     // Approach to grasping position
     RCLCPP_INFO(LOGGER, "Approaching to grasp...");
     RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
-    setup_waypoints_target(+0.000, +0.000, -0.080);
+    setup_waypoints_target(+0.000, +0.000, -0.100);
     RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
     plan_trajectory_cartesian();
     RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
     execute_trajectory_cartesian();
+
+    return;
 
     // Close the gripper and pick the box
     // RCLCPP_INFO(LOGGER, "Closing Gripper...");
