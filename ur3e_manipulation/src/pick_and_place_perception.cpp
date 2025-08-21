@@ -93,7 +93,7 @@ public:
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
     float objX = this->obj_pose_.position.x;
-    float objY = this->obj_pose_.position.y - 0.015;
+    float objY = this->obj_pose_.position.y - 0.016;
     float objZ = this->obj_pose_.position.z + .3;
 
     RCLCPP_INFO(LOGGER, "Planning and Executing Pick And Place...");
@@ -131,23 +131,21 @@ public:
     // Approach to grasping position
     RCLCPP_INFO(LOGGER, "Approaching to grasp...");
     RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
-    setup_waypoints_target(+0.000, +0.000, -0.100);
+    setup_waypoints_target(+0.000, +0.000, -0.080);
     RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
     plan_trajectory_cartesian();
     RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
     execute_trajectory_cartesian();
 
-    return;
-
-    // Close the gripper and pick the box
     // RCLCPP_INFO(LOGGER, "Closing Gripper...");
-    // RCLCPP_INFO(LOGGER, "Preparing Gripper Value...");
-    // setup_gripper_named_pose("gripper_close");
+    // setup_gripper_named_pose("gripper_grasp");
     // RCLCPP_INFO(LOGGER, "Planning Gripper Action...");
     // plan_trajectory_gripper();
     // RCLCPP_INFO(LOGGER, "Executing Gripper Action...");
     // execute_trajectory_gripper();
     // RCLCPP_INFO(LOGGER, "Gripper Closed");
+
+    // Close the gripper and pick the cup
     closeGripper();
 
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -163,18 +161,25 @@ public:
 
     // Go to dropping position
     RCLCPP_INFO(LOGGER, "Going to Place Position...");
-    current_state_robot_ = move_group_robot_->getCurrentState(10);
-    current_state_robot_->copyJointGroupPositions(joint_model_group_robot_,
-                                                  joint_group_positions_robot_);
-    RCLCPP_INFO(LOGGER, "Preparing Joint Value Trajectory...");
-    setup_joint_value_target(
-        M_PI, joint_group_positions_robot_[1], joint_group_positions_robot_[2],
-        joint_group_positions_robot_[3], joint_group_positions_robot_[4],
-        joint_group_positions_robot_[5]);
-    RCLCPP_INFO(LOGGER, "Planning Joint Value Trajectory...");
-    plan_trajectory_kinematics();
-    RCLCPP_INFO(LOGGER, "Executing Joint Value Trajectory...");
-    execute_trajectory_kinematics();
+    RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
+    setup_waypoints_target(-objX - 0.400, -objY, -0.600);
+    RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
+    plan_trajectory_cartesian();
+    RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
+    execute_trajectory_cartesian();
+
+    // current_state_robot_ = move_group_robot_->getCurrentState(10);
+    // current_state_robot_->copyJointGroupPositions(joint_model_group_robot_,
+    //                                               joint_group_positions_robot_);
+    // RCLCPP_INFO(LOGGER, "Preparing Joint Value Trajectory...");
+    // setup_joint_value_target(
+    //     M_PI * .9, joint_group_positions_robot_[1],
+    //     joint_group_positions_robot_[2], joint_group_positions_robot_[3],
+    //     joint_group_positions_robot_[4], joint_group_positions_robot_[5]);
+    // RCLCPP_INFO(LOGGER, "Planning Joint Value Trajectory...");
+    // plan_trajectory_kinematics();
+    // RCLCPP_INFO(LOGGER, "Executing Joint Value Trajectory...");
+    // execute_trajectory_kinematics();
 
     // Open the gripper and drop the box
     RCLCPP_INFO(LOGGER, "Opening Gripper...");
@@ -293,25 +298,45 @@ private:
   // Method to close the gripper gradually by incrementing the gripper joint
   // position
   void closeGripper() {
-    float gripper_value = 0.6;
-    while (gripper_value <= 0.645) {
-      joint_group_positions_gripper_[2] = gripper_value;
+    float gripper_value = 0.4;
+    const float target_value = 0.01; // ~gripper_grasp
+    const float step_large = 0.06;
+    const float step_medium = 0.01;
+    const float step_small = 0.003;
+
+    RCLCPP_INFO(LOGGER, "Incremental Gripper Closing Started...");
+
+    while (gripper_value > target_value) {
+      joint_group_positions_gripper_[0] = gripper_value;
       move_group_gripper_->setJointValueTarget(joint_group_positions_gripper_);
-      RCLCPP_INFO(LOGGER, "Closing gripper: %.3f.", gripper_value);
-      if (executeGripperPlan()) {
-        if (gripper_value < 0.620)
-          gripper_value += 0.01;
-        else if (gripper_value < 0.640)
-          gripper_value += 0.005;
-        else
-          gripper_value += 0.001;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+      // Plan and execute motion
+      moveit::planning_interface::MoveGroupInterface::Plan plan;
+      bool success = move_group_gripper_->plan(plan) ==
+                     moveit::core::MoveItErrorCode::SUCCESS;
+
+      if (success) {
+        move_group_gripper_->execute(plan);
       } else {
-        RCLCPP_ERROR(LOGGER, "Failed to close gripper. Aborting.");
-        rclcpp::shutdown();
+        RCLCPP_ERROR(LOGGER, "Failed to plan gripper motion at value: %.3f",
+                     gripper_value);
+        break;
       }
+
+      // Dynamically reduce step size for precision
+      if (gripper_value > 0.1)
+        gripper_value -= step_large;
+      else if (gripper_value > 0.03)
+        gripper_value -= step_medium;
+      else
+        gripper_value -= step_small;
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
+
+    RCLCPP_INFO(LOGGER, "Incremental Gripper Closing Completed.");
   }
+
   // Method to execute the motion plan for the gripper
   bool executeGripperPlan() {
     return move_group_gripper_->plan(gripper_trajectory_plan_) ==
