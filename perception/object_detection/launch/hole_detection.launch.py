@@ -6,7 +6,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     
-    rviz_config = os.path.join(get_package_share_directory('object_detection'),'rviz','object_det_real.rviz')
+    rviz_config = os.path.join(get_package_share_directory('object_detection'),'rviz','hole_detection.rviz')
 
     # static_tf_pub = Node(
     #     package='tf2_ros',
@@ -18,12 +18,12 @@ def generate_launch_description():
     #     arguments=['0.5', '0.605', '0.1', '-3.142', '0.0', '-1.745', 'base_link', 'camera_depth_optical_frame']
     # )
 
-    object_detection_real_node = Node(
+    hole_detection_node = Node(
         package = 'object_detection',
-        executable = 'object_detection_real',
-        name = 'object_detection_real',
+        executable = 'hole_detection',
+        name = 'hole_detection',
         output = 'screen',
-        parameters = [{'use_sim_time': False}],
+        parameters = [{'use_sim_time': True}],
     )
 
     rviz_node = Node(
@@ -32,11 +32,11 @@ def generate_launch_description():
         name='rviz2',
         output='screen',
         arguments=['-d', rviz_config],
-        parameters=[{'use_sim_time': False}],
+        parameters=[{'use_sim_time': True}],
     )
 
     return LaunchDescription([
         # static_tf_pub,
-        object_detection_real_node,
+        hole_detection_node,
         rviz_node
     ])
