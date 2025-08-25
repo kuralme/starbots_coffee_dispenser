@@ -25,7 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'object_detection = object_detection.object_detection:main',
-            'hole_detection= object_detection.hole_detection:main',
+            'cup_holder_detection= object_detection.cup_holder_detection:main',
         ],
     },
 )

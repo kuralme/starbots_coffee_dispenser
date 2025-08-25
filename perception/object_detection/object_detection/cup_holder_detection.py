@@ -3,7 +3,6 @@ from rclpy.node import Node
 from sensor_msgs.msg import PointCloud2
 from visualization_msgs.msg import Marker, MarkerArray
 import pcl
-import math
 import numpy as np
 import tf2_ros
 from tf2_ros import TransformException, ConnectivityException
@@ -11,14 +10,14 @@ from custom_msgs.msg import DetectedSurfaces, DetectedHoles
 from typing import List, Tuple, Union
 
 
-class HoleDetection(Node):
+class CupHolderDetection(Node):
     def __init__(self) -> None:
-        super().__init__('hole_detection_node')
+        super().__init__('cup_holder_detection_node')
         self.pc_sub = self.create_subscription(PointCloud2, '/wrist_rgbd_depth_sensor/points', self.callback, 10)
-        self.tray_marker_pub = self.create_publisher(MarkerArray, '/table_markers', 10)
-        self.hole_marker_pub = self.create_publisher(MarkerArray, '/hole_markers', 10)
+        self.tray_marker_pub = self.create_publisher(MarkerArray, '/surface_markers', 10)
+        self.hole_marker_pub = self.create_publisher(MarkerArray, '/cup_holder_markers', 10)
         self.surface_detected_pub = self.create_publisher(DetectedSurfaces, '/surface_detected', 10)
-        self.hole_detected_pub = self.create_publisher(DetectedHoles, '/hole_detected', 10)
+        self.hole_detected_pub = self.create_publisher(DetectedHoles, '/cup_holder_detected', 10)
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
@@ -27,24 +26,24 @@ class HoleDetection(Node):
             cloud = self.from_ros_msg(msg)
             # Filtered cloud for tray surface detection
             filtered_cloud_plane = self.filter_cloud(cloud, min_x=-0.6, max_x=-0.2, min_y=-0.2, max_y=0.2, min_z=-0.65, max_z=-0.54)
-            # Filtered cloud for hole detection
+            # Filtered cloud for cup holder detection
             filtered_cloud_holes = self.filter_cloud(cloud, min_x=-0.55, max_x=-0.25, min_y=-0.15, max_y=0.15, min_z=-0.63, max_z=-0.55)
 
-            # Plane segmentations using RANSAC: tray and holes
+            # Plane segmentations using RANSAC: tray plane and holes
             plane_indices, plane_coefficients, tray_cloud = self.extract_plane(filtered_cloud_plane)
             hole_indices, hole_coefficients, hole_cloud = self.extract_cylinder(filtered_cloud_holes)
 
             # Clustering methods
-            table_clusters, surface_centroids, surface_dimensions = self.extract_clusters(tray_cloud, "Tray Surface")
-            hole_clusters, hole_centroids, hole_dimensions = self.extract_clusters(hole_cloud, "Hole cloud")
+            table_clusters, surface_centroids, surface_dimensions = self.extract_clusters(tray_cloud, "Tray Cloud")
+            cup_holder_clusters, cup_holder_centroids, cup_holder_dimensions = self.extract_clusters(hole_cloud, "Hole cloud")
 
             # Publish detected markers
             self.pub_surface_marker(surface_centroids, surface_dimensions)
-            self.pub_hole_markers(hole_centroids, hole_dimensions)
+            self.pub_cup_holder_markers(cup_holder_centroids, cup_holder_dimensions)
 
             # Publish detected info
             self.pub_surface_detected(surface_centroids, surface_dimensions)
-            self.pub_hole_detected(hole_centroids, hole_dimensions)
+            self.pub_cup_holder_detected(cup_holder_centroids, cup_holder_dimensions)
 
         except Exception as e:
             self.get_logger().error(f"Error in callback: {e}")
@@ -225,7 +224,7 @@ class HoleDetection(Node):
 
         # Process each cluster
         for idx, indices in enumerate(cluster_indices):
-            self.get_logger().info(f"Processing {cluster_type} cluster {idx + 1}...")
+            # self.get_logger().info(f"Processing {cluster_type} cluster {idx + 1}...")
 
             # Extract points belonging to the cluster
             cluster = cloud.extract(indices)
@@ -244,9 +243,9 @@ class HoleDetection(Node):
             cluster_dimensions.append(dimensions.tolist())
 
             # Log cluster information
-            num_points = len(indices)
-            self.get_logger().info(f"{cluster_type} cluster {idx + 1} has {num_points} points.")
-            self.get_logger().info(f"Centroid of {cluster_type} cluster {idx + 1}: {centroid}")
+            # num_points = len(indices)
+            # self.get_logger().info(f"{cluster_type} cluster {idx + 1} has {num_points} points.")
+            # self.get_logger().info(f"Centroid of {cluster_type} cluster {idx + 1}: {centroid}")
             # self.get_logger().info(f"Dimensions of {cluster_type} cluster {idx + 1}: {dimensions}")
 
         # Check if any clusters have been extracted
@@ -288,7 +287,7 @@ class HoleDetection(Node):
         if marker_array.markers:
             self.tray_marker_pub.publish(marker_array)
 
-    def pub_hole_markers(self, hole_centroids: List[List[float]], hole_dimensions: List[List[float]]) -> None:
+    def pub_cup_holder_markers(self, hole_centroids: List[List[float]], hole_dimensions: List[List[float]]) -> None:
         """Publishes the detected cylindrical holes as markers."""
         marker_array = MarkerArray()
         
@@ -332,7 +331,7 @@ class HoleDetection(Node):
             surface_msg.width = dimension[1]
             self.surface_detected_pub.publish(surface_msg)
 
-    def pub_hole_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
+    def pub_cup_holder_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
         """Publishes the detected hole information similar to pub_surface_detected."""
         for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
             hole_msg = DetectedHoles()
@@ -346,8 +345,8 @@ class HoleDetection(Node):
 
 def main(args=None) -> None:
     rclpy.init(args=args)
-    hole_detection = HoleDetection()
-    rclpy.spin(hole_detection)
+    cup_holder_detection = CupHolderDetection()
+    rclpy.spin(cup_holder_detection)
     rclpy.shutdown()
 
 if __name__ == '__main__':
