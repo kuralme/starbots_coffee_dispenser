@@ -74,6 +74,39 @@ public:
                            std::bind(&PickAndPlace::object_pose_cb, this,
                                      std::placeholders::_1));
 
+    // Collision object - coffee counter for the robot to avoid
+    auto const collision_object1 = [frame_id =
+                                        move_group_robot_->getPlanningFrame()] {
+      moveit_msgs::msg::CollisionObject collision_object;
+      collision_object.header.frame_id = frame_id;
+      collision_object.id = "coffee_counter";
+      shape_msgs::msg::SolidPrimitive primitive;
+
+      // Define the size of the box in meters
+      primitive.type = primitive.BOX;
+      primitive.dimensions.resize(3);
+      primitive.dimensions[primitive.BOX_X] = 0.6;
+      primitive.dimensions[primitive.BOX_Y] = 1.8;
+      primitive.dimensions[primitive.BOX_Z] = 1.0;
+
+      // Define the pose of the box (relative to the frame_id)
+      geometry_msgs::msg::Pose box_pose;
+      box_pose.orientation.w = 1.0;
+      box_pose.position.x = +0.19;
+      box_pose.position.y = +0.6;
+      box_pose.position.z = -0.51;
+
+      collision_object.primitives.push_back(primitive);
+      collision_object.primitive_poses.push_back(box_pose);
+      collision_object.operation = collision_object.ADD;
+
+      return collision_object;
+    }();
+
+    // Add the collision object to the scene
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+    planning_scene_interface.applyCollisionObject(collision_object1);
+
     RCLCPP_INFO(LOGGER, "Class Initialized: Pick And Place");
   }
 
@@ -137,15 +170,7 @@ public:
     RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
     execute_trajectory_cartesian();
 
-    // RCLCPP_INFO(LOGGER, "Closing Gripper...");
-    // setup_gripper_named_pose("gripper_grasp");
-    // RCLCPP_INFO(LOGGER, "Planning Gripper Action...");
-    // plan_trajectory_gripper();
-    // RCLCPP_INFO(LOGGER, "Executing Gripper Action...");
-    // execute_trajectory_gripper();
-    // RCLCPP_INFO(LOGGER, "Gripper Closed");
-
-    // Close the gripper and pick the cup
+    // Incrementally close the gripper and pick the cup
     closeGripper();
 
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -162,7 +187,7 @@ public:
     // Go to dropping position
     RCLCPP_INFO(LOGGER, "Going to Place Position...");
     RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
-    setup_waypoints_target(-objX - 0.400, -objY, -0.600);
+    setup_waypoints_target(-objX - 0.38, -objY + 0.03, -objZ - 0.62);
     RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
     plan_trajectory_cartesian();
     RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
@@ -260,13 +285,12 @@ private:
   void setup_waypoints_target(float x_delta, float y_delta, float z_delta) {
     // initially set target pose to current pose of the robot
     target_pose_robot_ = move_group_robot_->getCurrentPose().pose;
-    // add the current pose to the target waypoints vector
     cartesian_waypoints_.push_back(target_pose_robot_);
-    // calculate the desired pose from delta value for the axis
+
+    // add the desired pose to the target waypoints vector
     target_pose_robot_.position.x += x_delta;
     target_pose_robot_.position.y += y_delta;
     target_pose_robot_.position.z += z_delta;
-    // add the desired pose to the target waypoints vector
     cartesian_waypoints_.push_back(target_pose_robot_);
   }
 
@@ -295,8 +319,6 @@ private:
     move_group_gripper_->setJointValueTarget(joint_group_positions_gripper_);
   }
 
-  // Method to close the gripper gradually by incrementing the gripper joint
-  // position
   void closeGripper() {
     float gripper_value = 0.4;
     const float target_value = 0.01; // ~gripper_grasp
@@ -310,8 +332,7 @@ private:
       joint_group_positions_gripper_[0] = gripper_value;
       move_group_gripper_->setJointValueTarget(joint_group_positions_gripper_);
 
-      // Plan and execute motion
-      moveit::planning_interface::MoveGroupInterface::Plan plan;
+      MoveGroupInterface::Plan plan;
       bool success = move_group_gripper_->plan(plan) ==
                      moveit::core::MoveItErrorCode::SUCCESS;
 
@@ -337,7 +358,6 @@ private:
     RCLCPP_INFO(LOGGER, "Incremental Gripper Closing Completed.");
   }
 
-  // Method to execute the motion plan for the gripper
   bool executeGripperPlan() {
     return move_group_gripper_->plan(gripper_trajectory_plan_) ==
                moveit::core::MoveItErrorCode::SUCCESS &&
