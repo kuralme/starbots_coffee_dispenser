@@ -103,6 +103,12 @@ Object detection node, extracts table surface and cup from coffee table camera p
 ```bash
 ros2 launch object_detection object_detection.launch.py
 ```
+
+Cup holder tray and hole detection node:
+```bash
+ros2 launch object_detection hole_detection.launch.py
+```
+
 ---
 **The full pick and place pipeline:**
 ```bash
