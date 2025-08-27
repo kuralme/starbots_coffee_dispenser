@@ -249,8 +249,8 @@ class CupHolderDetection(Node):
             # self.get_logger().info(f"Dimensions of {cluster_type} cluster {idx + 1}: {dimensions}")
 
         # Check if any clusters have been extracted
-        if not object_clusters:
-            self.get_logger().warning(f"No {cluster_type} clusters extracted...")
+        # if not object_clusters:
+        #     self.get_logger().warning(f"No {cluster_type} clusters extracted...")
 
         # Return the filtered table clusters, centroids and cluster dimensions
         return object_clusters, cluster_centroids, cluster_dimensions
