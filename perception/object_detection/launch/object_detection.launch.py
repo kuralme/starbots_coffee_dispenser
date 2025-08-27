@@ -8,15 +8,6 @@ def generate_launch_description():
     
     rviz_config = os.path.join(get_package_share_directory('object_detection'),'rviz','object_det.rviz')
 
-    # static_tf_pub = Node(
-    #     package='tf2_ros',
-    #     executable='static_transform_publisher',
-    #     name='static_transform_publisher_turtle_odom',
-    #     output='screen',
-    #     emulate_tty=True,
-    #     arguments=['0.338', '0.450', '0.100', '3.142', '0.0', '-2.094', 'base_link', 'wrist_rgbd_camera_depth_optical_frame']
-    # )
-
     object_detection_node = Node(
         package = 'object_detection',
         executable = 'object_detection',
@@ -35,7 +26,6 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        # static_tf_pub,
         object_detection_node,
         rviz_node
     ])

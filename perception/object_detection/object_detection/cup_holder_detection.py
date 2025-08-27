@@ -6,18 +6,18 @@ import pcl
 import numpy as np
 import tf2_ros
 from tf2_ros import TransformException, ConnectivityException
-from custom_msgs.msg import DetectedSurfaces, DetectedHoles
+from custom_msgs.msg import DetectedSurfaces, DetectedCupholders
 from typing import List, Tuple, Union
 
 
 class CupHolderDetection(Node):
     def __init__(self) -> None:
         super().__init__('cup_holder_detection_node')
-        self.pc_sub = self.create_subscription(PointCloud2, '/wrist_rgbd_depth_sensor/points', self.callback, 10)
-        self.tray_marker_pub = self.create_publisher(MarkerArray, '/surface_markers', 10)
-        self.hole_marker_pub = self.create_publisher(MarkerArray, '/cup_holder_markers', 10)
-        self.surface_detected_pub = self.create_publisher(DetectedSurfaces, '/surface_detected', 10)
-        self.hole_detected_pub = self.create_publisher(DetectedHoles, '/cup_holder_detected', 10)
+        self.pc_sub = self.create_subscription(PointCloud2, '/wrist_rgbd_depth_sensor/points_filtered', self.callback, 10)
+        self.tray_marker_pub = self.create_publisher(MarkerArray, '/tray_marker', 10)
+        self.cupholder_marker_pub = self.create_publisher(MarkerArray, '/cup_holder_markers', 10)
+        self.tray_detected_pub = self.create_publisher(DetectedSurfaces, '/tray_detected', 10)
+        self.cupholder_detected_pub = self.create_publisher(DetectedCupholders, '/cup_holder_detected', 10)
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
@@ -27,15 +27,15 @@ class CupHolderDetection(Node):
             # Filtered cloud for tray surface detection
             filtered_cloud_plane = self.filter_cloud(cloud, min_x=-0.6, max_x=-0.2, min_y=-0.2, max_y=0.2, min_z=-0.65, max_z=-0.54)
             # Filtered cloud for cup holder detection
-            filtered_cloud_holes = self.filter_cloud(cloud, min_x=-0.55, max_x=-0.25, min_y=-0.15, max_y=0.15, min_z=-0.63, max_z=-0.55)
+            filtered_cloud_cupholder = self.filter_cloud(cloud, min_x=-0.55, max_x=-0.25, min_y=-0.15, max_y=0.15, min_z=-0.63, max_z=-0.55)
 
-            # Plane segmentations using RANSAC: tray plane and holes
+            # Plane segmentations using RANSAC: tray plane and cupholders
             plane_indices, plane_coefficients, tray_cloud = self.extract_plane(filtered_cloud_plane)
-            hole_indices, hole_coefficients, hole_cloud = self.extract_cylinder(filtered_cloud_holes)
+            cupholder_indices, cupholder_coefficients, cupholder_cloud = self.extract_cylinder(filtered_cloud_cupholder)
 
             # Clustering methods
             table_clusters, surface_centroids, surface_dimensions = self.extract_clusters(tray_cloud, "Tray Cloud")
-            cup_holder_clusters, cup_holder_centroids, cup_holder_dimensions = self.extract_clusters(hole_cloud, "Hole cloud")
+            cup_holder_clusters, cup_holder_centroids, cup_holder_dimensions = self.extract_clusters(cupholder_cloud, "Cupholder cloud")
 
             # Publish detected markers
             self.pub_surface_marker(surface_centroids, surface_dimensions)
@@ -130,14 +130,14 @@ class CupHolderDetection(Node):
 
         return indices, coefficients, plane_cloud
 
-    def extract_cylinder(self, cloud, max_holes=4, min_distance=0.05):
-        """Segmentation: Extracts cylindrical holes from the point cloud."""
-        holes_indices = []
-        holes_coeffs = []
-        hole_centroids = []
+    def extract_cylinder(self, cloud, max_cupholder=4, min_distance=0.05):
+        """Segmentation: Extracts cylindrical cupholder from the point cloud."""
+        cupholder_indices = []
+        cupholder_coeffs = []
+        cupholder_centroids = []
         working_cloud = cloud
 
-        for _ in range(max_holes):
+        for _ in range(max_cupholder):
             seg = working_cloud.make_segmenter_normals(ksearch=50)
             seg.set_optimize_coefficients(True)
             seg.set_model_type(pcl.SACMODEL_CYLINDER)
@@ -153,44 +153,44 @@ class CupHolderDetection(Node):
             if len(indices) < 30 or coefficients[6] > 0.06 or coefficients[6] < 0.01:
                 break
 
-            holes_indices.append(indices)
-            holes_coeffs.append(coefficients)
+            cupholder_indices.append(indices)
+            cupholder_coeffs.append(coefficients)
 
-            # Mask out detected hole points for the next iteration
+            # Mask out detected cup holder points for the next iteration
             mask = np.ones(working_cloud.size, dtype=bool)
             mask[indices] = False
             working_cloud = working_cloud.extract(np.where(mask)[0])
 
-            # Calculate centroid of detected hole
-            hole_points = cloud.extract(indices)
-            centroid = np.mean(hole_points, axis=0)
-            hole_centroids.append(centroid)
+            # Calculate centroid of detected cup holder
+            cupholder_points = cloud.extract(indices)
+            centroid = np.mean(cupholder_points, axis=0)
+            cupholder_centroids.append(centroid)
 
-        # After all holes are detected, filter out holes that are too close
-        hole_centroids, hole_indices = self.filter_close_holes(hole_centroids, holes_indices, min_distance)
+        # After all cupholder are detected, filter out cupholder that are too close
+        cupholder_centroids, cupholder_indices = self.filter_close_cupholder(cupholder_centroids, cupholder_indices, min_distance)
 
-        # For visualization, you can merge all detected hole clouds:
-        all_hole_points = []
-        for indices in hole_indices:
-            hole_cloud = cloud.extract(indices)
-            all_hole_points.append(hole_cloud.to_array())
+        # For visualization, you can merge all detected cup holder clouds:
+        cupholder_points = []
+        for indices in cupholder_indices:
+            cupholder_cloud = cloud.extract(indices)
+            cupholder_points.append(cupholder_cloud.to_array())
 
-        if all_hole_points:
-            merged_points = np.vstack(all_hole_points)
-            all_hole_cloud = pcl.PointCloud()
-            all_hole_cloud.from_array(merged_points)
+        if cupholder_points:
+            merged_points = np.vstack(cupholder_points)
+            cupholder_cloud = pcl.PointCloud()
+            cupholder_cloud.from_array(merged_points)
         else:
-            all_hole_cloud = pcl.PointCloud()
+            cupholder_cloud = pcl.PointCloud()
 
-        return hole_indices, holes_coeffs, all_hole_cloud
+        return cupholder_indices, cupholder_coeffs, cupholder_cloud
 
-    def filter_close_holes(self, centroids, indices, min_distance):
-        """Filters out holes that are too close to each other based on a minimum distance."""
+    def filter_close_cupholder(self, centroids, indices, min_distance):
+        """Filters out cupholder that are too close to each other based on a minimum distance."""
         filtered_centroids = []
         filtered_indices = []
 
         for i, centroid in enumerate(centroids):
-            # Check distance with already selected holes
+            # Check distance with already selected cupholder
             too_close = False
             for j, existing_centroid in enumerate(filtered_centroids):
                 distance = np.linalg.norm(np.array(centroid) - np.array(existing_centroid))
@@ -287,11 +287,11 @@ class CupHolderDetection(Node):
         if marker_array.markers:
             self.tray_marker_pub.publish(marker_array)
 
-    def pub_cup_holder_markers(self, hole_centroids: List[List[float]], hole_dimensions: List[List[float]]) -> None:
-        """Publishes the detected cylindrical holes as markers."""
+    def pub_cup_holder_markers(self, cupholder_centroids: List[List[float]], cupholder_dimensions: List[List[float]]) -> None:
+        """Publishes the detected cylindrical cupholder as markers."""
         marker_array = MarkerArray()
         
-        for idx, (centroid, dimensions) in enumerate(zip(hole_centroids, hole_dimensions)):
+        for idx, (centroid, dimensions) in enumerate(zip(cupholder_centroids, cupholder_dimensions)):
             radius = float(dimensions[0]) / 2
             height = 0.035
 
@@ -317,7 +317,7 @@ class CupHolderDetection(Node):
             marker_array.markers.append(cylinder_marker)
 
         if marker_array.markers:
-            self.hole_marker_pub.publish(marker_array)
+            self.cupholder_marker_pub.publish(marker_array)
 
     def pub_surface_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
         """Publishes the detected surface information"""
@@ -329,19 +329,19 @@ class CupHolderDetection(Node):
             surface_msg.position.z = centroid[2]
             surface_msg.height = dimension[0]
             surface_msg.width = dimension[1]
-            self.surface_detected_pub.publish(surface_msg)
+            self.tray_detected_pub.publish(surface_msg)
 
     def pub_cup_holder_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
-        """Publishes the detected hole information similar to pub_surface_detected."""
+        """Publishes the detected cup holder information similar to pub_surface_detected."""
         for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
-            hole_msg = DetectedHoles()
-            hole_msg.hole_id = idx
-            hole_msg.position.x = centroid[0]
-            hole_msg.position.y = centroid[1]
-            hole_msg.position.z = centroid[2]
-            hole_msg.radius = float(dimension[0]) / 2
-            hole_msg.height = 0.035  # Fixed hole depth of 3cm
-            self.hole_detected_pub.publish(hole_msg)
+            cupholder_msg = DetectedCupholders()
+            cupholder_msg.cupholder_id = idx
+            cupholder_msg.position.x = centroid[0]
+            cupholder_msg.position.y = centroid[1]
+            cupholder_msg.position.z = centroid[2]
+            cupholder_msg.radius = float(dimension[0]) / 2
+            cupholder_msg.height = 0.035
+            self.cupholder_detected_pub.publish(cupholder_msg)
 
 def main(args=None) -> None:
     rclpy.init(args=args)

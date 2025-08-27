@@ -12,10 +12,10 @@ from typing import List, Tuple, Union
 class ObjectDetection(Node):
     def __init__(self) -> None:
         super().__init__('object_detection_node')
-        self.pc_sub = self.create_subscription(PointCloud2, '/camera_depth_sensor/points', self.callback, 10)
-        self.table_marker_pub = self.create_publisher(MarkerArray, '/table_markers', 10)
-        self.objects_marker_pub = self.create_publisher(MarkerArray, '/object_markers', 10)
-        self.surface_detected_pub = self.create_publisher(DetectedSurfaces, '/surface_detected', 10)
+        self.pc_sub = self.create_subscription(PointCloud2, '/camera_depth_sensor/points_filtered', self.callback, 10)
+        self.table_marker_pub = self.create_publisher(MarkerArray, '/table_marker', 10)
+        self.objects_marker_pub = self.create_publisher(MarkerArray, '/object_marker', 10)
+        self.table_detected_pub = self.create_publisher(DetectedSurfaces, '/table_detected', 10)
         self.object_detected_pub = self.create_publisher(DetectedObjects, '/object_detected', 10)
         self.marker_id = 0
         self.tf_buffer = tf2_ros.Buffer()
@@ -242,7 +242,7 @@ class ObjectDetection(Node):
             surface_msg.position.z = centroid[2]
             surface_msg.height = dimension[0]
             surface_msg.width = dimension[1]
-            self.surface_detected_pub.publish(surface_msg)
+            self.table_detected_pub.publish(surface_msg)
 
     def pub_object_marker(self, object_centroids: List[List[float]], object_dimensions: List[List[float]]) -> None:
         """Publishes objects on flat surfaces as markers"""
