@@ -1,3 +1,4 @@
+octomap_resolution: 0.02
 sensors:
   - coffee_dispenser_cam_pointcloud
   # - coffee_dispenser_cam_depth_image
