@@ -104,8 +104,8 @@ public:
     }();
 
     // Add the collision object to the scene
-    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-    planning_scene_interface.applyCollisionObject(collision_object1);
+    // moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+    // planning_scene_interface.applyCollisionObject(collision_object1);
 
     RCLCPP_INFO(LOGGER, "Class Initialized: Pick And Place");
   }

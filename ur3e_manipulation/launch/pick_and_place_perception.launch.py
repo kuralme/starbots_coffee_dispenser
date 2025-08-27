@@ -8,7 +8,14 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
 
-    moveit_config = MoveItConfigsBuilder("name", package_name="ur3e_sim_moveit_config").to_moveit_configs()
+    rviz_config = os.path.join(get_package_share_directory('ur3e_manipulation'),'rviz','starbots_ur3e.rviz')
+    moveit_config = MoveItConfigsBuilder("name", package_name="ur3e_sim_moveit_config").sensors_3d(
+            file_path=os.path.join(
+                get_package_share_directory("ur3e_sim_moveit_config"),
+                "config/sensors_3d.yaml",
+            )
+        ).to_moveit_configs()
+        
     move_group_node = Node(
         package="moveit_ros_move_group",
         executable="move_group",
@@ -38,20 +45,29 @@ def generate_launch_description():
         actions=[manipulation_node]
     )
 
-    # The object detection node to be launched first
-    object_detection_launch = IncludeLaunchDescription(
+    # Both detection nodes to be launched first
+    detections_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
                 get_package_share_directory('object_detection'),
                 'launch',
-                'object_detection.launch.py'
+                'detections.launch.py'
             )
         )
     )
 
-    # Declare the launch options
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
+        arguments=['-d', rviz_config],
+        parameters=[{'use_sim_time': True}],
+    )
+
     ld = LaunchDescription()
     ld.add_action(move_group_node)
-    ld.add_action(object_detection_launch)
+    ld.add_action(detections_launch)
     ld.add_action(delayed_manipulation_node)
+    ld.add_action(rviz_node)
     return ld
