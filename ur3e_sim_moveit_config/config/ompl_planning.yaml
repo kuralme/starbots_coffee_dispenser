@@ -1,0 +1,18 @@
+planning_plugin: ompl_interface/OMPLPlanner
+planner_configs:
+  RRTstarkConfigDefault:
+    type: geometric::RRTstar
+    range: 0.0  # Max motion added to tree. ==> maxDistance_ default: 0.0, if 0.0, set on setup()
+    goal_bias: 0.05  # When close to goal select goal, with this probability? default: 0.05
+    delay_collision_checking: 1  # Stop collision checking as soon as C-free parent found. default 1
+    termination_condition: CostConvergence[10,.1]
+    optimization_objective: MaximizeMinClearanceObjective
+
+ur_manipulator:
+  planner_configs:
+    - RRTstarkConfigDefault
+  default_planner_config: RRTstarkConfigDefault
+  projection_evaluator: joints(elbow_joint, shoulder_lift_joint, shoulder_pan_joint, wrist_1_joint, wrist_2_joint, wrist_3_joint)
+  longest_valid_segment_fraction: 0.005
+  maximum_waypoint_distance: 0.01
+  enforce_constrained_state_space: true
