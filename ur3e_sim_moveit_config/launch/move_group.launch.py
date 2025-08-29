@@ -9,18 +9,18 @@ def generate_launch_description():
         .robot_description_semantic(file_path="config/name.srdf")
         .sensors_3d(file_path="config/sensors_3d.yaml")
         .planning_pipelines(
-            pipelines=["ompl", "chomp", "pilz_industrial_motion_planner"]
+            pipelines=["ompl", "pilz_industrial_motion_planner"]
         )
         .to_moveit_configs()
     )
-        
+    
     move_group_node = Node(
         package="moveit_ros_move_group",
         executable="move_group",
         output="screen",
         parameters=[
             moveit_config.to_dict(),
-            {"trajectory_execution.allowed_execution_duration_scaling": 10.0},
+            {"trajectory_execution.allowed_execution_duration_scaling": 2.0},
             {"publish_robot_description_semantic": True},
             {"use_sim_time": True},
         ],

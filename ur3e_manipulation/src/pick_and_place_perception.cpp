@@ -6,6 +6,7 @@
 
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
+
 #include <moveit_msgs/msg/display_robot_state.hpp>
 #include <moveit_msgs/msg/display_trajectory.hpp>
 
@@ -74,38 +75,11 @@ public:
                            std::bind(&PickAndPlace::object_pose_cb, this,
                                      std::placeholders::_1));
 
-    // Collision object - coffee counter for the robot to avoid
-    auto const collision_object1 = [frame_id =
-                                        move_group_robot_->getPlanningFrame()] {
-      moveit_msgs::msg::CollisionObject collision_object;
-      collision_object.header.frame_id = frame_id;
-      collision_object.id = "coffee_counter";
-      shape_msgs::msg::SolidPrimitive primitive;
-
-      // Define the size of the box in meters
-      primitive.type = primitive.BOX;
-      primitive.dimensions.resize(3);
-      primitive.dimensions[primitive.BOX_X] = 0.6;
-      primitive.dimensions[primitive.BOX_Y] = 1.8;
-      primitive.dimensions[primitive.BOX_Z] = 1.0;
-
-      // Define the pose of the box (relative to the frame_id)
-      geometry_msgs::msg::Pose box_pose;
-      box_pose.orientation.w = 1.0;
-      box_pose.position.x = +0.19;
-      box_pose.position.y = +0.6;
-      box_pose.position.z = -0.51;
-
-      collision_object.primitives.push_back(primitive);
-      collision_object.primitive_poses.push_back(box_pose);
-      collision_object.operation = collision_object.ADD;
-
-      return collision_object;
-    }();
-
-    // Add the collision object to the scene
-    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-    planning_scene_interface.applyCollisionObject(collision_object1);
+    RCLCPP_INFO(LOGGER, "================================================");
+    // move_group_robot_->setPlannerId("RRTstarkConfigDefault");
+    std::string planner_id = move_group_robot_->getPlannerId();
+    RCLCPP_INFO(LOGGER, "Active Planner: %s", planner_id.c_str());
+    RCLCPP_INFO(LOGGER, "================================================");
 
     RCLCPP_INFO(LOGGER, "Class Initialized: Pick And Place");
   }
@@ -125,26 +99,20 @@ public:
       RCLCPP_WARN(LOGGER, "Object Pose not received yet!");
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
+    // x: 0.299
+    // y: 0.347
+    // z: 0.056
     float objX = this->obj_pose_.position.x;
     float objY = this->obj_pose_.position.y - 0.016;
     float objZ = this->obj_pose_.position.z + .3;
 
     RCLCPP_INFO(LOGGER, "Planning and Executing Pick And Place...");
 
-    // Go to home position
-    RCLCPP_INFO(LOGGER, "Going to Home Position...");
-    RCLCPP_INFO(LOGGER, "Preparing Joint Value Trajectory...");
-    setup_arm_named_pose("home");
-    RCLCPP_INFO(LOGGER, "Planning Joint Value Trajectory...");
-    plan_trajectory_kinematics();
-    RCLCPP_INFO(LOGGER, "Executing Joint Value Trajectory...");
-    execute_trajectory_kinematics();
-
     // Approach to pre-grasp position
     RCLCPP_INFO(LOGGER, "Preparing Pregrasp Position...");
     RCLCPP_INFO(LOGGER, "Setting Goal Pose: [%.3f, %.3f, %.3f]", objX, objY,
                 objZ);
-    setup_goal_pose_target(+objX, +objY, +objZ, -1.000, +0.000, +0.000, +0.000);
+    setup_goal_pose_target(objX, objY, objZ, -1.000, 0.000, 0.000, 0.000);
     // setup_arm_named_pose("pregrasp");
     RCLCPP_INFO(LOGGER, "Planning Goal Pose Trajectory...");
     plan_trajectory_kinematics();
@@ -161,50 +129,59 @@ public:
     execute_trajectory_gripper();
     RCLCPP_INFO(LOGGER, "Gripper Opened");
 
-    // Approach to grasping position
-    RCLCPP_INFO(LOGGER, "Approaching to grasp...");
-    RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
-    setup_waypoints_target(+0.000, +0.000, -0.080);
-    RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
-    plan_trajectory_cartesian();
-    RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
-    execute_trajectory_cartesian();
+    // // Approach to grasping position
+    // RCLCPP_INFO(LOGGER, "Approaching to grasp...");
+    // RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
+    // setup_waypoints_target(+0.000, +0.000, -0.120);
+    // RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
+    // plan_trajectory_cartesian();
+    // RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
+    // execute_trajectory_cartesian();
 
-    // Incrementally close the gripper and pick the cup
-    closeGripper();
+    // // Incrementally close the gripper and pick the cup
+    // closeGripper();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-    // Retreat
-    RCLCPP_INFO(LOGGER, "Retreating...");
-    RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
-    setup_waypoints_target(+0.000, +0.000, +0.080);
-    RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
-    plan_trajectory_cartesian();
-    RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
-    execute_trajectory_cartesian();
+    // // Retreat
+    // RCLCPP_INFO(LOGGER, "Retreating...");
+    // RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
+    // setup_waypoints_target(+0.000, +0.000, +0.120);
+    // RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
+    // plan_trajectory_cartesian();
+    // RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
+    // execute_trajectory_cartesian();
 
     // Go to dropping position
-    RCLCPP_INFO(LOGGER, "Going to Place Position...");
-    RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
-    setup_waypoints_target(-objX - 0.38, -objY + 0.03, -objZ - 0.62);
-    RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
-    plan_trajectory_cartesian();
-    RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
-    execute_trajectory_cartesian();
+    RCLCPP_INFO(LOGGER, "================================================");
+    RCLCPP_INFO(LOGGER, "Going to the Dropping Position...");
+    apply_upright_orientation_constraint();
 
-    // current_state_robot_ = move_group_robot_->getCurrentState(10);
-    // current_state_robot_->copyJointGroupPositions(joint_model_group_robot_,
-    //                                               joint_group_positions_robot_);
-    // RCLCPP_INFO(LOGGER, "Preparing Joint Value Trajectory...");
-    // setup_joint_value_target(
-    //     M_PI * .9, joint_group_positions_robot_[1],
-    //     joint_group_positions_robot_[2], joint_group_positions_robot_[3],
-    //     joint_group_positions_robot_[4], joint_group_positions_robot_[5]);
-    // RCLCPP_INFO(LOGGER, "Planning Joint Value Trajectory...");
-    // plan_trajectory_kinematics();
-    // RCLCPP_INFO(LOGGER, "Executing Joint Value Trajectory...");
-    // execute_trajectory_kinematics();
+    // RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
+    // // setup_waypoints_target(-0.700, -0.100, -0.500);
+    // setup_waypoints_target(-0.800, -0.100, 0.000);
+    // RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
+    // move_group_robot_->setPlanningTime(20.0);
+    // plan_trajectory_cartesian();
+    // RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
+    // execute_trajectory_cartesian();
+    RCLCPP_INFO(LOGGER, "Preparing kinematic trajectory...");
+    setup_goal_pose_target(0.000, 0.420, 0.150, -1.000, 0.000, 0.000, 0.000);
+    RCLCPP_INFO(LOGGER, "Planning Intermediate-Goal Pose Trajectory...");
+    plan_trajectory_kinematics();
+    RCLCPP_INFO(LOGGER, "Executing Intermediate-Goal Pose Trajectory...");
+    execute_trajectory_kinematics();
+
+    RCLCPP_INFO(LOGGER, "Preparing kinematic trajectory...");
+    setup_goal_pose_target(-0.400, 0.000, -0.200, -1.000, 0.000, 0.000, 0.000);
+    RCLCPP_INFO(LOGGER, "Planning Goal Pose Trajectory...");
+    plan_trajectory_kinematics();
+    RCLCPP_INFO(LOGGER, "Executing Goal Pose Trajectory...");
+    execute_trajectory_kinematics();
+
+    RCLCPP_INFO(LOGGER, "================================================");
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    clear_path_constraints();
 
     // Open the gripper and drop the box
     RCLCPP_INFO(LOGGER, "Opening Gripper...");
@@ -216,9 +193,9 @@ public:
     execute_trajectory_gripper();
     RCLCPP_INFO(LOGGER, "Gripper Opened");
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-    // Go back to home position
+    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+  }
+  void gotoHome() {
     RCLCPP_INFO(LOGGER, "Going to Home Position...");
     RCLCPP_INFO(LOGGER, "Preparing Joint Value Trajectory...");
     setup_arm_named_pose("home");
@@ -226,18 +203,6 @@ public:
     plan_trajectory_kinematics();
     RCLCPP_INFO(LOGGER, "Executing Joint Value Trajectory...");
     execute_trajectory_kinematics();
-
-    // Close the gripper
-    RCLCPP_INFO(LOGGER, "Closing Gripper...");
-    RCLCPP_INFO(LOGGER, "Preparing Gripper Value...");
-    setup_gripper_named_pose("gripper_close");
-    RCLCPP_INFO(LOGGER, "Planning Gripper Action...");
-    plan_trajectory_gripper();
-    RCLCPP_INFO(LOGGER, "Executing Gripper Action...");
-    execute_trajectory_gripper();
-    RCLCPP_INFO(LOGGER, "Gripper Closed");
-
-    RCLCPP_INFO(LOGGER, "Pick And Place Execution Complete");
   }
 
 private:
@@ -271,14 +236,30 @@ private:
     plan_success_robot_ =
         (move_group_robot_->plan(kinematics_trajectory_plan_) ==
          moveit::core::MoveItErrorCode::SUCCESS);
+
+    if (plan_success_robot_) {
+      RCLCPP_INFO(LOGGER, "Robot Kinematics Trajectory Success !");
+    } else {
+      RCLCPP_ERROR(LOGGER, "Robot Kinematics Trajectory Failed !");
+    }
+    auto traj_points =
+        kinematics_trajectory_plan_.trajectory_.joint_trajectory.points.size();
+    RCLCPP_INFO(LOGGER, "Planned trajectory points: %ld", traj_points);
   }
 
   void execute_trajectory_kinematics() {
     if (plan_success_robot_) {
-      move_group_robot_->execute(kinematics_trajectory_plan_);
-      RCLCPP_INFO(LOGGER, "Robot Kinematics Trajectory Success !");
+      size_t num_points = kinematics_trajectory_plan_.trajectory_
+                              .joint_trajectory.points.size();
+      RCLCPP_INFO(LOGGER, "Trajectory has %zu points", num_points);
+      if (num_points > 1) {
+        move_group_robot_->execute(kinematics_trajectory_plan_);
+        RCLCPP_INFO(LOGGER, "Executed trajectory.");
+      } else {
+        RCLCPP_WARN(LOGGER, "Trajectory too short — nothing to execute.");
+      }
     } else {
-      RCLCPP_INFO(LOGGER, "Robot Kinematics Trajectory Failed !");
+      RCLCPP_ERROR(LOGGER, "Planning failed — no execution.");
     }
   }
 
@@ -391,6 +372,31 @@ private:
     }
   }
 
+  void apply_upright_orientation_constraint() {
+    // Orientation to "gripper pointing down" constraint
+    moveit_msgs::msg::OrientationConstraint ocm;
+    ocm.link_name = move_group_robot_->getEndEffectorLink();
+    ocm.header.frame_id = move_group_robot_->getPlanningFrame();
+    ocm.orientation.x = -1.000;
+    ocm.orientation.y = 0.000;
+    ocm.orientation.z = 0.000;
+    ocm.orientation.w = 0.000;
+    ocm.absolute_x_axis_tolerance = 0.1;
+    ocm.absolute_y_axis_tolerance = 0.1;
+    ocm.absolute_z_axis_tolerance = M_PI;
+    ocm.weight = 1.0;
+
+    moveit_msgs::msg::Constraints constraints;
+    constraints.orientation_constraints.push_back(ocm);
+    move_group_robot_->setPathConstraints(constraints);
+
+    RCLCPP_INFO(LOGGER, "Applied upright orientation constraint (Z down)");
+  }
+  void clear_path_constraints() {
+    move_group_robot_->clearPathConstraints();
+    RCLCPP_INFO(LOGGER, "Cleared path constraints.");
+  }
+
   using MoveGroupInterface = moveit::planning_interface::MoveGroupInterface;
   using JointModelGroup = moveit::core::JointModelGroup;
   using RobotStatePtr = moveit::core::RobotStatePtr;
@@ -437,7 +443,10 @@ int main(int argc, char **argv) {
       std::make_shared<rclcpp::Node>("pick_and_place");
 
   PickAndPlace pick_and_place_trajectory_node(base_node);
+  pick_and_place_trajectory_node.gotoHome();
   pick_and_place_trajectory_node.execute_trajectory_plan();
+  pick_and_place_trajectory_node.gotoHome();
+  RCLCPP_INFO(LOGGER, "Pick And Place Execution Complete");
 
   rclcpp::shutdown();
   return 0;
