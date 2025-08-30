@@ -18,7 +18,6 @@ def generate_launch_description():
         )
         .to_moveit_configs()
     )
-        
     move_group_node = Node(
         package="moveit_ros_move_group",
         executable="move_group",
@@ -29,8 +28,6 @@ def generate_launch_description():
             {"trajectory_execution.allowed_execution_duration_scaling": 10.0,},
             {"publish_robot_description_semantic": True},
             {"use_sim_time": True},
-            {"ompl.planning_pipeline": "ompl"},
-            {"planner_configs": ["RRTstarkConfigDefault"]},
         ],
     )
     manipulation_node = Node(

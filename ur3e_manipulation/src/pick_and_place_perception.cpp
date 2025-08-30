@@ -75,11 +75,38 @@ public:
                            std::bind(&PickAndPlace::object_pose_cb, this,
                                      std::placeholders::_1));
 
-    RCLCPP_INFO(LOGGER, "================================================");
-    // move_group_robot_->setPlannerId("RRTstarkConfigDefault");
-    std::string planner_id = move_group_robot_->getPlannerId();
-    RCLCPP_INFO(LOGGER, "Active Planner: %s", planner_id.c_str());
-    RCLCPP_INFO(LOGGER, "================================================");
+    // Collision object - coffee counter for the robot to avoid
+    auto const collision_object1 = [frame_id =
+                                        move_group_robot_->getPlanningFrame()] {
+      moveit_msgs::msg::CollisionObject collision_object;
+      collision_object.header.frame_id = frame_id;
+      collision_object.id = "coffee_counter";
+      shape_msgs::msg::SolidPrimitive primitive;
+
+      // Define the size of the box in meters
+      primitive.type = primitive.BOX;
+      primitive.dimensions.resize(3);
+      primitive.dimensions[primitive.BOX_X] = 0.6;
+      primitive.dimensions[primitive.BOX_Y] = 1.8;
+      primitive.dimensions[primitive.BOX_Z] = 1.0;
+
+      // Define the pose of the box (relative to the frame_id)
+      geometry_msgs::msg::Pose box_pose;
+      box_pose.orientation.w = 1.0;
+      box_pose.position.x = 0.19;
+      box_pose.position.y = 0.4;
+      box_pose.position.z = -0.51;
+
+      collision_object.primitives.push_back(primitive);
+      collision_object.primitive_poses.push_back(box_pose);
+      collision_object.operation = collision_object.ADD;
+
+      return collision_object;
+    }();
+
+    // Add the collision object to the scene
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+    // planning_scene_interface.applyCollisionObject(collision_object1);
 
     RCLCPP_INFO(LOGGER, "Class Initialized: Pick And Place");
   }
@@ -165,12 +192,13 @@ public:
     // plan_trajectory_cartesian();
     // RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
     // execute_trajectory_cartesian();
-    RCLCPP_INFO(LOGGER, "Preparing kinematic trajectory...");
-    setup_goal_pose_target(0.000, 0.420, 0.150, -1.000, 0.000, 0.000, 0.000);
-    RCLCPP_INFO(LOGGER, "Planning Intermediate-Goal Pose Trajectory...");
-    plan_trajectory_kinematics();
-    RCLCPP_INFO(LOGGER, "Executing Intermediate-Goal Pose Trajectory...");
-    execute_trajectory_kinematics();
+
+    // RCLCPP_INFO(LOGGER, "Preparing kinematic trajectory...");
+    // setup_goal_pose_target(-0.200, 0.200, 0.300, -1.000, 0.000, 0.000,
+    // 0.000); RCLCPP_INFO(LOGGER, "Planning Intermediate-Goal Pose
+    // Trajectory... "); plan_trajectory_kinematics(); RCLCPP_INFO(LOGGER,
+    // "Executing Intermediate-Goal Pose Trajectory...");
+    // execute_trajectory_kinematics();
 
     RCLCPP_INFO(LOGGER, "Preparing kinematic trajectory...");
     setup_goal_pose_target(-0.400, 0.000, -0.200, -1.000, 0.000, 0.000, 0.000);
@@ -179,9 +207,9 @@ public:
     RCLCPP_INFO(LOGGER, "Executing Goal Pose Trajectory...");
     execute_trajectory_kinematics();
 
+    clear_path_constraints();
     RCLCPP_INFO(LOGGER, "================================================");
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    clear_path_constraints();
 
     // Open the gripper and drop the box
     RCLCPP_INFO(LOGGER, "Opening Gripper...");
@@ -381,8 +409,8 @@ private:
     ocm.orientation.y = 0.000;
     ocm.orientation.z = 0.000;
     ocm.orientation.w = 0.000;
-    ocm.absolute_x_axis_tolerance = 0.1;
-    ocm.absolute_y_axis_tolerance = 0.1;
+    ocm.absolute_x_axis_tolerance = 0.2;
+    ocm.absolute_y_axis_tolerance = 0.2;
     ocm.absolute_z_axis_tolerance = M_PI;
     ocm.weight = 1.0;
 
