@@ -258,9 +258,9 @@ class ObjectDetection(Node):
 
             diameter = max(dimensions[0], dimensions[1])
 
-            marker.pose.position.x = float(centroid[0] - diameter/4)
-            marker.pose.position.y = float(centroid[1])
-            marker.pose.position.z = float(centroid[2])
+            marker.pose.position.x = centroid[0] - diameter / 4.
+            marker.pose.position.y = centroid[1] - 0.016
+            marker.pose.position.z = centroid[2]
             marker.pose.orientation.w = 1.0
             marker.scale.x = diameter
             marker.scale.y = diameter
@@ -286,14 +286,13 @@ class ObjectDetection(Node):
             object_msg.object_id = idx
 
             diameter = max(dimension[0], dimension[1])
-            corrected_x = centroid[0] - diameter / 4
 
-            object_msg.position.x = corrected_x
-            object_msg.position.y = centroid[1]
+            object_msg.position.x = centroid[0] - diameter / 4.
+            object_msg.position.y = centroid[1] - 0.016
             object_msg.position.z = centroid[2]
-            object_msg.height = dimension[0]
-            object_msg.width = dimension[1]
-            object_msg.thickness = dimension[2]
+            object_msg.width = diameter
+            object_msg.thickness = diameter
+            object_msg.height = dimension[2]
 
             self.object_detected_pub.publish(object_msg)
 
