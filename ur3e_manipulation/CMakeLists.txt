@@ -13,6 +13,7 @@ find_package(moveit_core REQUIRED)
 find_package(moveit_ros_planning REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(custom_msgs REQUIRED)
 
 if(BUILD_TESTING)
@@ -35,7 +36,8 @@ ament_target_dependencies(pick_and_place_perception
 	moveit_core 
 	moveit_ros_planning 
 	moveit_ros_planning_interface 
-	moveit_msgs 
+	moveit_msgs
+	visualization_msgs 
 	custom_msgs
 )
 

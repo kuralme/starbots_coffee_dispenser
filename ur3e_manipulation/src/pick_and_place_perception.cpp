@@ -1,18 +1,18 @@
-#include "shape_msgs/msg/detail/solid_primitive__struct.hpp"
 #include <chrono>
 #include <cmath>
 #include <memory>
 #include <thread>
 #include <vector>
 
-#include <moveit/move_group_interface/move_group_interface.h>
-#include <moveit/planning_scene_interface/planning_scene_interface.h>
-
-#include <moveit_msgs/msg/display_robot_state.hpp>
-#include <moveit_msgs/msg/display_trajectory.hpp>
-
 #include <custom_msgs/msg/detected_objects.hpp>
 #include <custom_msgs/msg/detected_surfaces.hpp>
+#include <moveit/move_group_interface/move_group_interface.h>
+#include <moveit/planning_scene_interface/planning_scene_interface.h>
+#include <moveit_msgs/msg/display_robot_state.hpp>
+#include <moveit_msgs/msg/display_trajectory.hpp>
+#include <moveit_msgs/msg/position_constraint.hpp>
+#include <shape_msgs/msg/solid_primitive.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("move_group_node");
 static const std::string PLANNING_GROUP_ROBOT = "ur_manipulator";
@@ -73,52 +73,25 @@ public:
     objpose_sub_ = move_group_node_
                        ->create_subscription<custom_msgs::msg::DetectedObjects>(
                            "/object_detected", 10,
-                           std::bind(&PickAndPlace::object_detection_cb, this,
-                                     std::placeholders::_1));
+                           std::bind(&PickAndPlace::objectDetectionCallback,
+                                     this, std::placeholders::_1));
+    marker_pub_ =
+        move_group_node_->create_publisher<visualization_msgs::msg::Marker>(
+            "/constraint_marker", rclcpp::QoS(10).transient_local());
 
-    // Collision object - coffee counter for the robot to avoid
-    auto const collision_object1 = [frame_id =
-                                        move_group_robot_->getPlanningFrame()] {
-      moveit_msgs::msg::CollisionObject collision_object;
-      collision_object.header.frame_id = frame_id;
-      collision_object.id = "coffee_counter";
-      shape_msgs::msg::SolidPrimitive primitive;
-
-      // Define the size of the box in meters
-      primitive.type = primitive.BOX;
-      primitive.dimensions.resize(3);
-      primitive.dimensions[primitive.BOX_X] = 0.6;
-      primitive.dimensions[primitive.BOX_Y] = 1.8;
-      primitive.dimensions[primitive.BOX_Z] = 1.0;
-
-      // Define the pose of the box (relative to the frame_id)
-      geometry_msgs::msg::Pose box_pose;
-      box_pose.orientation.w = 1.0;
-      box_pose.position.x = 0.19;
-      box_pose.position.y = 0.4;
-      box_pose.position.z = -0.51;
-
-      collision_object.primitives.push_back(primitive);
-      collision_object.primitive_poses.push_back(box_pose);
-      collision_object.operation = collision_object.ADD;
-
-      return collision_object;
-    }();
-
-    // Add the collision object to the scene
-    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-    // planning_scene_interface.applyCollisionObject(collision_object1);
+    // Set box constraint as planning workspace
+    createTrajectoryConstraint();
 
     RCLCPP_INFO(LOGGER, "Class Initialized: Pick And Place");
   }
 
   ~PickAndPlace() { RCLCPP_INFO(LOGGER, "Class Terminated: Pick And Place"); }
 
-  void execute_trajectory_plan() {
+  void execute() {
 
     while (!obj_pose_received_) {
       RCLCPP_WARN(LOGGER, "Object Pose not received yet!");
-      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+      std::this_thread::sleep_for(std::chrono::milliseconds(3000));
     }
     float objX = obj_pose_.position.x;
     float objY = obj_pose_.position.y;
@@ -126,112 +99,91 @@ public:
 
     RCLCPP_INFO(LOGGER, "Planning and Executing Pick And Place...");
 
-    // Approach to pre-grasp position
     RCLCPP_INFO(LOGGER, "Preparing Pregrasp Position...");
-    RCLCPP_INFO(LOGGER, "Setting Goal Pose: [%.3f, %.3f, %.3f]", objX, objY,
+    RCLCPP_INFO(LOGGER, "Setting Goal Position: [%.3f, %.3f, %.3f]", objX, objY,
                 objZ);
-    setup_goal_pose_target(objX, objY, objZ, -1.000, 0.000, 0.000, 0.000);
-    // setup_arm_named_pose("pregrasp");
+    setupPoseTarget(objX, objY, objZ, -1.000, 0.000, 0.000, 0.000);
     RCLCPP_INFO(LOGGER, "Planning Goal Pose Trajectory...");
-    plan_trajectory_kinematics();
+    planTrajectoryKinematics();
     RCLCPP_INFO(LOGGER, "Executing Goal Pose Trajectory...");
-    execute_trajectory_kinematics();
+    executeTrajectoryKinematics();
 
-    // Open the gripper
     RCLCPP_INFO(LOGGER, "Opening Gripper...");
     RCLCPP_INFO(LOGGER, "Preparing Gripper Value...");
-    setup_gripper_named_pose("gripper_open");
+    move_group_gripper_->setNamedTarget("gripper_open");
     RCLCPP_INFO(LOGGER, "Planning Gripper Action...");
-    plan_trajectory_gripper();
+    planTrajectoryGripper();
     RCLCPP_INFO(LOGGER, "Executing Gripper Action...");
-    execute_trajectory_gripper();
+    executeTrajectoryGripper();
     RCLCPP_INFO(LOGGER, "Gripper Opened");
 
     // Approach to grasping position
     RCLCPP_INFO(LOGGER, "Approaching to grasp...");
     RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
-    setup_waypoints_target(+0.000, +0.000, -0.250);
+    setupWaypointTarget(+0.000, +0.000, -0.300);
     RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
-    plan_trajectory_cartesian();
+    planTrajectoryCartesian();
     RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
-    execute_trajectory_cartesian();
+    executeTrajectoryCartesian();
 
     // Incrementally close the gripper and pick the cup
-    closeGripper();
-    attach_cup();
+    closeGripperIncremental();
+    attachObject();
 
-    // Retreat
     RCLCPP_INFO(LOGGER, "Retreating...");
     RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
-    setup_waypoints_target(+0.000, +0.000, +0.250);
+    setupWaypointTarget(+0.000, +0.000, +0.300);
     RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
-    plan_trajectory_cartesian();
+    planTrajectoryCartesian();
     RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
-    execute_trajectory_cartesian();
+    executeTrajectoryCartesian();
 
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-    // Go to dropping position
     RCLCPP_INFO(LOGGER, "================================================");
     RCLCPP_INFO(LOGGER, "Going to the Dropping Position...");
-    apply_upright_orientation_constraint();
-
-    // RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
-    // // setup_waypoints_target(-0.700, -0.100, -0.500);
-    // setup_waypoints_target(-0.800, -0.100, 0.000);
-    // RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
-    // move_group_robot_->setPlanningTime(20.0);
-    // plan_trajectory_cartesian();
-    // RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
-    // execute_trajectory_cartesian();
-
-    // RCLCPP_INFO(LOGGER, "Preparing kinematic trajectory...");
-    // setup_goal_pose_target(-0.200, 0.200, 0.300, -1.000, 0.000, 0.000,
-    // 0.000); RCLCPP_INFO(LOGGER, "Planning Intermediate-Goal Pose
-    // Trajectory... "); plan_trajectory_kinematics(); RCLCPP_INFO(LOGGER,
-    // "Executing Intermediate-Goal Pose Trajectory...");
-    // execute_trajectory_kinematics();
+    createOrientationConstraint();
 
     RCLCPP_INFO(LOGGER, "Preparing kinematic trajectory...");
-    setup_goal_pose_target(-0.370, 0.000, -0.220, -1.000, 0.000, 0.000, 0.000);
+    setupPoseTarget(-0.370, 0.000, -0.220, -1.000, 0.000, 0.000, 0.000);
     RCLCPP_INFO(LOGGER, "Planning Goal Pose Trajectory...");
-    plan_trajectory_kinematics();
+    planTrajectoryKinematics();
     RCLCPP_INFO(LOGGER, "Executing Goal Pose Trajectory...");
-    execute_trajectory_kinematics();
+    executeTrajectoryKinematics();
 
-    clear_path_constraints();
+    clearConstraints();
+    move_group_robot_->setPathConstraints(ws_constraints_);
+    RCLCPP_INFO(LOGGER, "Reapplied workspace constraints");
     RCLCPP_INFO(LOGGER, "================================================");
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     // Open the gripper and drop the box
     RCLCPP_INFO(LOGGER, "Opening Gripper...");
     RCLCPP_INFO(LOGGER, "Preparing Gripper Value...");
-    setup_gripper_named_pose("gripper_open");
+    move_group_gripper_->setNamedTarget("gripper_open");
     RCLCPP_INFO(LOGGER, "Planning Gripper Action...");
-    plan_trajectory_gripper();
+    planTrajectoryGripper();
     RCLCPP_INFO(LOGGER, "Executing Gripper Action...");
-    execute_trajectory_gripper();
+    executeTrajectoryGripper();
     RCLCPP_INFO(LOGGER, "Gripper Opened");
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    detachObject();
 
-    RCLCPP_INFO(LOGGER, "Detach the object");
-    detach_cup();
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   }
   void gotoHome() {
-    RCLCPP_INFO(LOGGER, "Going to Home Position...");
+    // Move robot(joints) to predefined home configuration
+    RCLCPP_INFO(LOGGER, "Going to Home Pose...");
     RCLCPP_INFO(LOGGER, "Preparing Joint Value Trajectory...");
-    setup_arm_named_pose("home");
+    move_group_robot_->setNamedTarget("home");
     RCLCPP_INFO(LOGGER, "Planning Joint Value Trajectory...");
-    plan_trajectory_kinematics();
+    planTrajectoryKinematics();
     RCLCPP_INFO(LOGGER, "Executing Joint Value Trajectory...");
-    execute_trajectory_kinematics();
+    executeTrajectoryKinematics();
   }
 
 private:
-  void
-  object_detection_cb(const custom_msgs::msg::DetectedObjects::SharedPtr msg) {
+  void objectDetectionCallback(
+      const custom_msgs::msg::DetectedObjects::SharedPtr msg) {
     if (!obj_pose_received_) {
       obj_pose_.position = msg->position;
       obj_radius_ = msg->width / 2.;
@@ -241,8 +193,8 @@ private:
     }
   }
 
-  void setup_joint_value_target(float angle0, float angle1, float angle2,
-                                float angle3, float angle4, float angle5) {
+  void setupJointTarget(float angle0, float angle1, float angle2, float angle3,
+                        float angle4, float angle5) {
     // set the joint values for each joint of robot arm
     joint_group_positions_robot_[0] = angle0; // Shoulder Pan
     joint_group_positions_robot_[1] = angle1; // Shoulder Lift
@@ -253,9 +205,8 @@ private:
     move_group_robot_->setJointValueTarget(joint_group_positions_robot_);
   }
 
-  void setup_goal_pose_target(float pos_x, float pos_y, float pos_z,
-                              float quat_x, float quat_y, float quat_z,
-                              float quat_w) {
+  void setupPoseTarget(float pos_x, float pos_y, float pos_z, float quat_x,
+                       float quat_y, float quat_z, float quat_w) {
     // set the pose values for end effector of robot arm
     target_pose_robot_.position.x = pos_x;
     target_pose_robot_.position.y = pos_y;
@@ -267,7 +218,7 @@ private:
     move_group_robot_->setPoseTarget(target_pose_robot_);
   }
 
-  void plan_trajectory_kinematics() {
+  void planTrajectoryKinematics() {
     plan_success_robot_ =
         (move_group_robot_->plan(kinematics_trajectory_plan_) ==
          moveit::core::MoveItErrorCode::SUCCESS);
@@ -282,7 +233,7 @@ private:
     RCLCPP_INFO(LOGGER, "Planned trajectory points: %ld", traj_points);
   }
 
-  void execute_trajectory_kinematics() {
+  void executeTrajectoryKinematics() {
     if (plan_success_robot_) {
       size_t num_points = kinematics_trajectory_plan_.trajectory_
                               .joint_trajectory.points.size();
@@ -298,7 +249,7 @@ private:
     }
   }
 
-  void setup_waypoints_target(float x_delta, float y_delta, float z_delta) {
+  void setupWaypointTarget(float x_delta, float y_delta, float z_delta) {
     // initially set target pose to current pose of the robot
     target_pose_robot_ = move_group_robot_->getCurrentPose().pose;
     cartesian_waypoints_.push_back(target_pose_robot_);
@@ -310,13 +261,13 @@ private:
     cartesian_waypoints_.push_back(target_pose_robot_);
   }
 
-  void plan_trajectory_cartesian() {
+  void planTrajectoryCartesian() {
     plan_fraction_robot_ = move_group_robot_->computeCartesianPath(
         cartesian_waypoints_, end_effector_step_, jump_threshold_,
         cartesian_trajectory_plan_);
   }
 
-  void execute_trajectory_cartesian() {
+  void executeTrajectoryCartesian() {
     if (plan_fraction_robot_ >= 0.0) {
       // 0.0 to 1.0 = success and -1.0 = failure
       move_group_robot_->execute(cartesian_trajectory_plan_);
@@ -328,14 +279,18 @@ private:
     cartesian_waypoints_.clear();
   }
 
-  void setup_joint_value_gripper(float angle) {
-    // set the joint values for each joint of gripper
-    // based on values provided
-    joint_group_positions_gripper_[2] = angle;
-    move_group_gripper_->setJointValueTarget(joint_group_positions_gripper_);
+  bool executeGripperPlan() {
+    return move_group_gripper_->plan(gripper_trajectory_plan_) ==
+               moveit::core::MoveItErrorCode::SUCCESS &&
+           move_group_robot_->execute(gripper_trajectory_plan_) ==
+               moveit::core::MoveItErrorCode::SUCCESS;
   }
-
-  void closeGripper() {
+  void planTrajectoryGripper() {
+    plan_success_gripper_ =
+        (move_group_gripper_->plan(gripper_trajectory_plan_) ==
+         moveit::core::MoveItErrorCode::SUCCESS);
+  }
+  void closeGripperIncremental() {
     float gripper_value = 0.4;
     const float target_value = 0.01; // ~gripper_grasp
     const float step_large = 0.06;
@@ -373,32 +328,7 @@ private:
 
     RCLCPP_INFO(LOGGER, "Incremental Gripper Closing Completed.");
   }
-
-  bool executeGripperPlan() {
-    return move_group_gripper_->plan(gripper_trajectory_plan_) ==
-               moveit::core::MoveItErrorCode::SUCCESS &&
-           move_group_robot_->execute(gripper_trajectory_plan_) ==
-               moveit::core::MoveItErrorCode::SUCCESS;
-  }
-
-  void setup_gripper_named_pose(std::string pose_name) {
-    // set the joint values for each joint of gripper
-    // based on predefined pose names
-    move_group_gripper_->setNamedTarget(pose_name);
-  }
-  void setup_arm_named_pose(std::string pose_name) {
-    // set the joint values for each joint of robot arm
-    // based on predefined pose names
-    move_group_robot_->setNamedTarget(pose_name);
-  }
-
-  void plan_trajectory_gripper() {
-    plan_success_gripper_ =
-        (move_group_gripper_->plan(gripper_trajectory_plan_) ==
-         moveit::core::MoveItErrorCode::SUCCESS);
-  }
-
-  void execute_trajectory_gripper() {
+  void executeTrajectoryGripper() {
     if (plan_success_gripper_) {
       move_group_gripper_->execute(gripper_trajectory_plan_);
       RCLCPP_INFO(LOGGER, "Gripper Action Command Success !");
@@ -406,7 +336,8 @@ private:
       RCLCPP_INFO(LOGGER, "Gripper Action Command Failed !");
     }
   }
-  void attach_cup() {
+
+  void attachObject() {
 
     // Add the cup to the planning scene
     shape_msgs::msg::SolidPrimitive primitive;
@@ -435,7 +366,7 @@ private:
 
     RCLCPP_INFO(LOGGER, "Cup attached to gripper");
   }
-  void detach_cup() {
+  void detachObject() {
 
     // Detach the cup from the gripper
     moveit_msgs::msg::AttachedCollisionObject detach_object;
@@ -452,29 +383,74 @@ private:
     RCLCPP_INFO(LOGGER, "Cup detached from gripper");
   }
 
-  void apply_upright_orientation_constraint() {
-    // Orientation to "gripper pointing down" constraint
+  void createTrajectoryConstraint() {
+    // Constraint for planning trajectory
+    shape_msgs::msg::SolidPrimitive box;
+    box.type = shape_msgs::msg::SolidPrimitive::BOX;
+    box.dimensions = {1.2, 1.0, 2.0};
+    geometry_msgs::msg::Pose box_pose;
+    box_pose.position.x = -0.1;
+    box_pose.position.y = 0.3;
+    box_pose.orientation.w = 1.0;
+    displayBox(box_pose, box.dimensions);
+
+    moveit_msgs::msg::PositionConstraint box_constraint;
+    box_constraint.header.frame_id = move_group_robot_->getPlanningFrame();
+    box_constraint.link_name = move_group_robot_->getEndEffectorLink();
+    box_constraint.constraint_region.primitives.emplace_back(box);
+    box_constraint.constraint_region.primitive_poses.emplace_back(box_pose);
+    box_constraint.weight = 1.0;
+
+    ws_constraints_.position_constraints.emplace_back(box_constraint);
+    move_group_robot_->setStartStateToCurrentState();
+    move_group_robot_->setPathConstraints(ws_constraints_);
+  }
+  void createOrientationConstraint() {
+    // "Gripper pointing down" orientation constraint
     moveit_msgs::msg::OrientationConstraint ocm;
     ocm.link_name = move_group_robot_->getEndEffectorLink();
     ocm.header.frame_id = move_group_robot_->getPlanningFrame();
-    ocm.orientation.x = -1.000;
-    ocm.orientation.y = 0.000;
-    ocm.orientation.z = 0.000;
-    ocm.orientation.w = 0.000;
-    ocm.absolute_x_axis_tolerance = 0.2;
-    ocm.absolute_y_axis_tolerance = 0.2;
+    ocm.orientation.x = -1.0;
+    ocm.orientation.y = 0.0;
+    ocm.orientation.z = 0.0;
+    ocm.orientation.w = 0.0;
+    ocm.absolute_x_axis_tolerance = 0.1;
+    ocm.absolute_y_axis_tolerance = 0.1;
     ocm.absolute_z_axis_tolerance = M_PI;
     ocm.weight = 1.0;
 
     moveit_msgs::msg::Constraints constraints;
     constraints.orientation_constraints.push_back(ocm);
+    move_group_robot_->setStartStateToCurrentState();
     move_group_robot_->setPathConstraints(constraints);
 
     RCLCPP_INFO(LOGGER, "Applied upright orientation constraint (Z down)");
   }
-  void clear_path_constraints() {
+  void clearConstraints() {
     move_group_robot_->clearPathConstraints();
-    RCLCPP_INFO(LOGGER, "Cleared path constraints.");
+    RCLCPP_INFO(LOGGER, "Cleared path constraints");
+  }
+  void displayBox(
+      const geometry_msgs::msg::Pose &pose,
+      const rosidl_runtime_cpp::BoundedVector<double, 3, std::allocator<double>>
+          &dimensions) {
+    visualization_msgs::msg::Marker marker;
+    marker.header.frame_id = move_group_robot_->getPlanningFrame();
+    marker.header.stamp = move_group_node_->now();
+    marker.ns = "/";
+    marker.id = 1;
+
+    marker.type = visualization_msgs::msg::Marker::CUBE;
+    marker.action = visualization_msgs::msg::Marker::ADD;
+    marker.lifetime = rclcpp::Duration::from_seconds(0.0);
+
+    marker.color.a = 0.5;
+    marker.pose = pose;
+    marker.scale.x = dimensions.at(0);
+    marker.scale.y = dimensions.at(1);
+    marker.scale.z = dimensions.at(2);
+
+    marker_pub_->publish(marker);
   }
 
   using MoveGroupInterface = moveit::planning_interface::MoveGroupInterface;
@@ -494,7 +470,9 @@ private:
   const JointModelGroup *joint_model_group_gripper_;
   rclcpp::Subscription<custom_msgs::msg::DetectedObjects>::SharedPtr
       objpose_sub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
   geometry_msgs::msg::Pose obj_pose_;
+  moveit_msgs::msg::Constraints ws_constraints_;
   float obj_radius_, obj_thickness_, obj_height_;
   bool obj_pose_received_ = false;
 
@@ -524,7 +502,7 @@ int main(int argc, char **argv) {
 
   PickAndPlace pick_and_place_trajectory_node(base_node);
   pick_and_place_trajectory_node.gotoHome();
-  pick_and_place_trajectory_node.execute_trajectory_plan();
+  pick_and_place_trajectory_node.execute();
   pick_and_place_trajectory_node.gotoHome();
   RCLCPP_INFO(LOGGER, "Pick And Place Execution Complete");
 

@@ -745,6 +745,19 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: BoxConstraint
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /constraint_marker
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -791,25 +804,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 0.779603898525238
+      Distance: 0.8707943558692932
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.7114105224609375
-        Y: 1.1310673952102661
-        Z: 0.43173348903656006
+        X: -0.9610496759414673
+        Y: 0.7961614727973938
+        Z: 0.39045417308807373
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.2896709144115448
+      Pitch: 0.2846709191799164
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.2207798957824707
+      Yaw: 2.570780038833618
     Saved: ~
 Window Geometry:
   CupholderTrayCam:
