@@ -4,8 +4,6 @@
 #include <thread>
 #include <vector>
 
-#include <custom_msgs/msg/detected_objects.hpp>
-#include <custom_msgs/msg/detected_surfaces.hpp>
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <moveit_msgs/msg/display_robot_state.hpp>
@@ -13,6 +11,9 @@
 #include <moveit_msgs/msg/position_constraint.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <visualization_msgs/msg/marker.hpp>
+
+#include <starbots_detection_msgs/msg/detected_objects.hpp>
+#include <starbots_detection_msgs/msg/detected_surfaces.hpp>
 
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("move_group_node");
 static const std::string PLANNING_GROUP_ROBOT = "ur_manipulator";
@@ -29,7 +30,7 @@ public:
     node_options.automatically_declare_parameters_from_overrides(true);
 
     move_group_node_ =
-        rclcpp::Node::make_shared("move_group_node", node_options);
+        rclcpp::Node::make_shared("ur3e_move_group_node", node_options);
     // start move_group node in a new executor thread and spin it
     executor_.add_node(move_group_node_);
     std::thread([this]() { this->executor_.spin(); }).detach();
@@ -55,7 +56,6 @@ public:
     RCLCPP_INFO(LOGGER, "Available Planning Groups:");
     std::vector<std::string> group_names =
         move_group_robot_->getJointModelGroupNames();
-    // more efficient method than std::copy() method used in the docs
     for (long unsigned int i = 0; i < group_names.size(); i++) {
       RCLCPP_INFO(LOGGER, "Group %ld: %s", i, group_names[i].c_str());
     }
@@ -70,11 +70,11 @@ public:
     move_group_robot_->setStartStateToCurrentState();
     move_group_gripper_->setStartStateToCurrentState();
 
-    objpose_sub_ = move_group_node_
-                       ->create_subscription<custom_msgs::msg::DetectedObjects>(
-                           "/object_detected", 10,
-                           std::bind(&PickAndPlace::objectDetectionCallback,
-                                     this, std::placeholders::_1));
+    objpose_sub_ = move_group_node_->create_subscription<
+        starbots_detection_msgs::msg::DetectedObjects>(
+        "/cup_detected", 10,
+        std::bind(&PickAndPlace::objectDetectionCallback, this,
+                  std::placeholders::_1));
     marker_pub_ =
         move_group_node_->create_publisher<visualization_msgs::msg::Marker>(
             "/constraint_marker", rclcpp::QoS(10).transient_local());
@@ -90,7 +90,7 @@ public:
   void execute() {
 
     while (!obj_pose_received_) {
-      RCLCPP_WARN(LOGGER, "Object Pose not received yet!");
+      RCLCPP_WARN(LOGGER, "Cup Pose not received yet!");
       std::this_thread::sleep_for(std::chrono::milliseconds(3000));
     }
     float objX = obj_pose_.position.x;
@@ -120,7 +120,7 @@ public:
     // Approach to grasping position
     RCLCPP_INFO(LOGGER, "Approaching to grasp...");
     RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
-    setupWaypointTarget(+0.000, +0.000, -0.300);
+    setupWaypointTarget(+0.000, +0.000, -0.280);
     RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
     planTrajectoryCartesian();
     RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
@@ -132,7 +132,7 @@ public:
 
     RCLCPP_INFO(LOGGER, "Retreating...");
     RCLCPP_INFO(LOGGER, "Preparing Cartesian Trajectory...");
-    setupWaypointTarget(+0.000, +0.000, +0.300);
+    setupWaypointTarget(+0.000, +0.000, +0.280);
     RCLCPP_INFO(LOGGER, "Planning Cartesian Trajectory...");
     planTrajectoryCartesian();
     RCLCPP_INFO(LOGGER, "Executing Cartesian Trajectory...");
@@ -183,7 +183,7 @@ public:
 
 private:
   void objectDetectionCallback(
-      const custom_msgs::msg::DetectedObjects::SharedPtr msg) {
+      const starbots_detection_msgs::msg::DetectedObjects::SharedPtr msg) {
     if (!obj_pose_received_) {
       obj_pose_.position = msg->position;
       obj_radius_ = msg->width / 2.;
@@ -442,9 +442,9 @@ private:
 
     marker.type = visualization_msgs::msg::Marker::CUBE;
     marker.action = visualization_msgs::msg::Marker::ADD;
-    marker.lifetime = rclcpp::Duration::from_seconds(0.0);
+    // marker.lifetime = rclcpp::Duration::from_seconds(0.0);
 
-    marker.color.a = 0.5;
+    marker.color.a = 0.2;
     marker.pose = pose;
     marker.scale.x = dimensions.at(0);
     marker.scale.y = dimensions.at(1);
@@ -468,7 +468,7 @@ private:
   std::shared_ptr<MoveGroupInterface> move_group_gripper_;
   const JointModelGroup *joint_model_group_robot_;
   const JointModelGroup *joint_model_group_gripper_;
-  rclcpp::Subscription<custom_msgs::msg::DetectedObjects>::SharedPtr
+  rclcpp::Subscription<starbots_detection_msgs::msg::DetectedObjects>::SharedPtr
       objpose_sub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
   geometry_msgs::msg::Pose obj_pose_;
@@ -501,7 +501,6 @@ int main(int argc, char **argv) {
       std::make_shared<rclcpp::Node>("pick_and_place");
 
   PickAndPlace pick_and_place_trajectory_node(base_node);
-  pick_and_place_trajectory_node.gotoHome();
   pick_and_place_trajectory_node.execute();
   pick_and_place_trajectory_node.gotoHome();
   RCLCPP_INFO(LOGGER, "Pick And Place Execution Complete");

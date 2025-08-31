@@ -14,7 +14,8 @@ find_package(moveit_ros_planning REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
-find_package(custom_msgs REQUIRED)
+find_package(shape_msgs REQUIRED)
+find_package(starbots_detection_msgs REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -38,7 +39,8 @@ ament_target_dependencies(pick_and_place_perception
 	moveit_ros_planning_interface 
 	moveit_msgs
 	visualization_msgs 
-	custom_msgs
+	shape_msgs
+	starbots_detection_msgs
 )
 
 install(TARGETS 

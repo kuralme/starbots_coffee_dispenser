@@ -54,7 +54,7 @@ def generate_launch_description():
     detections_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
-                get_package_share_directory('object_detection'),
+                get_package_share_directory('starbots_detection'),
                 'launch',
                 'detections.launch.py'
             )
