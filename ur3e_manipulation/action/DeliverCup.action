@@ -1,0 +1,8 @@
+# Cup holder goal
+int8 goal_cup_holder
+---
+# Result
+bool status
+---
+# Feedback
+string status

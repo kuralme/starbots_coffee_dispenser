@@ -16,6 +16,7 @@ find_package(moveit_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(shape_msgs REQUIRED)
 find_package(starbots_detection_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -29,8 +30,13 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-add_executable(pick_and_place_perception src/pick_and_place_perception.cpp)
-ament_target_dependencies(pick_and_place_perception 
+# Generate action service interfaces
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "action/DeliverCup.action"
+)
+
+add_executable(pick_and_place_server src/pick_and_place_server.cpp)
+ament_target_dependencies(pick_and_place_server 
 	ament_cmake 
 	rclcpp 
 	rclcpp_action 
@@ -42,15 +48,17 @@ ament_target_dependencies(pick_and_place_perception
 	shape_msgs
 	starbots_detection_msgs
 )
+rosidl_target_interfaces(pick_and_place_server
+  ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 install(TARGETS 
-	pick_and_place_perception
+	pick_and_place_server
     DESTINATION lib/${PROJECT_NAME}
 )
 install(DIRECTORY 
+	action
 	rviz
     launch
     DESTINATION share/${PROJECT_NAME}
 )
-
 ament_package()

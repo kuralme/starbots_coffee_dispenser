@@ -1,10 +1,10 @@
+import os
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.actions import IncludeLaunchDescription, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from moveit_configs_utils import MoveItConfigsBuilder
-import os
-from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
 
@@ -31,9 +31,9 @@ def generate_launch_description():
         ],
     )
     manipulation_node = Node(
-        name="pick_and_place_perception_node",
+        name="pick_and_place_server_node",
         package="ur3e_manipulation",
-        executable="pick_and_place_perception",
+        executable="pick_and_place_server",
         output="screen",
         parameters=[
             moveit_config.robot_description,
@@ -50,7 +50,7 @@ def generate_launch_description():
         actions=[manipulation_node]
     )
 
-    # Both detection nodes to be launched first
+    # Detection nodes to be launched
     detections_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(

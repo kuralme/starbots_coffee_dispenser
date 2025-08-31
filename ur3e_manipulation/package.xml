@@ -17,6 +17,9 @@
   <depend>moveit_msgs</depend>
   <depend>visualization_msgs</depend>
   <depend>starbots_detection_msgs</depend>
+  <depend>rosidl_default_generators</depend>
+
+  <member_of_group>rosidl_interface_packages</member_of_group>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
