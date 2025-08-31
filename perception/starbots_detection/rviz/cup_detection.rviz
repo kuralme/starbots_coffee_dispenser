@@ -4,7 +4,6 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
         - /TF1/Frames1
         - /PlanningScene1/Scene Geometry1
       Splitter Ratio: 0.5808823704719543
@@ -26,7 +25,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Table Cam PointCloud
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -470,7 +469,7 @@ Visualization Manager:
       Enabled: true
       Name: TableMarker
       Namespaces:
-        "": true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -480,15 +479,15 @@ Visualization Manager:
       Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
-      Name: ObjectMarker
+      Name: CupMarker
       Namespaces:
-        "": true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /object_markers
+        Value: /cup_marker
       Value: true
     - Class: moveit_rviz_plugin/PlanningScene
       Enabled: true

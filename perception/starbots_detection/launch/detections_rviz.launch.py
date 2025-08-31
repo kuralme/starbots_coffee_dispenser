@@ -6,7 +6,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     
-    rviz_config = os.path.join(get_package_share_directory('object_detection'),'rviz','detections.rviz')
+    rviz_config = os.path.join(get_package_share_directory('starbots_detection'),'rviz','detections.rviz')
 
     pointcloud_filter_node = Node(
         package = 'pointcloud_filter',
@@ -15,16 +15,16 @@ def generate_launch_description():
         output = 'screen',
     )
 
-    object_detection_node = Node(
-        package = 'object_detection',
-        executable = 'object_detection',
-        name = 'object_detection',
+    cup_detection_node = Node(
+        package = 'starbots_detection',
+        executable = 'cup_detection',
+        name = 'cup_detection',
         output = 'screen',
         parameters = [{'use_sim_time': True}],
     )
 
     cup_holder_detection_node = Node(
-        package = 'object_detection',
+        package = 'starbots_detection',
         executable = 'cup_holder_detection',
         name = 'cup_holder_detection',
         output = 'screen',
@@ -42,7 +42,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         pointcloud_filter_node,
-        object_detection_node,
+        cup_detection_node,
         cup_holder_detection_node,
         rviz_node
     ])

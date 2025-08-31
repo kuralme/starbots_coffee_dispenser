@@ -2,7 +2,7 @@ from setuptools import setup
 import os
 from glob import glob
 
-package_name = 'object_detection'
+package_name = 'starbots_detection'
 
 setup(
     name=package_name,
@@ -24,8 +24,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'object_detection = object_detection.object_detection:main',
-            'cup_holder_detection= object_detection.cup_holder_detection:main',
+            'cup_detection = starbots_detection.cup_detection:main',
+            'cup_holder_detection= starbots_detection.cup_holder_detection:main',
         ],
     },
 )

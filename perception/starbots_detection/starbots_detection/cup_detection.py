@@ -6,17 +6,17 @@ import pcl
 import numpy as np
 import tf2_ros
 from tf2_ros import TransformException, ConnectivityException
-from custom_msgs.msg import DetectedSurfaces, DetectedObjects
+from starbots_detection_msgs.msg import DetectedSurfaces, DetectedObjects
 from typing import List, Tuple, Union
 
 class ObjectDetection(Node):
     def __init__(self) -> None:
-        super().__init__('object_detection_node')
+        super().__init__('cup_detection_node')
         self.pc_sub = self.create_subscription(PointCloud2, '/camera_depth_sensor/points_filtered', self.callback, 10)
         self.table_marker_pub = self.create_publisher(MarkerArray, '/table_marker', 10)
-        self.objects_marker_pub = self.create_publisher(MarkerArray, '/object_marker', 10)
+        self.objects_marker_pub = self.create_publisher(MarkerArray, '/cup_marker', 10)
         self.table_detected_pub = self.create_publisher(DetectedSurfaces, '/table_detected', 10)
-        self.object_detected_pub = self.create_publisher(DetectedObjects, '/object_detected', 10)
+        self.object_detected_pub = self.create_publisher(DetectedObjects, '/cup_detected', 10)
         self.marker_id = 0
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
@@ -38,7 +38,7 @@ class ObjectDetection(Node):
             # Clustering: Identify clusters corresponding to tables surfaces
             table_clusters, surface_centroids, surface_dimensions = self.extract_clusters(plane_cloud, "Table Surface")
             # Clustering: Identify clusters corresponding to objects placed on top of tables
-            object_clusters, object_centroids, object_dimensions = self.extract_clusters(filtered_cloud_objects, "Object")
+            object_clusters, object_centroids, object_dimensions = self.extract_clusters(filtered_cloud_objects, "Cup")
 
             # Publish the detected table surface clusters as markers
             self.pub_surface_marker(surface_centroids, surface_dimensions)
@@ -56,7 +56,7 @@ class ObjectDetection(Node):
             self.get_logger().error(f"Error in callback: {e}")
 
     def from_ros_msg(self, msg: PointCloud2) -> Union[pcl.PointCloud, None]:
-        """Converts a ROS PointCloud2 message to a PCL point cloud"""
+        """Converts a ROS2 PointCloud2 message to a PCL point cloud"""
         try:
             transform = self.tf_buffer.lookup_transform('base_link',
                                                         msg.header.frame_id,
@@ -245,7 +245,7 @@ class ObjectDetection(Node):
             self.table_detected_pub.publish(surface_msg)
 
     def pub_object_marker(self, object_centroids: List[List[float]], object_dimensions: List[List[float]]) -> None:
-        """Publishes objects on flat surfaces as markers"""
+        """Publishes cylindrical objects on flat surfaces as markers"""
         marker_array = MarkerArray()
 
         for idx, (centroid, dimensions) in enumerate(zip(object_centroids, object_dimensions)):
@@ -280,7 +280,7 @@ class ObjectDetection(Node):
 
 
     def pub_object_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
-        """Publishes the detected surface information"""
+        """Publishes the cylindrical objects information"""
         for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
             object_msg = DetectedObjects()
             object_msg.object_id = idx

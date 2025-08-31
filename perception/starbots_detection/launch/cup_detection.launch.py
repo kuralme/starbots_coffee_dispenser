@@ -6,12 +6,12 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     
-    rviz_config = os.path.join(get_package_share_directory('object_detection'),'rviz','hole_detection.rviz')
+    rviz_config = os.path.join(get_package_share_directory('starbots_detection'),'rviz','cup_detection.rviz')
 
-    hole_detection_node = Node(
-        package = 'object_detection',
-        executable = 'hole_detection',
-        name = 'hole_detection',
+    cup_detection_node = Node(
+        package = 'starbots_detection',
+        executable = 'cup_detection',
+        name = 'cup_detection',
         output = 'screen',
         parameters = [{'use_sim_time': True}],
     )
@@ -26,6 +26,6 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        hole_detection_node,
+        cup_detection_node,
         rviz_node
     ])

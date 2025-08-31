@@ -6,7 +6,7 @@ import pcl
 import numpy as np
 import tf2_ros
 from tf2_ros import TransformException, ConnectivityException
-from custom_msgs.msg import DetectedSurfaces, DetectedCupholders
+from starbots_detection_msgs.msg import DetectedSurfaces, DetectedCupholders
 from typing import List, Tuple, Union
 
 
