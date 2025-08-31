@@ -99,20 +99,23 @@ ros2 launch ur3e_sim_moveit_config move_group.launch.py
 ros2 launch ur3e_sim_moveit_config moveit_rviz.launch.py
 ```
 
-Object detection node, extracts table surface and cup from coffee table camera point cloud data:
+Cup detection node extracts cup and table surface points:
 ```bash
-ros2 launch object_detection object_detection.launch.py
+ros2 launch starbots_detection cup_detection.launch.py
 ```
 
 Cup holder tray and hole detection node:
 ```bash
-ros2 launch object_detection hole_detection.launch.py
+ros2 launch starbots_detection cup_holder_detection.launch.py
 ```
 
+All detections including point cloud filter node:
+```bash
+ros2 launch starbots_detection detections.launch.py
+```
 ---
+
 **The full pick and place pipeline:**
 ```bash
 ros2 launch ur3e_manipulation pick_and_place_perception.launch.py
 ```
-
-### Real Robot
