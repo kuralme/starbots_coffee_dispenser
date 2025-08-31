@@ -115,7 +115,12 @@ ros2 launch starbots_detection detections.launch.py
 ```
 ---
 
-**The full pick and place pipeline:**
+**Start pick and place action server:**
 ```bash
-ros2 launch ur3e_manipulation pick_and_place_perception.launch.py
+ros2 launch ur3e_manipulation pick_and_place.launch.py
 ```
+Test:
+```bash
+ros2 action send_goal /deliver_cup ur3e_manipulation/action/DeliverCup "{goal_cup_holder: 1}"
+```
+
