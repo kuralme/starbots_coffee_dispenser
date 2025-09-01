@@ -121,6 +121,6 @@ ros2 launch ur3e_manipulation pick_and_place.launch.py
 ```
 Test:
 ```bash
-ros2 action send_goal /deliver_cup ur3e_manipulation/action/DeliverCup "{goal_cup_holder: 1}"
+ros2 action send_goal /coffee_delivery_as ur3e_manipulation/action/DeliverCup "{goal_cup_holder: 1}"
 ```
 

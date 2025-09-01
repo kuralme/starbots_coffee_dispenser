@@ -1,5 +1,5 @@
 # Cup holder goal
-int8 goal_cup_holder
+uint8 goal_cup_holder
 ---
 # Result
 bool status
