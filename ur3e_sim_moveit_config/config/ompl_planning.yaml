@@ -168,8 +168,8 @@ ur_manipulator:
     - SPARSkConfigDefault
     - SPARStwokConfigDefault
     - TrajOptDefault
-  default_planner_config: RRTstarkConfigDefault
+  default_planner_config: BiTRRTkConfigDefault
   projection_evaluator: joints(elbow_joint, shoulder_lift_joint, shoulder_pan_joint, wrist_1_joint, wrist_2_joint, wrist_3_joint)
-  longest_valid_segment_fraction: 0.005
-  maximum_waypoint_distance: 0.01
+  longest_valid_segment_fraction: 0.01
+  maximum_waypoint_distance: 0.05
   enforce_constrained_state_space: true
