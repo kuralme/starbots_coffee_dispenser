@@ -1,12 +1,13 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import PointCloud2
+from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker, MarkerArray
 import pcl
 import numpy as np
 import tf2_ros
 from tf2_ros import TransformException, ConnectivityException
-from starbots_detection_msgs.msg import DetectedSurfaces, DetectedCupholders
+from starbots_detection_msgs.msg import DetectedSurfaces, DetectedCupholder, DetectedCupholders
 from typing import List, Tuple, Union
 
 
@@ -332,16 +333,23 @@ class CupHolderDetection(Node):
             self.tray_detected_pub.publish(surface_msg)
 
     def pub_cup_holder_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
-        """Publishes the detected cup holder information similar to pub_surface_detected."""
+        """Publishes detected cupholder information of 4 cupholders."""
+        
+        if len(centroids) != 4:
+            # print("Skipping publishing: Expected 4 cupholders, found", len(centroids))
+            return  # Do nothing if there are not 4 cupholders
+        
+        cupholders_msg = DetectedCupholders()
         for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
-            cupholder_msg = DetectedCupholders()
-            cupholder_msg.cupholder_id = idx
-            cupholder_msg.position.x = centroid[0]
-            cupholder_msg.position.y = centroid[1]
-            cupholder_msg.position.z = centroid[2]
-            cupholder_msg.radius = float(dimension[0]) / 2
-            cupholder_msg.height = 0.035
-            self.cupholder_detected_pub.publish(cupholder_msg)
+            cupholder = DetectedCupholder()
+            cupholder.cupholder_id = idx
+            cupholder.position = Point(x=centroid[0], y=centroid[1], z=centroid[2])
+            cupholder.radius = float(dimension[0]) / 2
+            cupholder.height = 0.035  # Fixed height for all cupholders
+            cupholders_msg.cup_holders.append(cupholder)
+
+        self.cupholder_detected_pub.publish(cupholders_msg)
+        # print("Published cupholder information for 4 cupholders.")
 
 def main(args=None) -> None:
     rclpy.init(args=args)
