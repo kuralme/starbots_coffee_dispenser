@@ -17,7 +17,7 @@
 #include <starbots_detection_msgs/msg/detected_cupholders.hpp>
 #include <starbots_detection_msgs/msg/detected_objects.hpp>
 #include <starbots_detection_msgs/msg/detected_surfaces.hpp>
-#include <ur3e_manipulation/action/deliver_cup.hpp>
+#include <ur3e_manipulation/srv/deliver_cup.hpp>
 
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("move_group_node");
 static const std::string PLANNING_GROUP_ROBOT = "ur_manipulator";
@@ -27,16 +27,15 @@ using namespace std::chrono_literals;
 using std::placeholders::_1;
 using std::placeholders::_2;
 using MoveGroupInterface = moveit::planning_interface::MoveGroupInterface;
-using DeliverCupAction = ur3e_manipulation::action::DeliverCup;
-using GoalHandleDeliverCup = rclcpp_action::ServerGoalHandle<DeliverCupAction>;
+using DeliverCup = ur3e_manipulation::srv::DeliverCup;
 
 class PickAndPlace : public rclcpp::Node {
 public:
   PickAndPlace(const rclcpp::NodeOptions &node_options = rclcpp::NodeOptions())
-      : Node("pick_and_place_action_server", node_options),
+      : Node("starbots_delivery_service_server", node_options),
         obj_pose_received_(false), goal_poses_received_(false) {
 
-    RCLCPP_INFO(LOGGER, "Initializing Class: Pick And Place...");
+    RCLCPP_INFO(LOGGER, "Initializing Starbots UR3e Coffee Dispenser...");
     this->declare_parameter("automatically_declare_parameters_from_overrides",
                             true);
 
@@ -58,6 +57,7 @@ public:
         move_group_node_, PLANNING_GROUP_GRIPPER);
 
     // get initial state of robot and gripper
+    move_group_robot_->startStateMonitor();
     joint_model_group_robot_ =
         move_group_robot_->getCurrentState()->getJointModelGroup(
             PLANNING_GROUP_ROBOT);
@@ -86,9 +86,6 @@ public:
     move_group_robot_->setStartStateToCurrentState();
     move_group_gripper_->setStartStateToCurrentState();
 
-    constraint_marker_pub_ =
-        move_group_node_->create_publisher<visualization_msgs::msg::Marker>(
-            "/constraint_marker", rclcpp::QoS(10).transient_local());
     objpose_sub_ = move_group_node_->create_subscription<
         starbots_detection_msgs::msg::DetectedObjects>(
         "/cup_detected", 10,
@@ -97,23 +94,39 @@ public:
         starbots_detection_msgs::msg::DetectedCupholders>(
         "/cup_holder_detected", 10,
         std::bind(&PickAndPlace::holeDetectionCallback, this, _1));
-    action_server_ = rclcpp_action::create_server<DeliverCupAction>(
-        this, "/coffee_delivery_as",
-        std::bind(&PickAndPlace::handle_goal, this, _1, _2),
-        std::bind(&PickAndPlace::handle_cancel, this, _1),
-        std::bind(&PickAndPlace::handle_accepted, this, _1));
+    service_server_ = move_group_node_->create_service<DeliverCup>(
+        "/deliver_coffee",
+        std::bind(&PickAndPlace::handleService, this, _1, _2));
+    // constraint_marker_pub_ =
+    //     move_group_node_->create_publisher<visualization_msgs::msg::Marker>(
+    //         "/constraint_marker", rclcpp::QoS(10).transient_local());
 
-    // Set box constraint as planning workspace
-    createTrajectoryConstraint();
+    // Set position constraint as planning workspace
+    // createTrajectoryConstraint();
 
-    gotoHome();
-    RCLCPP_INFO(LOGGER, "Class Initialized: Pick And Place");
+    createSceneObjects();
+    // gotoHome();
+    RCLCPP_INFO(LOGGER, "UR3e ready for coffee delivery");
+  }
+  ~PickAndPlace() {
+    RCLCPP_INFO(LOGGER, "Class Terminated: UR3e Coffee Dispenser");
   }
 
-  ~PickAndPlace() { RCLCPP_INFO(LOGGER, "Class Terminated: Pick And Place"); }
-
 private:
-  void execute(const std::shared_ptr<GoalHandleDeliverCup> goal_handle) {
+  void gotoHome() {
+    // Move robot(joints) to predefined home configuration
+    RCLCPP_INFO(LOGGER, "Going to Home Pose...");
+    RCLCPP_INFO(LOGGER, "Preparing Joint Value Trajectory...");
+    move_group_robot_->setNamedTarget("home");
+    executeKinematicsPlan();
+  }
+  void handleService(const std::shared_ptr<DeliverCup::Request> request,
+                     std::shared_ptr<DeliverCup::Response> response) {
+
+    RCLCPP_INFO(LOGGER, "Coffee Delivery Requested");
+    RCLCPP_INFO(LOGGER, "Goal cup holder on tray: %d",
+                request->goal_cup_holder);
+
     // ============ Receive detections phase =================
     while (!obj_pose_received_) {
       RCLCPP_WARN(LOGGER, "Cup Pose not received yet!");
@@ -122,12 +135,12 @@ private:
     auto obj_pos = obj_position_;
     obj_pos.z += .3;
 
-    while (!goal_poses_received_) {
-      RCLCPP_WARN(LOGGER, "Cup Holder Poses not received yet!");
-      std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-    }
+    // while (!goal_poses_received_) {
+    //   RCLCPP_WARN(LOGGER, "Cup Holder Poses not received yet!");
+    //   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+    // }
     auto goal_position = goal_poses_[goal_id_];
-    goal_position.z += .35;
+    goal_position.z += .3;
 
     // ============ Pregrasp phase =======================
     RCLCPP_INFO(LOGGER, "Going to Pregrasp Position: [%.3f, %.3f, %.3f]",
@@ -137,20 +150,20 @@ private:
     executeKinematicsPlan();
 
     // ============ Picking phase ========================
-    // RCLCPP_INFO(LOGGER, "Opening Gripper...");
-    // executeGripperPlan("gripper_open");
+    RCLCPP_INFO(LOGGER, "Opening Gripper...");
+    executeGripperPlan("gripper_open");
 
-    // RCLCPP_INFO(LOGGER, "Approaching to grasp...");
-    // executeCartesianPlan(+0.000, +0.000, -0.130);
+    RCLCPP_INFO(LOGGER, "Approaching to grasp...");
+    executeCartesianPlan(+0.000, +0.000, -0.080);
 
-    // // Close the gripper and pick the cup
-    // closeGripperIncremental();
-    // attachObject();
+    // Close the gripper and pick the cup
+    closeGripperIncremental();
+    attachObject();
 
-    // RCLCPP_INFO(LOGGER, "Retreating...");
-    // executeCartesianPlan(+0.000, +0.000, +0.20);
-    // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
+    RCLCPP_INFO(LOGGER, "Retreating...");
+    executeCartesianPlan(+0.000, +0.000, -0.080);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    return;
     // ============ Placing phase =========================
     createOrientationConstraint();
     RCLCPP_INFO(LOGGER, "Going to the Dropping Position: [%.3f, %.3f, %.3f]",
@@ -160,10 +173,14 @@ private:
     executeKinematicsPlan();
 
     // Open the gripper and drop the cup
-    RCLCPP_INFO(LOGGER, "Opening Gripper...");
-    executeGripperPlan("gripper_open");
-    detachObject();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    // RCLCPP_INFO(LOGGER, "Opening Gripper...");
+    // executeGripperPlan("gripper_open");
+    // detachObject();
+
+    if (rclcpp::ok()) {
+      response->result = "Coffee Delivery successful";
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
     // ============ Back to initial phase ==================
     clearOrientationConstraints();
@@ -174,32 +191,6 @@ private:
 
     RCLCPP_INFO(LOGGER, "Pick And Place Execution Complete");
   }
-  void gotoHome() {
-    // Move robot(joints) to predefined home configuration
-    RCLCPP_INFO(LOGGER, "Going to Home Pose...");
-    RCLCPP_INFO(LOGGER, "Preparing Joint Value Trajectory...");
-    move_group_robot_->setNamedTarget("home");
-    executeKinematicsPlan();
-  }
-
-  rclcpp_action::GoalResponse
-  handle_goal(const rclcpp_action::GoalUUID &uuid,
-              std::shared_ptr<const DeliverCupAction::Goal> goal) {
-    RCLCPP_INFO(LOGGER, "Action Called - Goal:%d", goal->goal_cup_holder);
-    goal_id_ = goal->goal_cup_holder;
-    (void)uuid;
-    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
-  }
-  rclcpp_action::CancelResponse
-  handle_cancel(const std::shared_ptr<GoalHandleDeliverCup> goal_handle) {
-    RCLCPP_INFO(LOGGER, "Received request to cancel goal");
-    (void)goal_handle;
-    return rclcpp_action::CancelResponse::ACCEPT;
-  }
-  void
-  handle_accepted(const std::shared_ptr<GoalHandleDeliverCup> goal_handle) {
-    std::thread{std::bind(&PickAndPlace::execute, this, goal_handle)}.detach();
-  }
 
   void objectDetectionCallback(
       const starbots_detection_msgs::msg::DetectedObjects::SharedPtr msg) {
@@ -209,6 +200,14 @@ private:
       obj_thickness_ = msg->thickness;
       obj_height_ = msg->height;
       obj_pose_received_ = true;
+
+      // RCLCPP_INFO(LOGGER, "===========================");
+      // RCLCPP_INFO(LOGGER, "Cup detected");
+      // RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)", obj_position_.x,
+      //               obj_position_.y, obj_position_.z);
+      // RCLCPP_INFO(LOGGER, "Radius: %.2f", obj_radius_);
+      // RCLCPP_INFO(LOGGER, "Height: %.2f", obj_height_);
+      // RCLCPP_INFO(LOGGER, "===========================");
     }
   }
   void holeDetectionCallback(
@@ -257,8 +256,9 @@ private:
   }
 
   void executeKinematicsPlan() {
-    MoveGroupInterface::Plan kinematics_trajectory_plan;
 
+    move_group_robot_->setStartStateToCurrentState();
+    MoveGroupInterface::Plan kinematics_trajectory_plan;
     bool plan_success_robot_ =
         (move_group_robot_->plan(kinematics_trajectory_plan) ==
          moveit::core::MoveItErrorCode::SUCCESS);
@@ -288,6 +288,12 @@ private:
   }
   void executeCartesianPlan(float x_delta, float y_delta, float z_delta) {
     // Set target pose to current pose of the robot
+    RCLCPP_INFO(LOGGER, "Prepare waypoint");
+
+    if (!move_group_robot_->getCurrentState()) {
+      RCLCPP_ERROR(LOGGER, "Robot current state not received!");
+      return;
+    }
     std::vector<geometry_msgs::msg::Pose> cartesian_waypoints;
     geometry_msgs::msg::Pose target_pose_robot =
         move_group_robot_->getCurrentPose().pose;
@@ -307,6 +313,7 @@ private:
 
     // Check plan: 0.0 to 1.0 = success and -1.0 = failure
     if (plan_fraction_robot_ >= 0.0) {
+      move_group_robot_->setStartStateToCurrentState();
       move_group_robot_->execute(cartesian_trajectory_plan_);
       RCLCPP_INFO(LOGGER, "Cartesian Trajectory Success !");
     } else {
@@ -411,21 +418,38 @@ private:
     planning_scene_interface.applyAttachedCollisionObject(detach_object);
 
     // Remove the cup from the world
-    // removeCupFromScene();
+    // planning_scene_interface.removeCollisionObjects({"coffee_cup"});
+    // RCLCPP_INFO(LOGGER, "Removed cup from planning scene");
 
     RCLCPP_INFO(LOGGER, "Cup detached from gripper");
   }
-  void removeCupFromScene() {
+  void createSceneObjects() {
+    // Create coffee counter part that isnt visible in pointcloud
+    shape_msgs::msg::SolidPrimitive primitive;
+    primitive.type = primitive.BOX;
+    primitive.dimensions = {0.65, 0.55, 0.05};
+    geometry_msgs::msg::Pose box_pose;
+    box_pose.orientation.w = 1.0;
+    box_pose.position.x = 0.2;
+    box_pose.position.y = -0.2;
+    box_pose.position.z = -0.05;
+
+    moveit_msgs::msg::CollisionObject collision_object;
+    collision_object.header.frame_id = move_group_robot_->getPlanningFrame();
+    collision_object.id = "coffee_counter_partial";
+    collision_object.primitives.push_back(primitive);
+    collision_object.primitive_poses.push_back(box_pose);
+    collision_object.operation = collision_object.ADD;
+
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-    planning_scene_interface.removeCollisionObjects({"coffee_cup"});
-    RCLCPP_INFO(LOGGER, "Removed cup from planning scene");
+    planning_scene_interface.applyCollisionObject(collision_object);
   }
 
   void createTrajectoryConstraint() {
     // Constraint for planning trajectory
     shape_msgs::msg::SolidPrimitive box;
     box.type = shape_msgs::msg::SolidPrimitive::BOX;
-    box.dimensions = {1.4, 1.0, 2.0};
+    box.dimensions = {2.0, 2.0, 2.0};
     geometry_msgs::msg::Pose box_pose;
     box_pose.position.x = -0.1;
     box_pose.position.y = 0.3;
@@ -439,10 +463,10 @@ private:
     box_constraint.constraint_region.primitive_poses.push_back(box_pose);
     box_constraint.weight = 1.0;
 
-    ws_constraints_.position_constraints.push_back(box_constraint);
-    move_group_robot_->setPathConstraints(ws_constraints_);
+    path_constraints_.position_constraints.push_back(box_constraint);
+    move_group_robot_->setPathConstraints(path_constraints_);
     move_group_robot_->setStartStateToCurrentState();
-    // move_group_robot_->setPlanningTime(20.0);
+    move_group_robot_->setPlanningTime(20.0);
   }
   void createOrientationConstraint() {
     // "Gripper pointing down" orientation constraint
@@ -458,17 +482,17 @@ private:
     ocm.absolute_z_axis_tolerance = M_PI;
     ocm.weight = 1.0;
 
-    ws_constraints_.orientation_constraints.push_back(ocm);
-    move_group_robot_->setPathConstraints(ws_constraints_);
+    path_constraints_.orientation_constraints.push_back(ocm);
+    move_group_robot_->setPathConstraints(path_constraints_);
     move_group_robot_->setStartStateToCurrentState();
-    move_group_robot_->setPlanningTime(20.0);
+    // move_group_robot_->setPlanningTime(20.0);
 
     RCLCPP_INFO(LOGGER, "Applied upright orientation constraint (Z down)");
   }
   void clearOrientationConstraints() {
     // move_group_robot_->clearPathConstraints();
-    ws_constraints_.orientation_constraints.clear();
-    move_group_robot_->setPathConstraints(ws_constraints_);
+    path_constraints_.orientation_constraints.clear();
+    move_group_robot_->setPathConstraints(path_constraints_);
     RCLCPP_INFO(LOGGER, "Cleared Orientation constraints");
   }
   void displayBoxConstraint(
@@ -509,8 +533,8 @@ private:
       objpose_sub_;
   rclcpp::Subscription<starbots_detection_msgs::msg::DetectedCupholders>::
       SharedPtr holepose_sub_;
-  rclcpp_action::Server<DeliverCupAction>::SharedPtr action_server_;
-  moveit_msgs::msg::Constraints ws_constraints_;
+  rclcpp::Service<DeliverCup>::SharedPtr service_server_;
+  moveit_msgs::msg::Constraints path_constraints_;
 
   // declare detection variables
   geometry_msgs::msg::Point obj_position_;

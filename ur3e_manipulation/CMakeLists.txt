@@ -8,7 +8,6 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_action REQUIRED)
 find_package(moveit_core REQUIRED)
 find_package(moveit_ros_planning REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
@@ -30,16 +29,15 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-# Generate action service interfaces
+# Generate service interfaces
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "action/DeliverCup.action"
+  "srv/DeliverCup.srv"
 )
 
-add_executable(pick_and_place_server src/pick_and_place_server.cpp)
-ament_target_dependencies(pick_and_place_server 
+add_executable(starbots_delivery_server src/starbots_delivery_server.cpp)
+ament_target_dependencies(starbots_delivery_server 
 	ament_cmake 
 	rclcpp 
-	rclcpp_action 
 	moveit_core 
 	moveit_ros_planning 
 	moveit_ros_planning_interface 
@@ -48,15 +46,15 @@ ament_target_dependencies(pick_and_place_server
 	shape_msgs
 	starbots_detection_msgs
 )
-rosidl_target_interfaces(pick_and_place_server
+rosidl_target_interfaces(starbots_delivery_server
   ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 install(TARGETS 
-	pick_and_place_server
+	starbots_delivery_server
     DESTINATION lib/${PROJECT_NAME}
 )
 install(DIRECTORY 
-	action
+	srv
 	rviz
     launch
     DESTINATION share/${PROJECT_NAME}

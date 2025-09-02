@@ -31,20 +31,16 @@ def generate_launch_description():
         ],
     )
     manipulation_node = Node(
-        name="pick_and_place_server_node",
+        name="starbots_delivery_server_node",
         package="ur3e_manipulation",
-        executable="pick_and_place_server",
+        executable="starbots_delivery_server",
         output="screen",
         parameters=[
-            moveit_config.robot_description,
-            moveit_config.robot_description_semantic,
-            moveit_config.robot_description_kinematics,
-            moveit_config.sensors_3d,
-            moveit_config.planning_pipelines,
+            moveit_config.to_dict(),
             {'use_sim_time': True},
         ],
     )
-    # Delay action before launching the pick_and_place node
+    # Delay action before launching the starbots delivery node
     delayed_manipulation_node = TimerAction(
         period=6.0,  # seconds
         actions=[manipulation_node]

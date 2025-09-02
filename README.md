@@ -115,12 +115,31 @@ ros2 launch starbots_detection detections.launch.py
 ```
 ---
 
-**Start pick and place action server:**
+**Start starbots delivery service server:**
 ```bash
-ros2 launch ur3e_manipulation pick_and_place.launch.py
+ros2 launch ur3e_manipulation starbots_delivery.launch.py
+# with rviz
+ros2 launch ur3e_manipulation starbots_delivery_rviz.launch.py
 ```
 Test:
 ```bash
-ros2 action send_goal /coffee_delivery_as ur3e_manipulation/action/DeliverCup "{goal_cup_holder: 1}"
+ros2 service call /deliver_coffee ur3e_manipulation/srv/DeliverCup "{goal_cup_holder: 1}"
 ```
 
+### Webapp
+
+Visualize with foxglove webapp:
+- Start foxglove bridge
+    ```bash
+    ros2 launch starbots_webapp start_foxglove.launch.xml
+    ```
+
+- Get rosbridge address for connection
+    ```bash
+    rosbridge_address
+    ```
+    Copy the address that is _wss://i-...robotigniteacademy.com/.../rosbridge/_ format
+
+- Login [foxglove](https://app.foxglove.dev/dashboard) and connect via the rosbridge_address
+
+- Enter "goal_cup_holder" number and call service to deliver the coffee cup to the desired hole on barista robot tray.

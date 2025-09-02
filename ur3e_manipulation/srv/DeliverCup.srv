@@ -2,7 +2,4 @@
 uint8 goal_cup_holder
 ---
 # Result
-bool status
----
-# Feedback
-string status
+string result
