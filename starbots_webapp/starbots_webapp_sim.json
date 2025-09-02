@@ -1,9 +1,13 @@
 {
   "configById": {
     "CallService!3jm0wum": {
-      "requestPayload": "{}",
+      "requestPayload": "{\n  \"goal_cup_holder\": 0\n}",
       "layout": "vertical",
-      "timeoutSeconds": 10
+      "timeoutSeconds": 500,
+      "foxglovePanelTitle": "Coffee Delivery Service",
+      "serviceName": "/deliver_coffee",
+      "buttonTooltip": "Enter target hole & Order Coffee",
+      "buttonText": "Order Coffee"
     },
     "3D!19idsu8": {
       "topics": {
@@ -35,10 +39,7 @@
           "videoKeyframeLookbackSeconds": 5
         },
         "/robot_description": {
-          "visible": true,
-          "showAxis": false,
-          "showOutlines": false,
-          "displayMode": "auto"
+          "visible": true
         },
         "/wrist_rgbd_depth_sensor/depth/image_raw": {
           "visible": false
@@ -53,30 +54,21 @@
           "visible": false
         },
         "/camera_depth_sensor/image_raw": {
-          "visible": false,
-          "frameLocked": true,
-          "cameraInfoTopic": "/camera_depth_sensor/camera_info",
-          "distance": 1,
-          "planarProjectionFactor": 0,
-          "color": "#ffffff",
-          "videoKeyframeLookbackSeconds": 5
-        },
-        "/camera_depth_sensor/depth/image_raw/compressedDepth": {
           "visible": false
         },
-        "/camera_depth_sensor/image_raw/compressed": {
+        "/camera_depth_sensor/depth/image_raw/compressedDepth": {
           "visible": false
         }
       },
       "cameraState": {
-        "perspective": true,
-        "distance": 3.1555842957619005,
-        "phi": 57.08962610230713,
-        "thetaOffset": 136.49424563219182,
+        "perspective": false,
+        "distance": 2.0934790944647528,
+        "phi": 28.723461560007657,
+        "thetaOffset": 138.1628435464438,
         "targetOffset": [
-          -0.1476437018273688,
-          0.13644288951741856,
-          -0.10116477227407561
+          -0.12969166629874945,
+          0.22312471669716843,
+          0.05622555702353406
         ],
         "target": [
           0,
@@ -98,15 +90,8 @@
         "transforms": {
           "visible": true,
           "lineWidth": 2,
-          "axisScale": 1,
-          "labelSize": 0.04,
-          "editable": false,
-          "showLabel": true,
-          "enablePreloading": true
-        },
-        "syncCamera": false,
-        "enableStats": false,
-        "ignoreColladaUpAxis": false
+          "axisScale": 1
+        }
       },
       "transforms": {
         "frame:camera_camera_depth_optical_frame": {
@@ -161,7 +146,7 @@
           "visible": false
         },
         "frame:base_link": {
-          "visible": true
+          "visible": false
         },
         "frame:base": {
           "visible": false
@@ -194,7 +179,7 @@
           "visible": false
         },
         "frame:rg2_gripper_base_link": {
-          "visible": true
+          "visible": false
         },
         "frame:rg2_gripper_left_finger": {
           "visible": false
@@ -230,7 +215,7 @@
           "visible": false
         },
         "frame:wrist_rgbd_camera_link": {
-          "visible": true
+          "visible": false
         },
         "frame:wrist_rgbd_camera_depth_frame": {
           "visible": false
@@ -257,35 +242,10 @@
           "visible": false
         },
         "frame:camera_camera_link": {
-          "visible": true
+          "visible": false
         }
       },
-      "layers": {
-        "7767b6af-75bc-43f3-8cea-c97792e9bc0a": {
-          "visible": true,
-          "drawBehind": true,
-          "frameLocked": true,
-          "label": "Grid",
-          "instanceId": "7767b6af-75bc-43f3-8cea-c97792e9bc0a",
-          "layerId": "foxglove.Grid",
-          "frameId": "base_link",
-          "size": 5,
-          "divisions": 10,
-          "lineWidth": 1,
-          "color": "#248eff59",
-          "position": [
-            0,
-            0,
-            -1
-          ],
-          "rotation": [
-            0,
-            0,
-            0
-          ],
-          "order": 1
-        }
-      },
+      "layers": {},
       "publish": {
         "type": "point",
         "poseTopic": "/move_base_simple/goal",
@@ -341,9 +301,54 @@
         "poseEstimateThetaDeviation": 0.26179939
       }
     },
+    "Image!1uv14k2": {
+      "cameraState": {
+        "distance": 20,
+        "perspective": true,
+        "phi": 60,
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOffset": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "thetaOffset": 45,
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "scene": {},
+      "transforms": {},
+      "topics": {},
+      "layers": {},
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "imageMode": {
+        "imageTopic": "/camera_depth_sensor/depth/image_raw",
+        "calibrationTopic": "/camera_depth_sensor/depth/camera_info"
+      }
+    },
     "Image!21vy45r": {
       "imageMode": {
-        "imageTopic": "/wrist_rgbd_depth_sensor/image_raw",
+        "imageTopic": "/wrist_rgbd_depth_sensor/image_raw/compressed",
         "calibrationTopic": "/wrist_rgbd_depth_sensor/camera_info"
       },
       "cameraState": {
@@ -385,6 +390,51 @@
         "poseEstimateYDeviation": 0.5,
         "poseEstimateThetaDeviation": 0.26179939
       }
+    },
+    "Image!46fjbv8": {
+      "cameraState": {
+        "distance": 20,
+        "perspective": true,
+        "phi": 60,
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOffset": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "thetaOffset": 45,
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "scene": {},
+      "transforms": {},
+      "topics": {},
+      "layers": {},
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "imageMode": {
+        "imageTopic": "/wrist_rgbd_depth_sensor/depth/image_raw",
+        "calibrationTopic": "/wrist_rgbd_depth_sensor/depth/camera_info"
+      }
     }
   },
   "layout": {
@@ -393,14 +443,23 @@
     "second": {
       "first": "3D!19idsu8",
       "second": {
-        "first": "Image!30uq953",
-        "second": "Image!21vy45r",
-        "direction": "column"
+        "first": {
+          "first": "Image!30uq953",
+          "second": "Image!1uv14k2",
+          "direction": "row"
+        },
+        "second": {
+          "first": "Image!21vy45r",
+          "second": "Image!46fjbv8",
+          "direction": "row"
+        },
+        "direction": "column",
+        "splitPercentage": 49.72067039106145
       },
       "direction": "row",
-      "splitPercentage": 71.24631992149165
+      "splitPercentage": 62.721474131821395
     },
-    "splitPercentage": 18.07372175980975
+    "splitPercentage": 16.11177170035672
   },
   "globalVariables": {},
   "playbackConfig": {
