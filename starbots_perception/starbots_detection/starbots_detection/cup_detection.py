@@ -283,7 +283,7 @@ class ObjectDetection(Node):
         for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
 
             diameter = max(dimension[0], dimension[1])
-            if diameter > 0.1 or diameter < 0.05:
+            if diameter > 0.1 or diameter < 0.06:
                 continue
             
             object_msg = DetectedObjects()

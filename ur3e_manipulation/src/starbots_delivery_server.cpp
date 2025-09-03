@@ -138,10 +138,10 @@ private:
     auto pregrasp_pos = obj_position_;
     pregrasp_pos.z += .3;
 
-    // while (!goal_poses_received_) {
-    //   RCLCPP_WARN(LOGGER, "Cup Holder Poses not received yet!");
-    //   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-    // }
+    while (!goal_poses_received_) {
+      RCLCPP_WARN(LOGGER, "Cup Holder Poses not received yet!");
+      std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+    }
     auto goal_position = goal_poses_[request->goal_cup_holder];
     goal_position.z += .4;
 
