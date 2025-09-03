@@ -11,6 +11,7 @@
 #include <moveit_msgs/msg/display_trajectory.hpp>
 #include <moveit_msgs/msg/position_constraint.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
+#include <std_srvs/srv/empty.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
 #include <starbots_detection_msgs/msg/detected_cupholder.hpp>
@@ -106,6 +107,8 @@ public:
         "/deliver_coffee",
         std::bind(&PickAndPlace::handleService, this, _1, _2),
         rmw_qos_profile_services_default, callback_group);
+    octo_client_ =
+        move_group_node_->create_client<std_srvs::srv::Empty>("/clear_octomap");
 
     createSceneObjects();
     gotoHome();
@@ -143,10 +146,12 @@ private:
       std::this_thread::sleep_for(std::chrono::milliseconds(3000));
     }
     auto goal_position = goal_poses_[request->goal_cup_holder];
-    goal_position.z += .4;
+    goal_position.x -= .005;
+    goal_position.y -= .01;
+    goal_position.z += .43;
 
     // ============ Pregrasp phase =======================
-    RCLCPP_INFO(LOGGER, "Going to Pregrasp Position: [%.3f, %.3f, %.3f]",
+    RCLCPP_INFO(LOGGER, "Going to Pre-grasp Position: [%.3f, %.3f, %.3f]",
                 pregrasp_pos.x, pregrasp_pos.y, pregrasp_pos.z);
     setupPoseTarget(pregrasp_pos.x, pregrasp_pos.y, pregrasp_pos.z, -1.000,
                     0.000, 0.000, 0.000);
@@ -157,19 +162,20 @@ private:
     executeGripperPlan("gripper_open");
 
     RCLCPP_INFO(LOGGER, "Approaching to grasp...");
+    clearOctomap();
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
     executeCartesianPlan(+0.000, +0.000, -0.079, pregrasp_pos);
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
     closeGripperIncremental();
     attachObject();
 
     RCLCPP_INFO(LOGGER, "Retreating...");
     executeCartesianPlan(+0.000, +0.000, +0.000, pregrasp_pos);
-    return;
 
     // ============ Placing phase =========================
     createOrientationConstraint();
-    RCLCPP_INFO(LOGGER, "Going to the Predrop Position: [%.3f, %.3f, %.3f]",
+    RCLCPP_INFO(LOGGER, "Going to the Pre-drop Position: [%.3f, %.3f, %.3f]",
                 goal_position.x, goal_position.y, goal_position.z);
     setupPoseTarget(goal_position.x, goal_position.y, goal_position.z, -1.000,
                     0.000, 0.000, 0.000);
@@ -177,14 +183,14 @@ private:
     clearOrientationConstraints();
 
     RCLCPP_INFO(LOGGER, "Approaching to place...");
-    executeCartesianPlan(+0.000, -0.010, -0.127, goal_position);
+    executeCartesianPlan(+0.000, +0.000, -0.050, goal_position);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     executeGripperPlan("gripper_open");
     detachObject();
 
     RCLCPP_INFO(LOGGER, "Retreating...");
-    executeCartesianPlan(+0.000, +0.000, +0.000, goal_position);
+    executeCartesianPlan(+0.000, +0.000, +0.100, goal_position);
 
     if (rclcpp::ok()) {
       response->result = "Coffee Delivery successful";
@@ -194,8 +200,16 @@ private:
     // ============ Back to initial phase ==================
     gotoHome();
     obj_pose_received_ = false;
-    goal_poses_received_ = false;
     RCLCPP_INFO(LOGGER, "Pick And Place Execution Complete");
+  }
+  void clearOctomap() {
+    auto request = std::make_shared<std_srvs::srv::Empty::Request>();
+    if (!octo_client_->wait_for_service(std::chrono::seconds(2))) {
+      RCLCPP_WARN(LOGGER, "clear_octomap service not available");
+      return;
+    }
+    auto future = octo_client_->async_send_request(request);
+    RCLCPP_INFO(LOGGER, "Octomap cleared!");
   }
 
   void objectDetectionCallback(
@@ -207,13 +221,13 @@ private:
       obj_height_ = msg->height;
       obj_pose_received_ = true;
 
-      // RCLCPP_INFO(LOGGER, "===========================");
+      //   RCLCPP_INFO(LOGGER, "===========================");
       //   RCLCPP_INFO(LOGGER, "Cup detected");
       //   RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)", obj_position_.x,
       //               obj_position_.y, obj_position_.z);
       //   RCLCPP_INFO(LOGGER, "Radius: %.2f", obj_radius_);
       //   RCLCPP_INFO(LOGGER, "Height: %.2f", obj_height_);
-      // RCLCPP_INFO(LOGGER, "===========================");
+      //   RCLCPP_INFO(LOGGER, "===========================");
     }
   }
   void holeDetectionCallback(
@@ -262,27 +276,17 @@ private:
   }
 
   void executeKinematicsPlan() {
-
-    move_group_robot_->setStartStateToCurrentState();
+    // move_group_robot_->setStartStateToCurrentState();
     MoveGroupInterface::Plan kinematics_trajectory_plan;
     bool plan_success_robot_ =
         (move_group_robot_->plan(kinematics_trajectory_plan) ==
          moveit::core::MoveItErrorCode::SUCCESS);
 
     if (plan_success_robot_) {
-      RCLCPP_INFO(LOGGER, "Robot Kinematics Trajectory Success !");
-    } else {
-      RCLCPP_ERROR(LOGGER, "Robot Kinematics Trajectory Failed !");
-    }
-    auto traj_points =
-        kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
-    RCLCPP_INFO(LOGGER, "Planned trajectory points: %ld", traj_points);
-
-    if (plan_success_robot_) {
       size_t num_points =
           kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
       RCLCPP_INFO(LOGGER, "Trajectory has %zu points", num_points);
-      if (num_points > 1) {
+      if (num_points > 20) {
         move_group_robot_->execute(kinematics_trajectory_plan);
         RCLCPP_INFO(LOGGER, "Executed trajectory.");
       } else {
@@ -482,11 +486,13 @@ private:
     ocm.absolute_y_axis_tolerance = 0.1;
     ocm.absolute_z_axis_tolerance = M_PI;
     ocm.weight = 1.0;
-
     path_constraints_.orientation_constraints.push_back(ocm);
+
+    // Changed planner for better orientation constrained planning
+    move_group_robot_->setPlannerId("RRTConnectkConfigDefault");
     move_group_robot_->setPathConstraints(path_constraints_);
     move_group_robot_->setStartStateToCurrentState();
-    move_group_robot_->setPlanningTime(20.0);
+    move_group_robot_->setPlanningTime(40.0);
 
     RCLCPP_INFO(LOGGER, "Applied upright orientation constraint (Z down)");
   }
@@ -494,6 +500,7 @@ private:
     // move_group_robot_->clearPathConstraints();
     path_constraints_.orientation_constraints.clear();
     move_group_robot_->setPathConstraints(path_constraints_);
+    move_group_robot_->setPlannerId("BiTRRTkConfigDefault");
     RCLCPP_INFO(LOGGER, "Cleared Orientation constraints");
   }
   void displayBoxConstraint(
@@ -535,6 +542,7 @@ private:
   rclcpp::Subscription<starbots_detection_msgs::msg::DetectedCupholders>::
       SharedPtr holepose_sub_;
   rclcpp::Service<DeliverCup>::SharedPtr service_server_;
+  rclcpp::Client<std_srvs::srv::Empty>::SharedPtr octo_client_;
   moveit_msgs::msg::Constraints path_constraints_;
 
   // declare detection variables
