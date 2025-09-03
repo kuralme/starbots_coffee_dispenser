@@ -39,15 +39,13 @@ class ObjectDetection(Node):
             table_clusters, surface_centroids, surface_dimensions = self.extract_clusters(plane_cloud, "Table Surface")
             # Clustering: Identify clusters corresponding to objects placed on top of tables
             object_clusters, object_centroids, object_dimensions = self.extract_clusters(filtered_cloud_objects, "Cup")
-
-            # Publish the detected table surface clusters as markers
+            
+            # Publish the detected table surface cluster markers and information
             self.pub_surface_marker(surface_centroids, surface_dimensions)
-            # Publish the detected object clusters as markers
-            self.pub_object_marker(object_centroids, object_dimensions)
-
-            # Publish detected surface information
             self.pub_surface_detected(surface_centroids, surface_dimensions)
-            # Publish detected object information
+
+            # Publish the detected object clusters as marker and information
+            self.pub_object_marker(object_centroids, object_dimensions)
             self.pub_object_detected(object_centroids, object_dimensions)
 
         except (TransformException, ConnectivityException) as e:
@@ -185,10 +183,10 @@ class ObjectDetection(Node):
             cluster_dimensions.append(dimensions.tolist())
 
             # Log cluster information
-            # num_points = len(indices)
-            # self.get_logger().info(f"{cluster_type} cluster {idx + 1} has {num_points} points.")
-            # self.get_logger().info(f"Centroid of {cluster_type} cluster {idx + 1}: {centroid}")
-            # self.get_logger().info(f"Dimensions of {cluster_type} cluster {idx + 1}: {dimensions}")
+            num_points = len(indices)
+            self.get_logger().info(f"{cluster_type} cluster {idx + 1} has {num_points} points.")
+            self.get_logger().info(f"Centroid of {cluster_type} cluster {idx + 1}: {centroid}")
+            self.get_logger().info(f"Dimensions of {cluster_type} cluster {idx + 1}: {dimensions}")
 
         # Check if any clusters have been extracted
         if not table_clusters:
@@ -227,7 +225,7 @@ class ObjectDetection(Node):
             marker_array.markers.append(cube_marker)
 
         if marker_array.markers:
-            # self.get_logger().info(f"Published {len(marker_array.markers)} table plane markers")
+            self.get_logger().info(f"Published {len(marker_array.markers)} table plane markers")
             self.table_marker_pub.publish(marker_array)
         else:
             self.get_logger().warning("No table plane markers to publish.")
@@ -248,10 +246,10 @@ class ObjectDetection(Node):
         """Publishes cylindrical objects on flat surfaces as markers"""
         marker_array = MarkerArray()
 
-        for idx, (centroid, dimensions) in enumerate(zip(object_centroids, object_dimensions)):
+        for idx, (centroid, dimension) in enumerate(zip(object_centroids, object_dimensions)):
 
-            diameter = max(dimensions[0], dimensions[1])
-            if diameter > 0.1 or diameter < 0.05:
+            diameter = max(dimension[0], dimension[1])
+            if diameter > 0.1 or diameter < 0.06 or dimension[2] < 0.05 or dimension[2] > 0.12:
                 continue
             
             marker = Marker()
@@ -265,7 +263,7 @@ class ObjectDetection(Node):
             marker.pose.orientation.w = 1.0
             marker.scale.x = diameter
             marker.scale.y = diameter
-            marker.scale.z = dimensions[2]
+            marker.scale.z = dimension[2]
             marker.color.r = 1.0
             marker.color.g = 0.0
             marker.color.b = 0.0
@@ -277,13 +275,12 @@ class ObjectDetection(Node):
         else:
             self.get_logger().warning("No objects on flat surface markers to publish.")
 
-
-    def pub_object_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
+    def pub_object_detected(self, object_centroids: List[List[float]], object_dimensions: List[List[float]]) -> None:
         """Publishes the cylindrical objects information"""
-        for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
+        for idx, (centroid, dimension) in enumerate(zip(object_centroids, object_dimensions)):
 
             diameter = max(dimension[0], dimension[1])
-            if diameter > 0.1 or diameter < 0.06:
+            if diameter > 0.1 or diameter < 0.06 or dimension[2] < 0.05 or dimension[2] > 0.12:
                 continue
             
             object_msg = DetectedObjects()

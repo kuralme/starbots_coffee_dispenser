@@ -21,6 +21,7 @@ def generate_launch_description():
         name = 'cup_detection',
         output = 'screen',
         parameters = [{'use_sim_time': True}],
+        arguments=['--ros-args', '--log-level', 'warn'],
     )
 
     cup_holder_detection_node = Node(
@@ -29,6 +30,7 @@ def generate_launch_description():
         name = 'cup_holder_detection',
         output = 'screen',
         parameters = [{'use_sim_time': True}],
+        arguments=['--ros-args', '--log-level', 'warn'],
     )
 
     rviz_node = Node(

@@ -1,8 +1,5 @@
-import os
 from launch import LaunchDescription
-from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
-
 
 def generate_launch_description():
     
@@ -12,21 +9,21 @@ def generate_launch_description():
         name = 'pointcloud_filter',
         output = 'screen',
     )
-
     cup_detection_node = Node(
         package = 'starbots_detection',
         executable = 'cup_detection',
         name = 'cup_detection',
         output = 'screen',
         parameters = [{'use_sim_time': True}],
+        arguments=['--ros-args', '--log-level', 'error'],
     )
-
     cup_holder_detection_node = Node(
         package = 'starbots_detection',
         executable = 'cup_holder_detection',
         name = 'cup_holder_detection',
         output = 'screen',
         parameters = [{'use_sim_time': True}],
+        arguments=['--ros-args', '--log-level', 'error'],
     )
 
     return LaunchDescription([

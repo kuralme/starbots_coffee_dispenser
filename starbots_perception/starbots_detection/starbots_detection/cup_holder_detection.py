@@ -244,14 +244,14 @@ class CupHolderDetection(Node):
             cluster_dimensions.append(dimensions.tolist())
 
             # Log cluster information
-            # num_points = len(indices)
-            # self.get_logger().info(f"{cluster_type} cluster {idx + 1} has {num_points} points.")
-            # self.get_logger().info(f"Centroid of {cluster_type} cluster {idx + 1}: {centroid}")
-            # self.get_logger().info(f"Dimensions of {cluster_type} cluster {idx + 1}: {dimensions}")
+            num_points = len(indices)
+            self.get_logger().info(f"{cluster_type} cluster {idx + 1} has {num_points} points.")
+            self.get_logger().info(f"Centroid of {cluster_type} cluster {idx + 1}: {centroid}")
+            self.get_logger().info(f"Dimensions of {cluster_type} cluster {idx + 1}: {dimensions}")
 
         # Check if any clusters have been extracted
-        # if not object_clusters:
-        #     self.get_logger().warning(f"No {cluster_type} clusters extracted...")
+        if not object_clusters:
+            self.get_logger().warning(f"No {cluster_type} clusters extracted...")
 
         # Return the filtered table clusters, centroids and cluster dimensions
         return object_clusters, cluster_centroids, cluster_dimensions
@@ -336,7 +336,7 @@ class CupHolderDetection(Node):
         """Publishes detected cupholder information of 4 cupholders."""
         
         if len(centroids) != 4:
-            # print("Skipping publishing: Expected 4 cupholders, found", len(centroids))
+            self.get_logger().warning(f"Skipping publishing: Expected 4 cupholders, found {len(centroids)}...")
             return  # Do nothing if there are not 4 cupholders
         
         cupholders_msg = DetectedCupholders()
@@ -349,7 +349,6 @@ class CupHolderDetection(Node):
             cupholders_msg.cup_holders.append(cupholder)
 
         self.cupholder_detected_pub.publish(cupholders_msg)
-        # print("Published cupholder information for 4 cupholders.")
 
 def main(args=None) -> None:
     rclpy.init(args=args)
