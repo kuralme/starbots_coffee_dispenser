@@ -250,14 +250,15 @@ class ObjectDetection(Node):
 
         for idx, (centroid, dimensions) in enumerate(zip(object_centroids, object_dimensions)):
 
+            diameter = max(dimensions[0], dimensions[1])
+            if diameter > 0.1 or diameter < 0.05:
+                continue
+            
             marker = Marker()
             marker.header.frame_id = "base_link"
             marker.id = idx
             marker.type = Marker.CYLINDER
             marker.action = Marker.ADD
-
-            diameter = max(dimensions[0], dimensions[1])
-
             marker.pose.position.x = centroid[0] - diameter / 4.
             marker.pose.position.y = centroid[1] - 0.016
             marker.pose.position.z = centroid[2]
@@ -265,12 +266,10 @@ class ObjectDetection(Node):
             marker.scale.x = diameter
             marker.scale.y = diameter
             marker.scale.z = dimensions[2]
-
             marker.color.r = 1.0
             marker.color.g = 0.0
             marker.color.b = 0.0
             marker.color.a = 0.5
-
             marker_array.markers.append(marker)
 
         if marker_array.markers:
@@ -282,11 +281,13 @@ class ObjectDetection(Node):
     def pub_object_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
         """Publishes the cylindrical objects information"""
         for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
-            object_msg = DetectedObjects()
-            object_msg.object_id = idx
 
             diameter = max(dimension[0], dimension[1])
-
+            if diameter > 0.1 or diameter < 0.05:
+                continue
+            
+            object_msg = DetectedObjects()
+            object_msg.object_id = idx
             object_msg.position.x = centroid[0] - diameter / 4.
             object_msg.position.y = centroid[1] - 0.016
             object_msg.position.z = centroid[2]
