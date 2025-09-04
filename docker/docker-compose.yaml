@@ -1,0 +1,43 @@
+version: '3'
+services:
+  starbots-gazebo:
+    image: starbots-ros2-gazebo
+    container_name: starbots-ros2-gazebo
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=0
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    privileged: true
+    networks:
+      - starbots-network
+    restart: always
+    entrypoint: /ros_entrypoint.sh
+    command: ["ros2 launch the_construct_office_gazebo starbots_ur3e.launch.xml"]
+
+  starbots-manipulation:
+    image: starbots-ros2-manipulation
+    container_name: starbots-ros2-manipulation
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=0
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    privileged: true
+    networks:
+      - starbots-network
+    ports:
+      - "8765:8765"
+      - "9090:9090"
+    restart: always
+    entrypoint: /ros_entrypoint.sh
+    command: ["sleep 22 && ros2 launch ur3e_manipulation starbots_delivery_rviz.launch.py & \
+      sleep 27 && ros2 launch starbots_webapp start_foxglove.launch.xml port:=8765"]
+
+volumes:
+  logs: {}
+networks:
+  starbots-network:
+    driver: bridge
