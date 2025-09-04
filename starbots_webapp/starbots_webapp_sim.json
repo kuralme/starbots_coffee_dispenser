@@ -12,7 +12,7 @@
     "3D!19idsu8": {
       "topics": {
         "/camera_depth_sensor/points": {
-          "visible": true,
+          "visible": false,
           "colorField": "rgb",
           "colorMode": "rgb",
           "colorMap": "turbo"
@@ -24,7 +24,7 @@
           "colorMap": "turbo"
         },
         "/wrist_rgbd_depth_sensor/points": {
-          "visible": true,
+          "visible": false,
           "colorField": "rgb",
           "colorMode": "rgb",
           "colorMap": "turbo"
@@ -58,17 +58,47 @@
         },
         "/camera_depth_sensor/depth/image_raw/compressedDepth": {
           "visible": false
+        },
+        "/camera_depth_sensor/points_filtered": {
+          "visible": true,
+          "colorField": "rgb",
+          "colorMode": "rgb",
+          "colorMap": "turbo"
+        },
+        "/wrist_rgbd_depth_sensor/points_filtered": {
+          "visible": true,
+          "colorField": "rgb",
+          "colorMode": "rgb",
+          "colorMap": "turbo"
+        },
+        "/cup_marker": {
+          "visible": true
+        },
+        "/table_marker": {
+          "visible": true
+        },
+        "/tray_marker": {
+          "visible": true
+        },
+        "/cup_holder_markers": {
+          "visible": true
+        },
+        "/constraint_marker_array": {
+          "visible": false
+        },
+        "/starbots_dispenser/display_contacts": {
+          "visible": false
         }
       },
       "cameraState": {
-        "perspective": false,
-        "distance": 2.0934790944647528,
-        "phi": 28.723461560007657,
-        "thetaOffset": 138.1628435464438,
+        "perspective": true,
+        "distance": 2.0934790944631096,
+        "phi": 71.74371494366937,
+        "thetaOffset": 138.5324028151508,
         "targetOffset": [
-          -0.12969166629874945,
-          0.22312471669716843,
-          0.05622555702353406
+          -0.15508402323549683,
+          0.41923353113591344,
+          0.1250838756730441
         ],
         "target": [
           0,
@@ -245,7 +275,32 @@
           "visible": false
         }
       },
-      "layers": {},
+      "layers": {
+        "13e51c90-7e58-4b4b-a050-ccf98834ff6d": {
+          "visible": true,
+          "drawBehind": false,
+          "frameLocked": true,
+          "label": "Grid",
+          "instanceId": "13e51c90-7e58-4b4b-a050-ccf98834ff6d",
+          "layerId": "foxglove.Grid",
+          "frameId": "base_link",
+          "size": 10,
+          "divisions": 10,
+          "lineWidth": 1,
+          "color": "#daebfd40",
+          "position": [
+            0,
+            0,
+            -1
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "order": 1
+        }
+      },
       "publish": {
         "type": "point",
         "poseTopic": "/move_base_simple/goal",
@@ -255,7 +310,8 @@
         "poseEstimateYDeviation": 0.5,
         "poseEstimateThetaDeviation": 0.26179939
       },
-      "imageMode": {}
+      "imageMode": {},
+      "followTf": "base_link"
     },
     "Image!30uq953": {
       "imageMode": {
@@ -435,31 +491,52 @@
         "imageTopic": "/wrist_rgbd_depth_sensor/depth/image_raw",
         "calibrationTopic": "/wrist_rgbd_depth_sensor/depth/camera_info"
       }
+    },
+    "RosOut!18rxmkt": {
+      "searchTerms": [],
+      "minLogLevel": 2,
+      "nameFilter": {
+        "foxglove_bridge": {
+          "visible": false
+        },
+        "joint_trajectory_controller": {
+          "visible": true
+        },
+        "cup_detection": {
+          "visible": true
+        }
+      },
+      "foxglovePanelTitle": ""
     }
   },
   "layout": {
-    "direction": "row",
-    "first": "CallService!3jm0wum",
-    "second": {
-      "first": "3D!19idsu8",
-      "second": {
-        "first": {
-          "first": "Image!30uq953",
-          "second": "Image!1uv14k2",
-          "direction": "row"
-        },
-        "second": {
-          "first": "Image!21vy45r",
-          "second": "Image!46fjbv8",
-          "direction": "row"
-        },
-        "direction": "column",
-        "splitPercentage": 49.72067039106145
-      },
+    "first": {
       "direction": "row",
-      "splitPercentage": 62.721474131821395
+      "first": "CallService!3jm0wum",
+      "second": {
+        "first": "3D!19idsu8",
+        "second": {
+          "first": {
+            "first": "Image!30uq953",
+            "second": "Image!1uv14k2",
+            "direction": "row"
+          },
+          "second": {
+            "first": "Image!21vy45r",
+            "second": "Image!46fjbv8",
+            "direction": "row"
+          },
+          "direction": "column",
+          "splitPercentage": 49.72067039106145
+        },
+        "direction": "row",
+        "splitPercentage": 53.153791637136784
+      },
+      "splitPercentage": 16.11177170035672
     },
-    "splitPercentage": 16.11177170035672
+    "second": "RosOut!18rxmkt",
+    "direction": "column",
+    "splitPercentage": 70.27932960893854
   },
   "globalVariables": {},
   "playbackConfig": {
