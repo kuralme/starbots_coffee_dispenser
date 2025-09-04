@@ -1,7 +1,7 @@
 <launch>
-    <!--including another launch file-->
+    <arg name="port" default="9090"/>
+
     <include file="$(find-pkg-share foxglove_bridge)/launch/foxglove_bridge_launch.xml">
-        <arg name="port" value="9090"/>
-        <!--other arguments..-->
-    </include>        
+        <arg name="port" value="$(var port)"/>
+    </include>
 </launch>
