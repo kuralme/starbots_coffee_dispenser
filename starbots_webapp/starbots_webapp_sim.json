@@ -92,13 +92,13 @@
       },
       "cameraState": {
         "perspective": true,
-        "distance": 2.0934790944631096,
-        "phi": 71.74371494366937,
-        "thetaOffset": 138.5324028151508,
+        "distance": 1.5388995055322197,
+        "phi": 57.55474895145814,
+        "thetaOffset": 147.58158904963622,
         "targetOffset": [
-          -0.15508402323549683,
-          0.41923353113591344,
-          0.1250838756730441
+          -0.1880838292865908,
+          0.3107527931937546,
+          0.1250838756730442
         ],
         "target": [
           0,
@@ -119,8 +119,9 @@
       "scene": {
         "transforms": {
           "visible": true,
-          "lineWidth": 2,
-          "axisScale": 1
+          "lineWidth": 0.5,
+          "axisScale": 0.5,
+          "labelSize": 0.04
         }
       },
       "transforms": {
@@ -176,7 +177,7 @@
           "visible": false
         },
         "frame:base_link": {
-          "visible": false
+          "visible": true
         },
         "frame:base": {
           "visible": false
@@ -185,22 +186,22 @@
           "visible": false
         },
         "frame:shoulder_link": {
-          "visible": false
+          "visible": true
         },
         "frame:upper_arm_link": {
-          "visible": false
+          "visible": true
         },
         "frame:forearm_link": {
-          "visible": false
+          "visible": true
         },
         "frame:wrist_1_link": {
-          "visible": false
+          "visible": true
         },
         "frame:wrist_2_link": {
-          "visible": false
+          "visible": true
         },
         "frame:wrist_3_link": {
-          "visible": false
+          "visible": true
         },
         "frame:flange": {
           "visible": false
@@ -245,7 +246,7 @@
           "visible": false
         },
         "frame:wrist_rgbd_camera_link": {
-          "visible": false
+          "visible": true
         },
         "frame:wrist_rgbd_camera_depth_frame": {
           "visible": false
@@ -272,7 +273,7 @@
           "visible": false
         },
         "frame:camera_camera_link": {
-          "visible": false
+          "visible": true
         }
       },
       "layers": {
@@ -315,7 +316,8 @@
     },
     "Image!30uq953": {
       "imageMode": {
-        "imageTopic": "/camera_depth_sensor/image_raw/compressed"
+        "imageTopic": "/camera_depth_sensor/image_raw",
+        "calibrationTopic": "/camera_depth_sensor/camera_info"
       },
       "cameraState": {
         "distance": 20,
@@ -355,7 +357,8 @@
         "poseEstimateXDeviation": 0.5,
         "poseEstimateYDeviation": 0.5,
         "poseEstimateThetaDeviation": 0.26179939
-      }
+      },
+      "foxglovePanelTitle": "Counter top cam"
     },
     "Image!1uv14k2": {
       "cameraState": {
@@ -400,11 +403,12 @@
       "imageMode": {
         "imageTopic": "/camera_depth_sensor/depth/image_raw",
         "calibrationTopic": "/camera_depth_sensor/depth/camera_info"
-      }
+      },
+      "foxglovePanelTitle": "Counter top depth cam"
     },
     "Image!21vy45r": {
       "imageMode": {
-        "imageTopic": "/wrist_rgbd_depth_sensor/image_raw/compressed",
+        "imageTopic": "/wrist_rgbd_depth_sensor/image_raw",
         "calibrationTopic": "/wrist_rgbd_depth_sensor/camera_info"
       },
       "cameraState": {
@@ -445,7 +449,8 @@
         "poseEstimateXDeviation": 0.5,
         "poseEstimateYDeviation": 0.5,
         "poseEstimateThetaDeviation": 0.26179939
-      }
+      },
+      "foxglovePanelTitle": "Barista tray cam"
     },
     "Image!46fjbv8": {
       "cameraState": {
@@ -490,53 +495,33 @@
       "imageMode": {
         "imageTopic": "/wrist_rgbd_depth_sensor/depth/image_raw",
         "calibrationTopic": "/wrist_rgbd_depth_sensor/depth/camera_info"
-      }
-    },
-    "RosOut!18rxmkt": {
-      "searchTerms": [],
-      "minLogLevel": 2,
-      "nameFilter": {
-        "foxglove_bridge": {
-          "visible": false
-        },
-        "joint_trajectory_controller": {
-          "visible": true
-        },
-        "cup_detection": {
-          "visible": true
-        }
       },
-      "foxglovePanelTitle": ""
+      "foxglovePanelTitle": "Barista tray depth cam"
     }
   },
   "layout": {
-    "first": {
-      "direction": "row",
-      "first": "CallService!3jm0wum",
+    "direction": "row",
+    "first": "CallService!3jm0wum",
+    "second": {
+      "first": "3D!19idsu8",
       "second": {
-        "first": "3D!19idsu8",
-        "second": {
-          "first": {
-            "first": "Image!30uq953",
-            "second": "Image!1uv14k2",
-            "direction": "row"
-          },
-          "second": {
-            "first": "Image!21vy45r",
-            "second": "Image!46fjbv8",
-            "direction": "row"
-          },
-          "direction": "column",
-          "splitPercentage": 49.72067039106145
+        "first": {
+          "first": "Image!30uq953",
+          "second": "Image!1uv14k2",
+          "direction": "row"
         },
-        "direction": "row",
-        "splitPercentage": 53.153791637136784
+        "second": {
+          "first": "Image!21vy45r",
+          "second": "Image!46fjbv8",
+          "direction": "row"
+        },
+        "direction": "column",
+        "splitPercentage": 49.72067039106145
       },
-      "splitPercentage": 16.11177170035672
+      "direction": "row",
+      "splitPercentage": 62.650602409638566
     },
-    "second": "RosOut!18rxmkt",
-    "direction": "column",
-    "splitPercentage": 70.27932960893854
+    "splitPercentage": 16.11177170035672
   },
   "globalVariables": {},
   "playbackConfig": {
