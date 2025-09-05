@@ -1,7 +1,7 @@
 version: '3'
 services:
   starbots-gazebo:
-    image: starbots-ros2-gazebo
+    image: kuralme/kuralme-starbots-dispenser:starbots-ros2-gazebo
     container_name: starbots-ros2-gazebo
     environment:
       - DISPLAY=${DISPLAY}
@@ -17,7 +17,7 @@ services:
     command: ["ros2 launch the_construct_office_gazebo starbots_ur3e.launch.xml"]
 
   starbots-manipulation:
-    image: starbots-ros2-manipulation
+    image: kuralme/kuralme-starbots-dispenser:starbots-ros2-manipulation
     container_name: starbots-ros2-manipulation
     environment:
       - DISPLAY=${DISPLAY}
