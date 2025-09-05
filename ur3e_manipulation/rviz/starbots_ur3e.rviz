@@ -90,7 +90,7 @@ Visualization Manager:
         camera_camera_depth_frame:
           Value: false
         camera_camera_depth_optical_frame:
-          Value: true
+          Value: false
         camera_camera_fisheye_frame:
           Value: false
         camera_camera_fisheye_optical_frame:
@@ -138,7 +138,7 @@ Visualization Manager:
         wrist_rgbd_camera_depth_frame:
           Value: false
         wrist_rgbd_camera_depth_optical_frame:
-          Value: true
+          Value: false
         wrist_rgbd_camera_fisheye_frame:
           Value: false
         wrist_rgbd_camera_fisheye_optical_frame:
@@ -745,19 +745,6 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
-    - Class: rviz_default_plugins/Marker
-      Enabled: true
-      Name: BoxConstraint
-      Namespaces:
-        {}
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /constraint_marker
-      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
