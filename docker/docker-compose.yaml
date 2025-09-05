@@ -1,24 +1,8 @@
 version: '3'
 services:
-  starbots-gazebo:
-    image: kuralme/kuralme-starbots-dispenser:starbots-ros2-gazebo
-    container_name: starbots-ros2-gazebo
-    environment:
-      - DISPLAY=${DISPLAY}
-      - QT_X11_NO_MITSHM=1
-      - ROS_DOMAIN_ID=0
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix
-    privileged: true
-    networks:
-      - starbots-network
-    restart: always
-    entrypoint: /ros_entrypoint.sh
-    command: ["ros2 launch the_construct_office_gazebo starbots_ur3e.launch.xml"]
-
   starbots-manipulation:
-    image: kuralme/kuralme-starbots-dispenser:starbots-ros2-manipulation
-    container_name: starbots-ros2-manipulation
+    image: starbots-ros2-manipulation-real
+    container_name: starbots-ros2-manipulation-real
     environment:
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
@@ -29,12 +13,11 @@ services:
     networks:
       - starbots-network
     ports:
-      - "8765:8765"
       - "9090:9090"
     restart: always
     entrypoint: /ros_entrypoint.sh
     command: ["sleep 22 && ros2 launch ur3e_manipulation starbots_delivery_rviz.launch.py & \
-      sleep 27 && ros2 launch starbots_webapp start_foxglove.launch.xml port:=8765"]
+      sleep 27 && ros2 launch starbots_webapp start_foxglove.launch.xml"]
 
 volumes:
   logs: {}

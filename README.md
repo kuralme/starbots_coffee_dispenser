@@ -2,16 +2,16 @@
 
 ## Overview
 
-Starbots Coffee Dispenser is a robotics **simulation** project that performs a complete Pick and Place task using the **UR3e robotic arm**, designed to operate in both Gazebo simulation and on a real-world setup. The system enables the robot to autonomously locate a coffee cup, pick it up, and place it on a coffee tray mounted on a Barista robot, simulating a real-world coffee-serving interaction.
+Starbots Coffee Dispenser is a robotics project that performs a complete Pick and Place task using the **UR3e robotic arm**, designed to operate in both Gazebo simulation and on a real-world setup. The system enables the robot to autonomously locate a coffee cup, pick it up, and place it on a coffee tray mounted on a Barista robot, simulating a real-world coffee-serving interaction.
 
-The project integrates **MoveIt2** for motion planning and execution, and employs perception pipeline with object detection and point cloud processing to locate and interact with objects in the environment. Point cloud data is also used to construct an **OctoMap**, enabling MoveIt2 to consider the surrounding environment as part of its collision-aware planning. The current branch supports seamless operation in  Gazebo simulation setup.
+The project integrates **MoveIt2** for motion planning and execution, and employs perception pipeline with object detection and point cloud processing to locate and interact with objects in the environment. Point cloud data is also used to construct an **OctoMap**, enabling MoveIt2 to consider the surrounding environment as part of its collision-aware planning. The current branch supports seamless operation in  real robot setup.
 
-This system is built on ROS 2 and offers modular launch files to execute the full task pipeline — from perception and planning to actuation — in both simulated and physical environments.
+This system is built on ROS 2 and offers modular launch files to execute the full task pipeline — from perception and planning to actuation in physical environments.
 
 ---
 
 <p align="center">
-  <img src="./media/coffee_delivery_sim.gif" width="90%">
+  <img src="./media/ur3e.png" width="70%">
 </p>
 
 ## Prerequisites
@@ -19,8 +19,7 @@ This system is built on ROS 2 and offers modular launch files to execute the ful
 #### For host setup
 
 - ROS 2 Humble
-- Starbots Coffee/UR3e Gazebo package
-- Physical UR3e robot and a Point Cloud camera for real-world testing
+- Physical UR3e robot and a Point Cloud camera
 - `MoveIt2`, `colcon`, and `rosdep` installed
 
 #### For docker setup
@@ -55,12 +54,6 @@ This system is built on ROS 2 and offers modular launch files to execute the ful
 
     ```bash
     colcon build && source install/setup.bash
-    ```
-
-4. Start the Starbots Coffee Simulation
-
-    ```bash
-    ros2 launch the_construct_office_gazebo starbots_ur3e.launch.xml
     ```
 
 ## Running the Pick & Place Task
@@ -110,13 +103,13 @@ Before running the main Pick and Place task, ensure your environment is correctl
 MoveIt2 configuration node:
 
 ```bash
-ros2 launch ur3e_sim_moveit_config move_group.launch.py
+ros2 launch ur3e_moveit_config move_group.launch.py
 ```
 
 (Optional) RViz for visualization, also can give commands via Moveit2 plugin:
 
 ```bash
-ros2 launch ur3e_sim_moveit_config moveit_rviz.launch.py
+ros2 launch ur3e_moveit_config moveit_rviz.launch.py
 ```
 
 Cup detection node extracts cup and table surface points:
@@ -189,6 +182,6 @@ sudo chmod +x ros_entrypoint.sh
 docker-compose up
 ```
 
-The foxglove bridge also starts within containers (with port 8765).
+The foxglove bridge also starts within containers (with port 9090).
 
 To call coffee delivery service either follow using webapp steps or send it in command line.

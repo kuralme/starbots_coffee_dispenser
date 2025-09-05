@@ -9,7 +9,7 @@ from moveit_configs_utils import MoveItConfigsBuilder
 def generate_launch_description():
 
     moveit_config = (
-        MoveItConfigsBuilder("ur_manipulator", package_name="ur3e_sim_moveit_config")
+        MoveItConfigsBuilder("ur_manipulator", package_name="ur3e_moveit_config")
         .robot_description_semantic(file_path="config/name.srdf")
         .sensors_3d(file_path="config/sensors_3d.yaml")
         .planning_pipelines(
@@ -26,7 +26,7 @@ def generate_launch_description():
             moveit_config.to_dict(),
             {"trajectory_execution.allowed_execution_duration_scaling": 10.0,},
             {"publish_robot_description_semantic": True},
-            {"use_sim_time": True},
+            {"use_sim_time": False},
         ],
     )
     manipulation_node = Node(
@@ -36,7 +36,7 @@ def generate_launch_description():
         output="screen",
         parameters=[
             moveit_config.to_dict(),
-            {'use_sim_time': True},
+            {'use_sim_time': False},
         ],
     )
     # Delay action before launching the starbots delivery node

@@ -14,7 +14,7 @@ def generate_launch_description():
         executable = 'cup_detection',
         name = 'cup_detection',
         output = 'screen',
-        parameters = [{'use_sim_time': True}],
+        parameters = [{'use_sim_time': False}],
         arguments=['--ros-args', '--log-level', 'error'],
     )
     cup_holder_detection_node = Node(
@@ -22,7 +22,7 @@ def generate_launch_description():
         executable = 'cup_holder_detection',
         name = 'cup_holder_detection',
         output = 'screen',
-        parameters = [{'use_sim_time': True}],
+        parameters = [{'use_sim_time': False}],
         arguments=['--ros-args', '--log-level', 'error'],
     )
 

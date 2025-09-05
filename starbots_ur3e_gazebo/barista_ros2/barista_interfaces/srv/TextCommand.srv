@@ -1,4 +1,0 @@
-string text   # String request info
----
-bool success  # Did it achieve it?
-string message

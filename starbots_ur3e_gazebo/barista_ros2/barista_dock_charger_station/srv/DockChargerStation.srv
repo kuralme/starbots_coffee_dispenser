@@ -1,4 +1,0 @@
-bool      dock_mode       # true = DOCK, false = Undock
----
-bool       success         # Did it achieve it?
-string     info            # Info
