@@ -130,18 +130,19 @@ private:
 
     // ============ Receive detections phase =================
     geometry_msgs::msg::Point pregrasp_pos;
-    pregrasp_pos.x = 0.31;
-    pregrasp_pos.y = 0.34;
-    pregrasp_pos.z = 0.35;
+    pregrasp_pos.x = 0.27;
+    pregrasp_pos.y = 0.4;
+    pregrasp_pos.z = 0.43;
 
-    while (!goal_poses_received_) {
-      RCLCPP_WARN(LOGGER, "Cup Holder Poses not received yet!");
-      std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-    }
-    auto goal_position = goal_poses_[request->goal_cup_holder];
-    goal_position.x -= .005;
-    goal_position.y -= .02;
-    goal_position.z += .42;
+    // while (!goal_poses_received_) {
+    //   RCLCPP_WARN(LOGGER, "Cup Holder Poses not received yet!");
+    //   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+    // }
+    // auto goal_position = goal_poses_[request->goal_cup_holder];
+    // goal_position.x -= .005;
+    // goal_position.y -= .02;
+    // goal_position.z += .42;
+    geometry_msgs::msg::Point goal_position;
 
     // ============ Pregrasp phase =======================
     RCLCPP_INFO(LOGGER, "Going to Pre-grasp Position: [%.3f, %.3f, %.3f]",
@@ -155,18 +156,17 @@ private:
     executeGripperPlan("gripper_open");
 
     RCLCPP_INFO(LOGGER, "Approaching to grasp...");
-    clearOctomap();
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));
-    executeCartesianPlan(+0.000, +0.000, -0.079, pregrasp_pos);
+    executeCartesianPlan(+0.000, +0.000, -0.09, pregrasp_pos);
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-    closeGripperIncremental();
+    // closeGripperIncremental();
+    // executeGripperPlan("gripper_grasp");
     attachObject("coffee_cup", pregrasp_pos);
 
     RCLCPP_INFO(LOGGER, "Retreating...");
     executeCartesianPlan(+0.000, +0.000, +0.000, pregrasp_pos);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
+    return;
     // ============ Placing phase =========================
     createOrientationConstraint();
     RCLCPP_INFO(LOGGER, "Going to the Pre-drop Position: [%.3f, %.3f, %.3f]",
@@ -363,8 +363,8 @@ private:
     // Add the cup to the planning scene
     geometry_msgs::msg::Pose cup_pose;
     cup_pose.position = pregrasp_pos;
-    cup_pose.position.z -= 0.3;
-    std::vector<double> cup_dimensions = {0.09, 0.03}; // {height, width}
+    cup_pose.position.z -= 0.38;
+    std::vector<double> cup_dimensions = {0.09, 0.035}; // {height, width}
     moveit_msgs::msg::CollisionObject coffee_cup =
         createCollisionObject(object_id, "cylinder", cup_dimensions, cup_pose);
 
