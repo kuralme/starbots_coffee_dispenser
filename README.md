@@ -6,13 +6,10 @@ Starbots Coffee Dispenser is a robotics **simulation** project that performs a c
 
 The project integrates **MoveIt2** for motion planning and execution, and employs perception pipeline with object detection and point cloud processing to locate and interact with objects in the environment. Point cloud data is also used to construct an **OctoMap**, enabling MoveIt2 to consider the surrounding environment as part of its collision-aware planning. The current branch supports seamless operation in  Gazebo simulation setup.
 
-This system is built on ROS 2 and offers modular launch files to execute the full task pipeline — from perception and planning to actuation — in both simulated and physical environments.
+This system is built on ROS 2 and offers modular launch files to execute the full task pipeline — from perception and planning to actuation in simulated environment. Additionally, Docker is used to build and containerize the system, and Docker Compose is leveraged to manage and start the multiple services, ensuring a consistent and efficient deployment across different setups.
 
 ---
-
-<p align="center">
-  <img src="./media/coffee_delivery_sim.gif" width="90%">
-</p>
+[![Sim video](./media/coffee_delivery_sim_webapp.gif)](https://www.youtube.com/watch?v=bQpeCSoZZug)
 
 ## Prerequisites
 
