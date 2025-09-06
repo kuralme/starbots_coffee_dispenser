@@ -11,7 +11,7 @@ def generate_launch_description():
     rviz_config = os.path.join(get_package_share_directory('ur3e_manipulation'),'rviz','starbots_ur3e.rviz')
     moveit_config = (
         MoveItConfigsBuilder("ur_manipulator", package_name="ur3e_moveit_config")
-        .robot_description_semantic(file_path="config/name.srdf")
+        .robot_description_semantic(file_path="config/ur3e.srdf")
         .sensors_3d(file_path="config/sensors_3d.yaml")
         .planning_pipelines(
             pipelines=["ompl", "pilz_industrial_motion_planner"]
@@ -68,7 +68,7 @@ def generate_launch_description():
 
     ld = LaunchDescription()
     ld.add_action(move_group_node)
-    ld.add_action(detections_launch)
+    # ld.add_action(detections_launch)
     ld.add_action(delayed_manipulation_node)
     ld.add_action(rviz_node)
     return ld

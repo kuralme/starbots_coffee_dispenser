@@ -130,10 +130,9 @@ private:
 
     // ============ Receive detections phase =================
     geometry_msgs::msg::Point pregrasp_pos;
-    pregrasp_pos.x = 0.0;
-    pregrasp_pos.y = 0.0;
-    pregrasp_pos.z = 0.0;
-    pregrasp_pos.z += 0.3;
+    pregrasp_pos.x = 0.31;
+    pregrasp_pos.y = 0.34;
+    pregrasp_pos.z = 0.35;
 
     while (!goal_poses_received_) {
       RCLCPP_WARN(LOGGER, "Cup Holder Poses not received yet!");
@@ -195,7 +194,6 @@ private:
 
     // ============ Back to initial phase ==================
     gotoHome();
-    obj_pose_received_ = false;
     RCLCPP_INFO(LOGGER, "Pick And Place Execution Complete");
   }
   void clearOctomap() {
@@ -422,10 +420,10 @@ private:
 
     geometry_msgs::msg::Pose machine_pose;
     machine_pose.orientation.w = 1.0;
-    machine_pose.position.x = 0.2;
-    machine_pose.position.y = 0.9;
+    machine_pose.position.x = 0.3;
+    machine_pose.position.y = 0.95;
     machine_pose.position.z = 0.2;
-    std::vector<double> machine_dimensions = {0.6, 0.16,
+    std::vector<double> machine_dimensions = {0.5, 0.22,
                                               0.4}; // {length, width, height}
     const moveit_msgs::msg::CollisionObject coffee_machine =
         createCollisionObject("coffee_machine", "box", machine_dimensions,
