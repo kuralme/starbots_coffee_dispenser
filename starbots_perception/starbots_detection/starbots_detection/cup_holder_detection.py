@@ -31,9 +31,9 @@ class CupHolderDetection(Node):
         try:
             cloud = self.from_ros_msg(msg)
             # Filtered cloud for tray surface detection
-            filtered_cloud_plane = self.filter_cloud(cloud, min_x=-0.6, max_x=-0.2, min_y=-0.2, max_y=0.2, min_z=-0.65, max_z=-0.54)
+            filtered_cloud_plane = self.filter_cloud(cloud, min_x=-0.6, max_x=-0.1, min_y=-0.2, max_y=0.4, min_z=-0.8, max_z=-0.5)
             # Filtered cloud for cup holder detection
-            filtered_cloud_cupholder = self.filter_cloud(cloud, min_x=-0.55, max_x=-0.25, min_y=-0.15, max_y=0.15, min_z=-0.63, max_z=-0.55)
+            filtered_cloud_cupholder = self.filter_cloud(cloud, min_x=-0.5, max_x=-0.1, min_y=-0.1, max_y=0.3, min_z=-0.7, max_z=-0.62)
 
             # Plane segmentations using RANSAC: tray plane and cupholders
             plane_indices, plane_coefficients, tray_cloud = self.extract_plane(filtered_cloud_plane)
@@ -150,13 +150,13 @@ class CupHolderDetection(Node):
             seg.set_normal_distance_weight(0.1)
             seg.set_method_type(pcl.SAC_RANSAC)
             seg.set_max_iterations(10000)
-            seg.set_distance_threshold(0.05)
-            seg.set_radius_limits(0.01, 0.06)  # Adjust as needed
+            seg.set_distance_threshold(0.06)
+            seg.set_radius_limits(0.03, 0.04)
 
             indices, coefficients = seg.segment()
 
             # Accept only cylinders with enough points and reasonable radius
-            if len(indices) < 30 or coefficients[6] > 0.06 or coefficients[6] < 0.01:
+            if len(indices) < 20 or coefficients[6] > 0.04 or coefficients[6] < 0.03:
                 break
 
             cupholder_indices.append(indices)
@@ -273,7 +273,7 @@ class CupHolderDetection(Node):
             cylinder_marker.type = Marker.CYLINDER
             cylinder_marker.action = Marker.ADD
             cylinder_marker.pose.position.x = centroid[0]
-            cylinder_marker.pose.position.y = centroid[1]
+            cylinder_marker.pose.position.y = centroid[1] + 0.015 # small offset
             cylinder_marker.pose.position.z = centroid[2] - height / 2  # Adjust height to center the cylinder
             cylinder_marker.pose.orientation.w = 1.0
             cylinder_marker.scale.x = dimensions[0]  # Diameter of the cylinder
@@ -287,6 +287,18 @@ class CupHolderDetection(Node):
 
         if marker_array.markers:
             self.tray_marker_pub.publish(marker_array)
+
+    def pub_surface_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
+        """Publishes the detected surface information"""
+        for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
+            surface_msg = DetectedSurfaces()
+            surface_msg.surface_id = idx
+            surface_msg.position.x = centroid[0]
+            surface_msg.position.y = centroid[1] + 0.015 # small offset
+            surface_msg.position.z = centroid[2]
+            surface_msg.height = dimension[0]
+            surface_msg.width = dimension[1]
+            self.tray_detected_pub.publish(surface_msg)
 
     def pub_cup_holder_markers(self, cupholder_centroids: List[List[float]], cupholder_dimensions: List[List[float]]) -> None:
         """Publishes the detected cylindrical cupholder as markers."""
@@ -315,20 +327,8 @@ class CupHolderDetection(Node):
         if marker_array.markers:
             self.cupholder_marker_pub.publish(marker_array)
 
-    def pub_surface_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
-        """Publishes the detected surface information"""
-        for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
-            surface_msg = DetectedSurfaces()
-            surface_msg.surface_id = idx
-            surface_msg.position.x = centroid[0]
-            surface_msg.position.y = centroid[1]
-            surface_msg.position.z = centroid[2]
-            surface_msg.height = dimension[0]
-            surface_msg.width = dimension[1]
-            self.tray_detected_pub.publish(surface_msg)
-
     def pub_cup_holder_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
-        """Publishes detected cupholder information of 4 cupholders."""
+        """Publishes detected cupholder information of cupholders."""
         cupholders_msg = DetectedCupholders()
         height = 0.035
 

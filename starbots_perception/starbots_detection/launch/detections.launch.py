@@ -26,6 +26,6 @@ def generate_launch_description():
     )
     
     return LaunchDescription([
-        pointcloud_launch,
+        # pointcloud_launch,
         cup_holder_detection_node,
     ])
