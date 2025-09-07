@@ -1,16 +1,8 @@
 from launch import LaunchDescription
 import launch_ros.actions
 import launch_ros.descriptions
-from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 
 def generate_launch_description():
-
-    qos_profile = QoSProfile(
-        reliability=ReliabilityPolicy.RELIABLE,
-        durability=DurabilityPolicy.VOLATILE,
-        history=QoSProfile.HistoryPolicy.KEEP_LAST,
-        depth=10
-    )
 
     return LaunchDescription([
 
@@ -25,7 +17,6 @@ def generate_launch_description():
             ],
             output='screen',
         ),
-        
         launch_ros.actions.ComposableNodeContainer(
             name='container',
             namespace='',
@@ -36,7 +27,6 @@ def generate_launch_description():
                     package='depth_image_proc',
                     plugin='depth_image_proc::PointCloudXyzrgbNode',
                     name='point_cloud_xyzrgb_node',
-                    parameters=[{'qos_profile': qos_profile}],
                     remappings=[
                         ('rgb/camera_info', '/D415/aligned_depth_to_color/camera_info'),
                         ('rgb/image_rect_color', '/D415/color/image_raw'),

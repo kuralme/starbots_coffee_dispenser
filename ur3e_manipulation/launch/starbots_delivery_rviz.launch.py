@@ -12,7 +12,6 @@ def generate_launch_description():
     moveit_config = (
         MoveItConfigsBuilder("ur_manipulator", package_name="ur3e_moveit_config")
         .robot_description_semantic(file_path="config/ur3e.srdf")
-        .sensors_3d(file_path="config/sensors_3d.yaml")
         .planning_pipelines(
             pipelines=["ompl", "pilz_industrial_motion_planner"]
         )
@@ -39,14 +38,13 @@ def generate_launch_description():
             moveit_config.to_dict(),
             {'use_sim_time': False},
         ],
+        # prefix=["xterm -e gdb -ex run --args"],
     )
     # Delay action before launching the starbots delivery node
     delayed_manipulation_node = TimerAction(
         period=6.0,  # seconds
         actions=[manipulation_node]
     )
-
-    # Detection nodes to be launched
     detections_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
@@ -56,7 +54,6 @@ def generate_launch_description():
             )
         )
     )
-
     rviz_node = Node(
         package='rviz2',
         executable='rviz2',
