@@ -27,7 +27,6 @@ COPY ./ur3e_manipulation /ros2_ws/src/ur3e_manipulation
 COPY ./ur3e_sim_moveit_config /ros2_ws/src/ur3e_sim_moveit_config
 COPY ./starbots_ur3e_gazebo/ur_description /ros2_ws/src/starbots_ur3e_gazebo/ur_description
 COPY ./starbots_ur3e_gazebo/rg2_gripper_description /ros2_ws/src/starbots_ur3e_gazebo/rg2_gripper_description
-COPY ./starbots_ur3e_gazebo/robotnik_sensors /ros2_ws/src/starbots_ur3e_gazebo/robotnik_sensors
 COPY ./starbots_webapp /ros2_ws/src/starbots_webapp
 COPY ./docker/ros_entrypoint.sh /ros_entrypoint.sh
 

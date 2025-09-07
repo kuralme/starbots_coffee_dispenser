@@ -1,32 +1,7 @@
 octomap_resolution: 0.02
 sensors:
-  # - coffee_counter_cam_pointcloud
-  # - coffee_dispenser_cam_depth_image
-  # - cupholder_tray_cam_pointcloud
+  - cupholder_tray_cam_pointcloud
   - cupholder_tray_cam_depth_image
-
-coffee_counter_cam_pointcloud:
-  sensor_plugin: occupancy_map_monitor/PointCloudOctomapUpdater
-  max_range: 5.0
-  max_update_rate: 1.0
-  padding_offset: 0.1
-  padding_scale: 1.0
-  point_subsample: 1
-  resolution: 0.05
-  point_cloud_topic: /.../points_filtered
-  filtered_cloud_topic: /.../points_filtered
-
-coffee_dispenser_cam_depth_image:
-  sensor_plugin: occupancy_map_monitor/DepthImageOctomapUpdater
-  far_clipping_plane_distance: 5.0
-  max_update_rate: 1.0
-  near_clipping_plane_distance: 0.3
-  padding_offset: 0.03
-  padding_scale: 4.0
-  queue_size: 5
-  shadow_threshold: 0.2
-  image_topic: /.../depth/image_rect_raw
-  filtered_cloud_topic: /.../points_filtered
 
 cupholder_tray_cam_pointcloud:
   sensor_plugin: occupancy_map_monitor/PointCloudOctomapUpdater
@@ -36,8 +11,14 @@ cupholder_tray_cam_pointcloud:
   padding_scale: 1.0
   point_subsample: 1
   resolution: 0.05
-  point_cloud_topic: /D415/points_filtered
-  filtered_cloud_topic: /D415/points_filtered
+  point_cloud_topic: /D415/barista_points
+  filtered_cloud_topic: /D415/barista_points
+  qos_profile:
+    reliability: BEST_EFFORT
+    durability: VOLATILE
+    history: KEEP_LAST
+    depth: 10
+    deadline: 100ms
 
 cupholder_tray_cam_depth_image:
   sensor_plugin: occupancy_map_monitor/DepthImageOctomapUpdater
@@ -48,5 +29,11 @@ cupholder_tray_cam_depth_image:
   padding_scale: 4.0
   queue_size: 5
   shadow_threshold: 0.2
-  image_topic: /D415/depth/image_rect_raw
-  filtered_cloud_topic: /D415/points_filtered
+  image_topic: /D415/aligned_depth_to_color/image_raw
+  filtered_cloud_topic: /D415/barista_points
+  qos_profile:
+    reliability: BEST_EFFORT
+    durability: VOLATILE
+    history: KEEP_LAST
+    depth: 10
+    deadline: 100ms
