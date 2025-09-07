@@ -14,7 +14,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_share_directory('pointcloud_filter'),
                 'launch',
-                'depth_to_points_filtered.launch.py'
+                'depth_to_points.launch.py'
             )
         )
     )

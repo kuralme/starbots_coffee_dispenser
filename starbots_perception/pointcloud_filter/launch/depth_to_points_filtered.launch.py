@@ -10,7 +10,7 @@ def generate_launch_description():
             package='tf2_ros',
             executable='static_transform_publisher',
             name='static_transform_world_to_d415',
-            arguments=[ #test
+            arguments=[ # '-0.415', '-0.375', '0.31', '0.31', '1.57', '1.197', '0.0'
                 '-0.450', '-0.300', '0.200',          # Translation: X, Y, Z
                 '-0.354', '0.354', '0.612', '0.612',  # Rotation: Quaternion (xyzw)
                 'world', 'D415_link'
@@ -33,11 +33,11 @@ def generate_launch_description():
                         ('depth_registered/image_rect', '/D415/aligned_depth_to_color/image_raw'),
                         ('points', '/D415/barista_points')],
                 ),
-                # launch_ros.descriptions.ComposableNode(
-                #     package = 'pointcloud_filter',
-                #     executable = 'pointcloud_filter_node',
-                #     name = 'pointcloud_filter',
-                # )
+                launch_ros.descriptions.ComposableNode(
+                    package = 'pointcloud_filter',
+                    executable = 'pointcloud_filter_node',
+                    name = 'pointcloud_filter',
+                ),
             ],
             output='screen',
         ),
