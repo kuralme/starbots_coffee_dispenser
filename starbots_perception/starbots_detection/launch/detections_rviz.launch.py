@@ -24,6 +24,7 @@ def generate_launch_description():
         name = 'cup_holder_detection',
         output = 'screen',
         parameters = [{'use_sim_time': False}],
+        arguments=['--ros-args', '--log-level', 'info'],
     )
     rviz_node = Node(
         package='rviz2',
@@ -36,6 +37,6 @@ def generate_launch_description():
 
     return LaunchDescription([
         pointcloud_launch,
-        # cup_holder_detection_node,
+        cup_holder_detection_node,
         rviz_node
     ])

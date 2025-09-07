@@ -22,7 +22,7 @@ def generate_launch_description():
         name = 'cup_holder_detection',
         output = 'screen',
         parameters = [{'use_sim_time': False}],
-        arguments=['--ros-args', '--log-level', 'warn'],
+        arguments=['--ros-args', '--log-level', 'info'],
     )
     
     return LaunchDescription([

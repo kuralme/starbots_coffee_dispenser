@@ -30,25 +30,23 @@ class CupHolderDetection(Node):
     def callback(self, msg: PointCloud2) -> None:
         try:
             cloud = self.from_ros_msg(msg)
-            # Filtered cloud for tray surface detection
-            filtered_cloud_plane = self.filter_cloud(cloud, min_x=-0.6, max_x=-0.1, min_y=-0.2, max_y=0.4, min_z=-0.8, max_z=-0.5)
-            # Filtered cloud for cup holder detection
-            filtered_cloud_cupholder = self.filter_cloud(cloud, min_x=-0.5, max_x=-0.1, min_y=-0.1, max_y=0.3, min_z=-0.7, max_z=-0.62)
+            filtered_cloud = self.filter_cloud(cloud, min_x=-0.6, max_x=-0.1, min_y=-0.2, max_y=0.4, min_z=-0.8, max_z=-0.5)
 
-            # Plane segmentations using RANSAC: tray plane and cupholders
-            plane_indices, plane_coefficients, tray_cloud = self.extract_plane(filtered_cloud_plane)
-            cupholder_indices, cupholder_coefficients, cupholder_cloud = self.extract_cylinder(filtered_cloud_cupholder)
+            # Plane segmentation and clustering
+            plane_indices, plane_coefficients, tray_cloud = self.extract_plane(filtered_cloud)
+            tray_clusters, surface_centroids, surface_dimensions = self.extract_clusters(tray_cloud, "Tray Cloud")
 
-            # Clustering methods
-            table_clusters, surface_centroids, surface_dimensions = self.extract_clusters(tray_cloud, "Tray Cloud")
+            # Filter points just below the tray surface using tray properties (centroid, normal)
+            cupholder_cloud = self.filter_below_surface(filtered_cloud,surface_centroids[0])
+            self.get_logger().info(f"Cupholder cloud size: {cupholder_cloud.size}")
             cup_holder_clusters, cup_holder_centroids, cup_holder_dimensions = self.extract_clusters(cupholder_cloud, "Cupholder cloud")
 
-            # Publish detected markers
-            self.pub_surface_marker(surface_centroids, surface_dimensions)
-            self.pub_cup_holder_markers(cup_holder_centroids, cup_holder_dimensions)
+            # Publish detected tray markers and info
+            # self.pub_surface_marker(surface_centroids, surface_dimensions)
+            # self.pub_surface_detected(surface_centroids, surface_dimensions)
 
-            # Publish detected info
-            self.pub_surface_detected(surface_centroids, surface_dimensions)
+            # Publish detected cup holder markers and info
+            self.pub_cup_holder_markers(cup_holder_centroids, cup_holder_dimensions)
             self.pub_cup_holder_detected(cup_holder_centroids, cup_holder_dimensions)
 
         except Exception as e:
@@ -122,6 +120,29 @@ class CupHolderDetection(Node):
                 indices.append(i)
         return cloud.extract(indices)
 
+    def filter_below_surface(self, cloud: pcl.PointCloud, surface_centroid: List[float], height_threshold=0.04, radius_limit=0.14) -> pcl.PointCloud:
+        """Filters points just below the tray surface and within a specified radius."""
+        filtered_indices = []
+
+        centroid = surface_centroid
+        centroid[1] += 0.015
+        self.get_logger().info(f"Centroid: {centroid}")
+
+        for i in range(cloud.size):
+            point = cloud[i]
+            x, y, z = point
+
+            # Check if the point is below the tray by comparing its Z-coordinate to the centroid's Z-coordinate
+            if z < centroid[2] and (centroid[2] - z) <= height_threshold:  # Point is below the tray surface
+                distance_from_center = np.sqrt((x - centroid[0])**2 + (y - centroid[1])**2)
+
+                # Ensure the point is within the tray's radius limit (14 cm max radius for cup holders)
+                if distance_from_center <= radius_limit:
+                    filtered_indices.append(i)
+
+        # Extract filtered cloud based on selected indices
+        return cloud.extract(filtered_indices)
+
     def extract_plane(self, cloud: pcl.PointCloud) -> Tuple[np.ndarray, np.ndarray, pcl.PointCloud]:
         """Segmentation: Extracts a plane from the point cloud."""
         seg = cloud.make_segmenter_normals(ksearch=50)
@@ -136,7 +157,7 @@ class CupHolderDetection(Node):
 
         return indices, coefficients, plane_cloud
 
-    def extract_cylinder(self, cloud, max_cupholder=4, min_distance=0.05):
+    def extract_cylinder(self, cloud, max_cupholder=4, min_distance=0.05, min_radius=0.03, max_radius=0.04):
         """Segmentation: Extracts cylindrical cupholder from the point cloud."""
         cupholder_indices = []
         cupholder_coeffs = []
@@ -151,12 +172,12 @@ class CupHolderDetection(Node):
             seg.set_method_type(pcl.SAC_RANSAC)
             seg.set_max_iterations(10000)
             seg.set_distance_threshold(0.06)
-            seg.set_radius_limits(0.03, 0.04)
+            seg.set_radius_limits(min_radius, max_radius)
 
             indices, coefficients = seg.segment()
 
             # Accept only cylinders with enough points and reasonable radius
-            if len(indices) < 20 or coefficients[6] > 0.04 or coefficients[6] < 0.03:
+            if len(indices) < 20 or coefficients[6] > max_radius or coefficients[6] < min_radius:
                 break
 
             cupholder_indices.append(indices)
@@ -209,7 +230,6 @@ class CupHolderDetection(Node):
                 filtered_indices.append(indices[i])
 
         return filtered_centroids, filtered_indices
-
 
     def extract_clusters(self, cloud: pcl.PointCloud, cluster_type: str) -> Tuple[List[pcl.PointCloud], List[List[float]], List[List[float]]]:
         """Extracts clusters corresponding to tray from the point cloud"""
