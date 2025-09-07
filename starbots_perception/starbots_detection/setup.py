@@ -24,7 +24,6 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'cup_detection = starbots_detection.cup_detection:main',
             'cup_holder_detection= starbots_detection.cup_holder_detection:main',
         ],
     },
