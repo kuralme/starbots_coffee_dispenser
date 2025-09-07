@@ -9,12 +9,17 @@ import tf2_ros
 from tf2_ros import TransformException, ConnectivityException
 from starbots_detection_msgs.msg import DetectedSurfaces, DetectedCupholder, DetectedCupholders
 from typing import List, Tuple, Union
-
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 
 class CupHolderDetection(Node):
     def __init__(self) -> None:
         super().__init__('cup_holder_detection_node')
-        self.pc_sub = self.create_subscription(PointCloud2, '/wrist_rgbd_depth_sensor/points_filtered', self.callback, 10)
+        pcl_qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=10,
+            reliability=QoSReliabilityPolicy.BEST_EFFORT
+        )
+        self.pc_sub = self.create_subscription(PointCloud2, '/D415/barista_points', self.callback, pcl_qos_profile)
         self.tray_marker_pub = self.create_publisher(MarkerArray, '/tray_marker', 10)
         self.cupholder_marker_pub = self.create_publisher(MarkerArray, '/cup_holder_markers', 10)
         self.tray_detected_pub = self.create_publisher(DetectedSurfaces, '/tray_detected', 10)
@@ -259,11 +264,9 @@ class CupHolderDetection(Node):
     def pub_surface_marker(self, surface_centroids: List[List[float]], surface_dimensions: List[List[float]]) -> None:
         """Publishes the detected cylindrical surface (coffee tray) as cylinder markers"""
         marker_array = MarkerArray()
+        height = 0.1
 
         for idx, (centroid, dimensions) in enumerate(zip(surface_centroids, surface_dimensions)):
-            radius = float(dimensions[0]) / 2
-            height = 0.09
-
             cylinder_marker = Marker()
             cylinder_marker.header.frame_id = "base_link"
             cylinder_marker.id = idx
@@ -273,16 +276,13 @@ class CupHolderDetection(Node):
             cylinder_marker.pose.position.y = centroid[1]
             cylinder_marker.pose.position.z = centroid[2] - height / 2  # Adjust height to center the cylinder
             cylinder_marker.pose.orientation.w = 1.0
-
-            cylinder_marker.scale.x = radius * 2  # Diameter of the cylinder
-            cylinder_marker.scale.y = radius * 2  # Diameter of the cylinder
-            cylinder_marker.scale.z = height  # Height of the cylinder
-
+            cylinder_marker.scale.x = dimensions[0]  # Diameter of the cylinder
+            cylinder_marker.scale.y = dimensions[0]  # Diameter of the cylinder
+            cylinder_marker.scale.z = height         # Height of the cylinder
             cylinder_marker.color.r = 0.0
             cylinder_marker.color.g = 1.0
             cylinder_marker.color.b = 0.0
-            cylinder_marker.color.a = 0.4  # Semi-transparent
-
+            cylinder_marker.color.a = 0.4 # Semi-transparent
             marker_array.markers.append(cylinder_marker)
 
         if marker_array.markers:
@@ -291,11 +291,9 @@ class CupHolderDetection(Node):
     def pub_cup_holder_markers(self, cupholder_centroids: List[List[float]], cupholder_dimensions: List[List[float]]) -> None:
         """Publishes the detected cylindrical cupholder as markers."""
         marker_array = MarkerArray()
-        
-        for idx, (centroid, dimensions) in enumerate(zip(cupholder_centroids, cupholder_dimensions)):
-            radius = float(dimensions[0]) / 2
-            height = 0.035
+        height = 0.035
 
+        for idx, (centroid, dimensions) in enumerate(zip(cupholder_centroids, cupholder_dimensions)):
             cylinder_marker = Marker()
             cylinder_marker.header.frame_id = "base_link"
             cylinder_marker.id = idx
@@ -305,16 +303,13 @@ class CupHolderDetection(Node):
             cylinder_marker.pose.position.y = centroid[1]
             cylinder_marker.pose.position.z = centroid[2]
             cylinder_marker.pose.orientation.w = 1.0
-
-            cylinder_marker.scale.x = radius * 2  # Diameter of the cylinder
-            cylinder_marker.scale.y = radius * 2  # Diameter of the cylinder
-            cylinder_marker.scale.z = height      # Height of the cylinder
-
+            cylinder_marker.scale.x = dimensions[0]  # Diameter of the cylinder
+            cylinder_marker.scale.y = dimensions[0]  # Diameter of the cylinder
+            cylinder_marker.scale.z = height         # Height of the cylinder
             cylinder_marker.color.r = 0.0
             cylinder_marker.color.g = 0.0
             cylinder_marker.color.b = 1.0
             cylinder_marker.color.a = 0.9
-
             marker_array.markers.append(cylinder_marker)
 
         if marker_array.markers:
@@ -334,18 +329,15 @@ class CupHolderDetection(Node):
 
     def pub_cup_holder_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
         """Publishes detected cupholder information of 4 cupholders."""
-        
-        if len(centroids) != 4:
-            self.get_logger().warning(f"Skipping publishing: Expected 4 cupholders, found {len(centroids)}...")
-            return  # Do nothing if there are not 4 cupholders
-        
         cupholders_msg = DetectedCupholders()
+        height = 0.035
+
         for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
             cupholder = DetectedCupholder()
             cupholder.cupholder_id = idx
             cupholder.position = Point(x=centroid[0], y=centroid[1], z=centroid[2])
-            cupholder.radius = float(dimension[0]) / 2
-            cupholder.height = 0.035  # Fixed height for all cupholders
+            cupholder.radius = float(dimension[0]) / 2.
+            cupholder.height = height
             cupholders_msg.cup_holders.append(cupholder)
 
         self.cupholder_detected_pub.publish(cupholders_msg)

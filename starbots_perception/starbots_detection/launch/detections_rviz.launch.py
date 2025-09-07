@@ -14,20 +14,18 @@ def generate_launch_description():
             os.path.join(
                 get_package_share_directory('pointcloud_filter'),
                 'launch',
-                'depth_to_points.launch.py'
+                'depth_to_points_filtered.launch.py'
             )
         )
     )
-
     cup_holder_detection_node = Node(
         package = 'starbots_detection',
         executable = 'cup_holder_detection',
         name = 'cup_holder_detection',
         output = 'screen',
         parameters = [{'use_sim_time': False}],
-        arguments=['--ros-args', '--log-level', 'warn'],
+        arguments=['--ros-args', '--log-level', 'info'],
     )
-
     rviz_node = Node(
         package='rviz2',
         executable='rviz2',

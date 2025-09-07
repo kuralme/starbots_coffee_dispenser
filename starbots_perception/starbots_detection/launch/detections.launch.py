@@ -24,6 +24,7 @@ def generate_launch_description():
         parameters = [{'use_sim_time': False}],
         arguments=['--ros-args', '--log-level', 'warn'],
     )
+    
     return LaunchDescription([
         pointcloud_launch,
         cup_holder_detection_node,
