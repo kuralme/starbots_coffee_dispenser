@@ -131,18 +131,17 @@ private:
     // ============ Receive detections phase =================
     geometry_msgs::msg::Point pregrasp_pos;
     pregrasp_pos.x = 0.27;
-    pregrasp_pos.y = 0.4;
-    pregrasp_pos.z = 0.43;
+    pregrasp_pos.y = 0.37;
+    pregrasp_pos.z = 0.4;
 
-    // while (!goal_poses_received_) {
-    //   RCLCPP_WARN(LOGGER, "Cup Holder Poses not received yet!");
-    //   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-    // }
-    // auto goal_position = goal_poses_[request->goal_cup_holder];
+    while (!goal_poses_received_) {
+      RCLCPP_WARN(LOGGER, "Cup Holder Poses not received yet!");
+      std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+    }
+    auto goal_position = goal_poses_[request->goal_cup_holder];
     // goal_position.x -= .005;
     // goal_position.y -= .02;
     // goal_position.z += .42;
-    geometry_msgs::msg::Point goal_position;
 
     // ============ Pregrasp phase =======================
     RCLCPP_INFO(LOGGER, "Going to Pre-grasp Position: [%.3f, %.3f, %.3f]",
@@ -156,7 +155,7 @@ private:
     executeGripperPlan("gripper_open");
 
     RCLCPP_INFO(LOGGER, "Approaching to grasp...");
-    executeCartesianPlan(+0.000, +0.000, -0.09, pregrasp_pos);
+    executeCartesianPlan(+0.000, +0.000, -0.15, pregrasp_pos);
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
     // closeGripperIncremental();
@@ -194,6 +193,7 @@ private:
 
     // ============ Back to initial phase ==================
     gotoHome();
+    goal_poses_received_ = false;
     RCLCPP_INFO(LOGGER, "Pick And Place Execution Complete");
   }
   void clearOctomap() {
@@ -209,10 +209,8 @@ private:
   void holeDetectionCallback(
       const starbots_detection_msgs::msg::DetectedCupholders::SharedPtr msg) {
     if (!goal_poses_received_) {
-
       for (const auto &cupholder : msg->cup_holders) {
         goal_poses_.push_back(cupholder.position);
-
         // RCLCPP_INFO(LOGGER, "===========================");
         // RCLCPP_INFO(LOGGER, "Cupholder ID: %u", cupholder.cupholder_id);
         // RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)",

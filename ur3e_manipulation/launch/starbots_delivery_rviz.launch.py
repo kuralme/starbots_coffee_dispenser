@@ -59,13 +59,13 @@ def generate_launch_description():
         executable='rviz2',
         name='rviz2',
         output='screen',
-        arguments=['-d', rviz_config, '--ros-args', '--log-level', 'warn'],
+        arguments=['-d', rviz_config, '--ros-args', '--log-level', 'error'],
         parameters=[{'use_sim_time': False}],
     )
 
     ld = LaunchDescription()
     ld.add_action(move_group_node)
-    # ld.add_action(detections_launch)
+    ld.add_action(detections_launch)
     ld.add_action(delayed_manipulation_node)
     ld.add_action(rviz_node)
     return ld
