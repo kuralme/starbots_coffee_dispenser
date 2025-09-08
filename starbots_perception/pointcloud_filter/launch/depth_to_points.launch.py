@@ -22,19 +22,22 @@ def generate_launch_description():
             namespace='',
             package='rclcpp_components',
             executable='component_container',
+            arguments=['--ros-args', '--log-level', 'warn'],
             composable_node_descriptions=[
                 launch_ros.descriptions.ComposableNode(
                     package='depth_image_proc',
+                    name='point_cloud_converter_node',
                     plugin='depth_image_proc::PointCloudXyzrgbNode',
-                    name='point_cloud_xyzrgb_node',
                     remappings=[
                         ('rgb/camera_info', '/D415/aligned_depth_to_color/camera_info'),
                         ('rgb/image_rect_color', '/D415/color/image_raw'),
                         ('depth_registered/image_rect', '/D415/aligned_depth_to_color/image_raw'),
                         ('points', '/D415/barista_points')],
-                        # ('camera_info', '/D415/depth/camera_info'),
-                        # ('image_rect', '/D415/depth/image_rect_raw'),
-                        # ('points', '/D415/my_points')],
+                    # plugin='depth_image_proc::PointCloudXyzNode',
+                    # remappings=[
+                    #     ('camera_info', '/D415/depth/camera_info'),
+                    #     ('image_rect', '/D415/depth/image_rect_raw'),
+                    #     ('points', '/D415/barista_points')],
                 ),
             ],
             output='screen',
