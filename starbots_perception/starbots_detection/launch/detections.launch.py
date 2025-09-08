@@ -22,10 +22,10 @@ def generate_launch_description():
         name = 'cup_holder_detection',
         output = 'screen',
         parameters = [{'use_sim_time': False}],
-        arguments=['--ros-args', '--log-level', 'info'],
+        arguments=['--ros-args', '--log-level', 'error'],
     )
     
     return LaunchDescription([
-        # pointcloud_launch,
+        pointcloud_launch,
         cup_holder_detection_node,
     ])

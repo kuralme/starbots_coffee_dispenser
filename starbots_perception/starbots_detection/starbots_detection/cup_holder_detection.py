@@ -1,15 +1,14 @@
+import pcl
+import numpy as np
 import rclpy
+import tf2_ros
+from typing import List, Tuple, Union
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker, MarkerArray
-import pcl
-import numpy as np
-import tf2_ros
-from tf2_ros import TransformException, ConnectivityException
 from starbots_detection_msgs.msg import DetectedSurfaces, DetectedCupholder, DetectedCupholders
-from typing import List, Tuple, Union
-from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 
 class CupHolderDetection(Node):
     def __init__(self) -> None:
@@ -34,20 +33,20 @@ class CupHolderDetection(Node):
 
             # Plane segmentation and clustering
             plane_indices, plane_coefficients, tray_cloud = self.extract_plane(filtered_cloud)
-            tray_clusters, surface_centroids, surface_dimensions = self.extract_clusters(tray_cloud, "Tray Cloud")
+            surface_clusters, surface_centroids, surface_dimensions = self.extract_clusters(tray_cloud, "Tray Cloud")
 
-            # Filter points just below the tray surface using tray properties (centroid, normal)
-            cupholder_cloud = self.filter_below_surface(filtered_cloud,surface_centroids[0])
-            self.get_logger().info(f"Cupholder cloud size: {cupholder_cloud.size}")
-            cup_holder_clusters, cup_holder_centroids, cup_holder_dimensions = self.extract_clusters(cupholder_cloud, "Cupholder cloud")
+            # Filter points just below the tray surface and cluster cylinder cup holders
+            cupholder_cloud = self.filter_below_surface(filtered_cloud, surface_centroids[0])
+            cup_holder_centroids, cup_holder_dimensions = self.extract_cylinders(cupholder_cloud)
 
             # Publish detected tray markers and info
-            # self.pub_surface_marker(surface_centroids, surface_dimensions)
-            # self.pub_surface_detected(surface_centroids, surface_dimensions)
+            self.pub_surface_marker(surface_centroids, surface_dimensions)
+            self.pub_surface_detected(surface_centroids, surface_dimensions)
 
             # Publish detected cup holder markers and info
-            self.pub_cup_holder_markers(cup_holder_centroids, cup_holder_dimensions)
-            self.pub_cup_holder_detected(cup_holder_centroids, cup_holder_dimensions)
+            tray_height = surface_centroids[0][2]
+            self.pub_cup_holder_markers(cup_holder_centroids, cup_holder_dimensions, tray_height)
+            self.pub_cup_holder_detected(cup_holder_centroids, cup_holder_dimensions, tray_height)
 
         except Exception as e:
             self.get_logger().error(f"Error in callback: {e}")
@@ -119,29 +118,42 @@ class CupHolderDetection(Node):
             if min_x <= pt[0] <= max_x and min_y <= pt[1] <= max_y and min_z <= pt[2] <= max_z:
                 indices.append(i)
         return cloud.extract(indices)
-
-    def filter_below_surface(self, cloud: pcl.PointCloud, surface_centroid: List[float], height_threshold=0.04, radius_limit=0.14) -> pcl.PointCloud:
+    
+    def filter_below_surface(self, cloud: pcl.PointCloud, surface_centroid: List[float], height_threshold=0.06, radius_limit=0.15) -> pcl.PointCloud:
         """Filters points just below the tray surface and within a specified radius."""
         filtered_indices = []
-
         centroid = surface_centroid
-        centroid[1] += 0.015
-        self.get_logger().info(f"Centroid: {centroid}")
 
         for i in range(cloud.size):
             point = cloud[i]
             x, y, z = point
 
-            # Check if the point is below the tray by comparing its Z-coordinate to the centroid's Z-coordinate
-            if z < centroid[2] and (centroid[2] - z) <= height_threshold:  # Point is below the tray surface
+            # Check if the point is below the tray surface
+            if z < centroid[2]-0.02 and (centroid[2] - z) <= height_threshold:
                 distance_from_center = np.sqrt((x - centroid[0])**2 + (y - centroid[1])**2)
 
-                # Ensure the point is within the tray's radius limit (14 cm max radius for cup holders)
+                # Ensure the point is within the tray's radius limit
                 if distance_from_center <= radius_limit:
                     filtered_indices.append(i)
 
-        # Extract filtered cloud based on selected indices
         return cloud.extract(filtered_indices)
+
+    def filter_close_cupholder(self, centroids, min_distance):
+        """Filters out cupholders that are too close to each other based on a minimum distance."""
+        filtered_centroids = []
+
+        for centroid in centroids:
+            too_close = False
+            for existing_centroid in filtered_centroids:
+                distance = np.linalg.norm(np.array(centroid) - np.array(existing_centroid))
+                if distance < min_distance:
+                    too_close = True
+                    break
+
+            if not too_close:
+                filtered_centroids.append(centroid)
+
+        return filtered_centroids
 
     def extract_plane(self, cloud: pcl.PointCloud) -> Tuple[np.ndarray, np.ndarray, pcl.PointCloud]:
         """Segmentation: Extracts a plane from the point cloud."""
@@ -156,80 +168,6 @@ class CupHolderDetection(Node):
         plane_cloud = cloud.extract(indices)
 
         return indices, coefficients, plane_cloud
-
-    def extract_cylinder(self, cloud, max_cupholder=4, min_distance=0.05, min_radius=0.03, max_radius=0.04):
-        """Segmentation: Extracts cylindrical cupholder from the point cloud."""
-        cupholder_indices = []
-        cupholder_coeffs = []
-        cupholder_centroids = []
-        working_cloud = cloud
-
-        for _ in range(max_cupholder):
-            seg = working_cloud.make_segmenter_normals(ksearch=50)
-            seg.set_optimize_coefficients(True)
-            seg.set_model_type(pcl.SACMODEL_CYLINDER)
-            seg.set_normal_distance_weight(0.1)
-            seg.set_method_type(pcl.SAC_RANSAC)
-            seg.set_max_iterations(10000)
-            seg.set_distance_threshold(0.06)
-            seg.set_radius_limits(min_radius, max_radius)
-
-            indices, coefficients = seg.segment()
-
-            # Accept only cylinders with enough points and reasonable radius
-            if len(indices) < 20 or coefficients[6] > max_radius or coefficients[6] < min_radius:
-                break
-
-            cupholder_indices.append(indices)
-            cupholder_coeffs.append(coefficients)
-
-            # Mask out detected cup holder points for the next iteration
-            mask = np.ones(working_cloud.size, dtype=bool)
-            mask[indices] = False
-            working_cloud = working_cloud.extract(np.where(mask)[0])
-
-            # Calculate centroid of detected cup holder
-            cupholder_points = cloud.extract(indices)
-            centroid = np.mean(cupholder_points, axis=0)
-            cupholder_centroids.append(centroid)
-
-        # After all cupholder are detected, filter out cupholder that are too close
-        cupholder_centroids, cupholder_indices = self.filter_close_cupholder(cupholder_centroids, cupholder_indices, min_distance)
-
-        # For visualization, you can merge all detected cup holder clouds:
-        cupholder_points = []
-        for indices in cupholder_indices:
-            cupholder_cloud = cloud.extract(indices)
-            cupholder_points.append(cupholder_cloud.to_array())
-
-        if cupholder_points:
-            merged_points = np.vstack(cupholder_points)
-            cupholder_cloud = pcl.PointCloud()
-            cupholder_cloud.from_array(merged_points)
-        else:
-            cupholder_cloud = pcl.PointCloud()
-
-        return cupholder_indices, cupholder_coeffs, cupholder_cloud
-
-    def filter_close_cupholder(self, centroids, indices, min_distance):
-        """Filters out cupholder that are too close to each other based on a minimum distance."""
-        filtered_centroids = []
-        filtered_indices = []
-
-        for i, centroid in enumerate(centroids):
-            # Check distance with already selected cupholder
-            too_close = False
-            for j, existing_centroid in enumerate(filtered_centroids):
-                distance = np.linalg.norm(np.array(centroid) - np.array(existing_centroid))
-                if distance < min_distance:
-                    too_close = True
-                    break
-
-            if not too_close:
-                filtered_centroids.append(centroid)
-                filtered_indices.append(indices[i])
-
-        return filtered_centroids, filtered_indices
 
     def extract_clusters(self, cloud: pcl.PointCloud, cluster_type: str) -> Tuple[List[pcl.PointCloud], List[List[float]], List[List[float]]]:
         """Extracts clusters corresponding to tray from the point cloud"""
@@ -281,28 +219,76 @@ class CupHolderDetection(Node):
         # Return the filtered table clusters, centroids and cluster dimensions
         return object_clusters, cluster_centroids, cluster_dimensions
 
+    def extract_cylinders(self, cloud, min_distance=0.05, min_height=0.02, min_radius=0.02, max_radius=0.04)  -> Tuple[List[List[float]], List[List[float]]]:
+        """Segmentation: Extracts cylindrical cupholder from the point cloud."""
+        tree = cloud.make_kdtree()
+        ec = cloud.make_EuclideanClusterExtraction()
+        ec.set_ClusterTolerance(0.04)
+        ec.set_MinClusterSize(30)
+        ec.set_MaxClusterSize(100000)
+        ec.set_SearchMethod(tree)
+        cluster_indices = ec.Extract()
+
+        cupholder_centroids = []
+        cupholder_dimensions = []
+
+        for idx, indices in enumerate(cluster_indices):
+            # Extract points belonging to the current cluster
+            cluster = cloud.extract(indices)
+
+            # Calculate centroid of the cluster
+            centroid = np.mean(cluster.to_array(), axis=0)
+
+            # Compute dimensions: the min/max coordinates
+            min_coords = np.min(cluster.to_array(), axis=0)
+            max_coords = np.max(cluster.to_array(), axis=0)
+            dimensions = max_coords - min_coords
+
+            # Filter out non-desired clusters
+            radius = dimensions[0] / 2
+            height = dimensions[2]
+            if min_radius <= radius <= max_radius:
+                cupholder_centroids.append(centroid.tolist())
+                cupholder_dimensions.append(dimensions.tolist())
+
+            self.get_logger().info(
+                f"Cluster {idx + 1} has {len(indices)} points\n"
+                f"Centroid of cluster {idx + 1}: {centroid}\n"
+                f"Dimensions of cluster {idx + 1}: {dimensions}"
+            )
+
+        if not cupholder_centroids:
+            self.get_logger().warning("No cupholder-like clusters detected!")
+
+        # Filter out centroids that are too close to each other based on minimum distance
+        cupholder_centroids = self.filter_close_cupholder(cupholder_centroids, min_distance)
+
+        return cupholder_centroids, cupholder_dimensions
+
     def pub_surface_marker(self, surface_centroids: List[List[float]], surface_dimensions: List[List[float]]) -> None:
         """Publishes the detected cylindrical surface (coffee tray) as cylinder markers"""
         marker_array = MarkerArray()
-        height = 0.1
+        height = 0.085
 
         for idx, (centroid, dimensions) in enumerate(zip(surface_centroids, surface_dimensions)):
+            radius = float(dimensions[0]) / 2
+            
             cylinder_marker = Marker()
             cylinder_marker.header.frame_id = "base_link"
             cylinder_marker.id = idx
             cylinder_marker.type = Marker.CYLINDER
             cylinder_marker.action = Marker.ADD
             cylinder_marker.pose.position.x = centroid[0]
-            cylinder_marker.pose.position.y = centroid[1] + 0.015 # small offset
-            cylinder_marker.pose.position.z = centroid[2] - height / 2  # Adjust height to center the cylinder
+            cylinder_marker.pose.position.y = centroid[1] + 0.015
+            cylinder_marker.pose.position.z = centroid[2] - height / 2
             cylinder_marker.pose.orientation.w = 1.0
-            cylinder_marker.scale.x = dimensions[0]  # Diameter of the cylinder
-            cylinder_marker.scale.y = dimensions[0]  # Diameter of the cylinder
-            cylinder_marker.scale.z = height         # Height of the cylinder
+            cylinder_marker.scale.x = radius * 2  # Diameter of the tray
+            cylinder_marker.scale.y = radius * 2  # Diameter of the tray
+            cylinder_marker.scale.z = height      # Height of the tray
             cylinder_marker.color.r = 0.0
             cylinder_marker.color.g = 1.0
             cylinder_marker.color.b = 0.0
-            cylinder_marker.color.a = 0.4 # Semi-transparent
+            cylinder_marker.color.a = 0.4  # Semi-transparent
             marker_array.markers.append(cylinder_marker)
 
         if marker_array.markers:
@@ -314,17 +300,18 @@ class CupHolderDetection(Node):
             surface_msg = DetectedSurfaces()
             surface_msg.surface_id = idx
             surface_msg.position.x = centroid[0]
-            surface_msg.position.y = centroid[1] + 0.015 # small offset
+            surface_msg.position.y = centroid[1] + 0.015
             surface_msg.position.z = centroid[2]
-            surface_msg.height = dimension[0]
-            surface_msg.width = dimension[1]
+            surface_msg.height = dimension[1]
+            surface_msg.width = dimension[0]
             self.tray_detected_pub.publish(surface_msg)
 
-    def pub_cup_holder_markers(self, cupholder_centroids: List[List[float]], cupholder_dimensions: List[List[float]]) -> None:
+    def pub_cup_holder_markers(self, cupholder_centroids: List[List[float]], cupholder_dimensions: List[List[float]], tray_height) -> None:
         """Publishes the detected cylindrical cupholder as markers."""
         marker_array = MarkerArray()
-        height = 0.035
-
+        radius = 0.032
+        height = 0.036
+        
         for idx, (centroid, dimensions) in enumerate(zip(cupholder_centroids, cupholder_dimensions)):
             cylinder_marker = Marker()
             cylinder_marker.header.frame_id = "base_link"
@@ -333,11 +320,11 @@ class CupHolderDetection(Node):
             cylinder_marker.action = Marker.ADD
             cylinder_marker.pose.position.x = centroid[0]
             cylinder_marker.pose.position.y = centroid[1]
-            cylinder_marker.pose.position.z = centroid[2]
+            cylinder_marker.pose.position.z = tray_height - height / 2.
             cylinder_marker.pose.orientation.w = 1.0
-            cylinder_marker.scale.x = dimensions[0]  # Diameter of the cylinder
-            cylinder_marker.scale.y = dimensions[0]  # Diameter of the cylinder
-            cylinder_marker.scale.z = height         # Height of the cylinder
+            cylinder_marker.scale.x = radius * 2  # Diameter of the cylinder
+            cylinder_marker.scale.y = radius * 2  # Diameter of the cylinder
+            cylinder_marker.scale.z = height      # Height of the cylinder
             cylinder_marker.color.r = 0.0
             cylinder_marker.color.g = 0.0
             cylinder_marker.color.b = 1.0
@@ -347,19 +334,19 @@ class CupHolderDetection(Node):
         if marker_array.markers:
             self.cupholder_marker_pub.publish(marker_array)
 
-    def pub_cup_holder_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
-        """Publishes detected cupholder information of cupholders."""
+    def pub_cup_holder_detected(self, centroids: List[List[float]], dimensions: List[List[float]], tray_height) -> None:
+        """Publishes detected cupholder information of the cupholders."""
         cupholders_msg = DetectedCupholders()
-        height = 0.035
+        radius = 0.032
+        height = 0.036
 
         for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
             cupholder = DetectedCupholder()
             cupholder.cupholder_id = idx
-            cupholder.position = Point(x=centroid[0], y=centroid[1], z=centroid[2])
-            cupholder.radius = float(dimension[0]) / 2.
+            cupholder.position = Point(x=centroid[0], y=centroid[1], z=(tray_height - height / 2.))
+            cupholder.radius = radius
             cupholder.height = height
             cupholders_msg.cup_holders.append(cupholder)
-
         self.cupholder_detected_pub.publish(cupholders_msg)
 
 def main(args=None) -> None:
