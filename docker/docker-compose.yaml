@@ -17,7 +17,7 @@ services:
     restart: always
     entrypoint: /ros_entrypoint.sh
     command: ["ros2 launch starbots_bringup starbots_coffee_delivery.launch.py & \
-      sleep 5 && ros2 launch starbots_webapp start_foxglove.launch.xml"]
+      sleep 5 && ros2 launch starbots_webapp start_foxglove.launch.xml > /dev/null 2>&1"]
 
 volumes:
   logs: {}
