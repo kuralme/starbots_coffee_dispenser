@@ -106,7 +106,7 @@ public:
         move_group_node_->create_client<std_srvs::srv::Empty>("/clear_octomap");
 
     createSceneObjects();
-    gotoHome();
+    gotoPredefined("quick_pick");
     RCLCPP_INFO(LOGGER, "UR3e ready for coffee delivery");
   }
   ~PickAndPlace() {
@@ -114,11 +114,11 @@ public:
   }
 
 private:
-  void gotoHome() {
+  void gotoPredefined(std::string pose_name) {
     // Move robot(joints) to predefined home configuration
-    RCLCPP_INFO(LOGGER, "Going to Home Pose...");
+    RCLCPP_INFO(LOGGER, "Going to '%s' Pose...", pose_name.c_str());
     RCLCPP_INFO(LOGGER, "Preparing Joint Value Trajectory...");
-    move_group_robot_->setNamedTarget("home");
+    move_group_robot_->setNamedTarget(pose_name);
     executeKinematicsPlan();
   }
   void handleService(const std::shared_ptr<DeliverCup::Request> request,
@@ -192,7 +192,7 @@ private:
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     // ============ Back to initial phase ==================
-    gotoHome();
+    gotoPredefined("quick_pick");
     goal_poses_received_ = false;
     RCLCPP_INFO(LOGGER, "Pick And Place Execution Complete");
   }
