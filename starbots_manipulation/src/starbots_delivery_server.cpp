@@ -130,7 +130,7 @@ private:
       if (num_points > 1) {
         move_group_robot_->execute(kinematics_trajectory_plan);
       } else {
-        RCLCPP_INFO(LOGGER, "Already at the initial pose.");
+        RCLCPP_INFO(LOGGER, "Already at the '%s' pose.", pose_name.c_str());
       }
     }
   }
@@ -143,9 +143,9 @@ private:
 
     // ============ Receive detection phase =================
     geometry_msgs::msg::Point pregrasp_pos;
-    pregrasp_pos.x = 0.28;
-    pregrasp_pos.y = 0.38;
-    pregrasp_pos.z = 0.4;
+    pregrasp_pos.x = 0.23;
+    pregrasp_pos.y = 0.32; // actual .33
+    pregrasp_pos.z = 0.37;
 
     int no_detection_count{0};
     while (!goal_poses_received_) {
@@ -160,7 +160,7 @@ private:
     auto goal_position = goal_poses_[request->goal_cup_holder];
     // goal_position.x -= .005;
     // goal_position.y -= .02;
-    // goal_position.z += .42;
+    goal_position.z += .3;
 
     try {
       // ============ Pregrasp phase =======================
@@ -174,18 +174,20 @@ private:
       RCLCPP_INFO(LOGGER, "Opening Gripper...");
       executeGripperPlan("gripper_open");
 
-      // RCLCPP_INFO(LOGGER, "Approaching to grasp...");
-      // executeCartesianPlan(+0.000, +0.000, -0.15, pregrasp_pos);
-      // std::this_thread::sleep_for(std::chrono::milliseconds(300));
+      RCLCPP_INFO(LOGGER, "Approaching to grasp...");
+      executeCartesianPlan(+0.000, +0.000, -0.09, pregrasp_pos);
+      std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-      // closeGripperIncremental();
+      closeGripperIncremental(); // test this again
       // executeGripperPlan("gripper_grasp");
       // attachObject("coffee_cup", pregrasp_pos);
+      std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
-      // RCLCPP_INFO(LOGGER, "Retreating...");
-      // executeCartesianPlan(+0.000, +0.000, +0.000, pregrasp_pos);
-      // std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      RCLCPP_INFO(LOGGER, "Retreating...");
+      executeCartesianPlan(+0.000, +0.000, +0.000, pregrasp_pos);
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
+      return;
       // ============ Placing phase =========================
       createOrientationConstraint();
       RCLCPP_INFO(LOGGER, "Going to the Pre-drop Position: [%.3f, %.3f, %.3f]",
@@ -240,8 +242,8 @@ private:
         // RCLCPP_INFO(LOGGER, "===========================");
         // RCLCPP_INFO(LOGGER, "Cupholder ID: %u", cupholder.cupholder_id);
         // RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)",
-        //             cupholder.position.x, cupholder.position.y,
-        //             cupholder.position.z);
+        // cupholder.position.x, cupholder.position.y,
+        // cupholder.position.z);
         // RCLCPP_INFO(LOGGER, "Radius: %.2f", cupholder.radius);
         // RCLCPP_INFO(LOGGER, "Height: %.2f", cupholder.height);
       }
@@ -352,10 +354,18 @@ private:
   }
   void closeGripperIncremental() {
     float gripper_value = 0.4;
-    const float target_value = 0.0; // ~gripper_grasp
-    const float step_large = 0.07;
-    const float step_medium = 0.02;
-    const float step_small = 0.003;
+    const float target_value = 0.05; // ~gripper_grasp
+    const float step_large = 0.31;
+    const float step_medium = 0.04;
+    // const float step_small = 0.003;
+
+    // Dynamically reduce step size for precision
+    if (gripper_value > 0.1)
+      gripper_value -= step_large;
+    else if (gripper_value > 0.03)
+      gripper_value -= step_medium;
+    //   else
+    //     gripper_value -= step_small;
 
     while (gripper_value > target_value) {
       joint_group_positions_gripper_[0] = gripper_value;
@@ -372,16 +382,6 @@ private:
                      gripper_value);
         break;
       }
-
-      // Dynamically reduce step size for precision
-      if (gripper_value > 0.1)
-        gripper_value -= step_large;
-      else if (gripper_value > 0.03)
-        gripper_value -= step_medium;
-      else
-        gripper_value -= step_small;
-
-      std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
   }
 
@@ -449,7 +449,7 @@ private:
     machine_pose.orientation.w = 1.0;
     machine_pose.position.x = 0.3;
     machine_pose.position.y = 0.95;
-    machine_pose.position.z = 0.2;
+    machine_pose.position.z = 0.15;
     std::vector<double> machine_dimensions = {0.5, 0.22,
                                               0.4}; // {length, width, height}
     const moveit_msgs::msg::CollisionObject coffee_machine =
