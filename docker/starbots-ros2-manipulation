@@ -22,12 +22,12 @@ RUN apt update && apt upgrade -y && apt install -y \
 
 # Create ros2 workspace
 RUN mkdir -p /ros2_ws/src
+COPY ./ur3e_moveit_config /ros2_ws/src/ur3e_moveit_config
+COPY ./starbots_ur3e /ros2_ws/src/starbots_ur3e
 COPY ./starbots_perception /ros2_ws/src/starbots_perception
-COPY ./ur3e_manipulation /ros2_ws/src/ur3e_manipulation
-COPY ./ur3e_sim_moveit_config /ros2_ws/src/ur3e_sim_moveit_config
-COPY ./starbots_ur3e_gazebo/ur_description /ros2_ws/src/starbots_ur3e_gazebo/ur_description
-COPY ./starbots_ur3e_gazebo/rg2_gripper_description /ros2_ws/src/starbots_ur3e_gazebo/rg2_gripper_description
+COPY ./starbots_manipulation /ros2_ws/src/starbots_manipulation
 COPY ./starbots_webapp /ros2_ws/src/starbots_webapp
+COPY ./starbots_bringup /ros2_ws/src/starbots_bringup
 COPY ./docker/ros_entrypoint.sh /ros_entrypoint.sh
 
 # Build the ros2 workspace
