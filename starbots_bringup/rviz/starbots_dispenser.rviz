@@ -81,26 +81,26 @@ Visualization Manager:
         rg2_gripper_left_finger:
           Value: false
         rg2_gripper_left_thumb:
-          Value: false
+          Value: true
         rg2_gripper_right_finger:
           Value: false
         rg2_gripper_right_thumb:
-          Value: false
+          Value: true
         shoulder_link:
           Value: false
         tool0:
           Value: false
         upper_arm_link:
-          Value: true
+          Value: false
         world:
           Value: false
         wrist_1_link:
-          Value: true
+          Value: false
         wrist_2_link:
-          Value: true
+          Value: false
         wrist_3_link:
-          Value: true
-      Marker Scale: 0.5
+          Value: false
+      Marker Scale: 0.30000001192092896
       Name: TF
       Show Arrows: true
       Show Axes: true
@@ -469,18 +469,18 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.020564494654536247
-        Y: 0.18646405637264252
-        Z: -0.031111082062125206
+        X: -0.023075586184859276
+        Y: 0.18436701595783234
+        Z: -0.12978817522525787
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.37039798498153687
+      Pitch: 0.3853977620601654
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.4903948307037354
+      Yaw: 2.5103933811187744
     Saved: ~
 Window Geometry:
   BaristaCam:
