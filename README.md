@@ -141,7 +141,7 @@ ros2 launch starbots_bringup starbots_coffee_delivery.launch.py
 Send a coffee delivery request to with given cup holder:
 
 ```bash
-ros2 service call /deliver_coffee ur3e_manipulation/srv/DeliverCup "{goal_cup_holder: 1}"
+ros2 service call /deliver_coffee starbots_manipulation/srv/DeliverCup "{goal_cup_holder: 1}"
 ```
 
 ### Webapp

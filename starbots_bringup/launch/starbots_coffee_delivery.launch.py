@@ -31,7 +31,7 @@ def generate_launch_description():
     )
     manipulation_node = Node(
         name="starbots_delivery_server_node",
-        package="ur3e_manipulation",
+        package="starbots_manipulation",
         executable="starbots_delivery_server",
         output="screen",
         parameters=[

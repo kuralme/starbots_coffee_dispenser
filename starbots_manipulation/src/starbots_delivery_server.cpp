@@ -18,7 +18,7 @@
 #include <starbots_detection_msgs/msg/detected_cupholders.hpp>
 #include <starbots_detection_msgs/msg/detected_objects.hpp>
 #include <starbots_detection_msgs/msg/detected_surfaces.hpp>
-#include <ur3e_manipulation/srv/deliver_cup.hpp>
+#include <starbots_manipulation/srv/deliver_cup.hpp>
 
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("move_group_node");
 static const std::string PLANNING_GROUP_ROBOT = "ur_manipulator";
@@ -28,7 +28,7 @@ using namespace std::chrono_literals;
 using std::placeholders::_1;
 using std::placeholders::_2;
 using MoveGroupInterface = moveit::planning_interface::MoveGroupInterface;
-using DeliverCup = ur3e_manipulation::srv::DeliverCup;
+using DeliverCup = starbots_manipulation::srv::DeliverCup;
 
 class PickAndPlace : public rclcpp::Node {
 public:
@@ -119,7 +119,20 @@ private:
     RCLCPP_INFO(LOGGER, "Going to '%s' Pose...", pose_name.c_str());
     RCLCPP_INFO(LOGGER, "Preparing Joint Value Trajectory...");
     move_group_robot_->setNamedTarget(pose_name);
-    executeKinematicsPlan();
+
+    MoveGroupInterface::Plan kinematics_trajectory_plan;
+    bool plan_success_robot_ =
+        (move_group_robot_->plan(kinematics_trajectory_plan) ==
+         moveit::core::MoveItErrorCode::SUCCESS);
+    if (plan_success_robot_) {
+      size_t num_points =
+          kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
+      if (num_points > 1) {
+        move_group_robot_->execute(kinematics_trajectory_plan);
+      } else {
+        RCLCPP_INFO(LOGGER, "Already at the initial pose.");
+      }
+    }
   }
   void handleService(const std::shared_ptr<DeliverCup::Request> request,
                      std::shared_ptr<DeliverCup::Response> response) {
@@ -128,73 +141,86 @@ private:
     RCLCPP_INFO(LOGGER, "Goal cup holder on tray: %d",
                 request->goal_cup_holder);
 
-    // ============ Receive detections phase =================
+    // ============ Receive detection phase =================
     geometry_msgs::msg::Point pregrasp_pos;
-    pregrasp_pos.x = 0.27;
-    pregrasp_pos.y = 0.37;
+    pregrasp_pos.x = 0.28;
+    pregrasp_pos.y = 0.38;
     pregrasp_pos.z = 0.4;
 
+    int no_detection_count{0};
     while (!goal_poses_received_) {
       RCLCPP_WARN(LOGGER, "Cup Holder Poses not received yet!");
-      std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+      std::this_thread::sleep_for(std::chrono::seconds(3));
+      if (no_detection_count > 5) {
+        response->result = "Coffee Delivery failed";
+        return;
+      }
+      no_detection_count++;
     }
     auto goal_position = goal_poses_[request->goal_cup_holder];
     // goal_position.x -= .005;
     // goal_position.y -= .02;
     // goal_position.z += .42;
 
-    // ============ Pregrasp phase =======================
-    RCLCPP_INFO(LOGGER, "Going to Pre-grasp Position: [%.3f, %.3f, %.3f]",
-                pregrasp_pos.x, pregrasp_pos.y, pregrasp_pos.z);
-    setupPoseTarget(pregrasp_pos.x, pregrasp_pos.y, pregrasp_pos.z, -1.000,
-                    0.000, 0.000, 0.000);
-    executeKinematicsPlan();
+    try {
+      // ============ Pregrasp phase =======================
+      RCLCPP_INFO(LOGGER, "Going to Pre-grasp Position: [%.3f, %.3f, %.3f]",
+                  pregrasp_pos.x, pregrasp_pos.y, pregrasp_pos.z);
+      setupPoseTarget(pregrasp_pos.x, pregrasp_pos.y, pregrasp_pos.z, -1.000,
+                      0.000, 0.000, 0.000);
+      executeKinematicsPlan();
 
-    // ============ Picking phase ========================
-    RCLCPP_INFO(LOGGER, "Opening Gripper...");
-    executeGripperPlan("gripper_open");
+      // ============ Picking phase ========================
+      RCLCPP_INFO(LOGGER, "Opening Gripper...");
+      executeGripperPlan("gripper_open");
 
-    RCLCPP_INFO(LOGGER, "Approaching to grasp...");
-    executeCartesianPlan(+0.000, +0.000, -0.15, pregrasp_pos);
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+      // RCLCPP_INFO(LOGGER, "Approaching to grasp...");
+      // executeCartesianPlan(+0.000, +0.000, -0.15, pregrasp_pos);
+      // std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-    // closeGripperIncremental();
-    // executeGripperPlan("gripper_grasp");
-    attachObject("coffee_cup", pregrasp_pos);
+      // closeGripperIncremental();
+      // executeGripperPlan("gripper_grasp");
+      // attachObject("coffee_cup", pregrasp_pos);
 
-    RCLCPP_INFO(LOGGER, "Retreating...");
-    executeCartesianPlan(+0.000, +0.000, +0.000, pregrasp_pos);
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    return;
-    // ============ Placing phase =========================
-    createOrientationConstraint();
-    RCLCPP_INFO(LOGGER, "Going to the Pre-drop Position: [%.3f, %.3f, %.3f]",
-                goal_position.x, goal_position.y, goal_position.z);
-    setupPoseTarget(goal_position.x, goal_position.y, goal_position.z, -1.000,
-                    0.000, 0.000, 0.000);
-    executeKinematicsPlan();
-    clearOrientationConstraints();
+      // RCLCPP_INFO(LOGGER, "Retreating...");
+      // executeCartesianPlan(+0.000, +0.000, +0.000, pregrasp_pos);
+      // std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    RCLCPP_INFO(LOGGER, "Approaching to place...");
-    executeCartesianPlan(+0.000, +0.000, -0.079, goal_position);
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+      // ============ Placing phase =========================
+      createOrientationConstraint();
+      RCLCPP_INFO(LOGGER, "Going to the Pre-drop Position: [%.3f, %.3f, %.3f]",
+                  goal_position.x, goal_position.y, goal_position.z);
+      setupPoseTarget(goal_position.x, goal_position.y, goal_position.z, -1.000,
+                      0.000, 0.000, 0.000);
+      executeKinematicsPlan();
+      clearOrientationConstraints();
 
-    executeGripperPlan("gripper_open");
-    detachObject("coffee_cup");
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+      RCLCPP_INFO(LOGGER, "Approaching to place...");
+      executeCartesianPlan(+0.000, +0.000, -0.069, goal_position);
+      std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-    RCLCPP_INFO(LOGGER, "Retreating...");
-    executeCartesianPlan(+0.000, +0.000, +0.100, goal_position);
+      executeGripperPlan("gripper_open");
+      detachObject("coffee_cup");
+      std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-    if (rclcpp::ok()) {
-      response->result = "Coffee Delivery successful";
+      RCLCPP_INFO(LOGGER, "Retreating...");
+      executeCartesianPlan(+0.000, +0.000, +0.100, goal_position);
+
+      if (rclcpp::ok()) {
+        response->result = "Coffee Delivery successful";
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+      // ============ Back to initial phase ==================
+      gotoPredefined("quick_pick");
+      goal_poses_received_ = false;
+      RCLCPP_INFO(LOGGER, "Coffee Delivery Completed");
+
+    } catch (const std::exception &e) {
+      RCLCPP_ERROR(LOGGER, "Error during Coffee Delivery execution: %s",
+                   e.what());
+      response->result = "Coffee Delivery failed";
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-    // ============ Back to initial phase ==================
-    gotoPredefined("quick_pick");
-    goal_poses_received_ = false;
-    RCLCPP_INFO(LOGGER, "Pick And Place Execution Complete");
   }
   void clearOctomap() {
     auto request = std::make_shared<std_srvs::srv::Empty::Request>();
@@ -260,14 +286,16 @@ private:
       size_t num_points =
           kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
       RCLCPP_INFO(LOGGER, "Trajectory has %zu points", num_points);
-      if (num_points > 20) {
+      if (num_points > 10) {
         move_group_robot_->execute(kinematics_trajectory_plan);
         RCLCPP_INFO(LOGGER, "Executed trajectory.");
       } else {
-        RCLCPP_WARN(LOGGER, "Trajectory too short — nothing to execute.");
+        gotoPredefined("quick_pick"); // Return to initial pose
+        throw std::runtime_error("Trajectory too short — execution failed");
       }
     } else {
-      RCLCPP_ERROR(LOGGER, "Planning failed — no execution.");
+      gotoPredefined("quick_pick"); // Return to initial pose
+      throw std::runtime_error("Kinematic Planning failed — execution failed");
     }
   }
   void executeCartesianPlan(float x_delta, float y_delta, float z_delta,
@@ -301,7 +329,8 @@ private:
       move_group_robot_->execute(cartesian_trajectory_plan_);
       RCLCPP_INFO(LOGGER, "Cartesian Trajectory Success !");
     } else {
-      RCLCPP_INFO(LOGGER, "Cartesian Trajectory Planning Failed !");
+      gotoPredefined("quick_pick"); // Return to initial pose
+      throw std::runtime_error("Cartesian planning failed !");
     }
     cartesian_waypoints.clear();
   }
