@@ -132,15 +132,13 @@ ros2 launch starbots_detection detections.launch.py
 
 </details>
 
-#### Start starbots delivery service server
+#### Start starbots coffee delivery service
 
 ```bash
-ros2 launch ur3e_manipulation starbots_delivery.launch.py
-# with rviz
-ros2 launch ur3e_manipulation starbots_delivery_rviz.launch.py
+ros2 launch starbots_bringup starbots_coffee_delivery.launch.py
 ```
 
-Send coffee delivery request to with given cup holder:
+Send a coffee delivery request to with given cup holder:
 
 ```bash
 ros2 service call /deliver_coffee ur3e_manipulation/srv/DeliverCup "{goal_cup_holder: 1}"

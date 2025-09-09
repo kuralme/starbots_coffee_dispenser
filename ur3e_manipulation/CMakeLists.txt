@@ -55,7 +55,6 @@ install(TARGETS
 )
 install(DIRECTORY 
 	srv
-	rviz
     launch
     DESTINATION share/${PROJECT_NAME}
 )
