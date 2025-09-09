@@ -88,16 +88,22 @@
         },
         "/starbots_dispenser/display_contacts": {
           "visible": false
+        },
+        "/D415/barista_points": {
+          "visible": true,
+          "colorField": "rgb",
+          "colorMode": "rgb",
+          "colorMap": "turbo"
         }
       },
       "cameraState": {
         "perspective": true,
-        "distance": 2.0934790944631096,
-        "phi": 71.74371494366937,
-        "thetaOffset": 138.5324028151508,
+        "distance": 2.093479094461925,
+        "phi": 57.137599472897215,
+        "thetaOffset": 124.22121825009759,
         "targetOffset": [
-          -0.15508402323549683,
-          0.41923353113591344,
+          -0.33088832883480196,
+          0.29149178113116747,
           0.1250838756730441
         ],
         "target": [
@@ -119,8 +125,9 @@
       "scene": {
         "transforms": {
           "visible": true,
-          "lineWidth": 2,
-          "axisScale": 1
+          "lineWidth": 0.5,
+          "axisScale": 0.5,
+          "labelSize": 0.04
         }
       },
       "transforms": {
@@ -176,7 +183,7 @@
           "visible": false
         },
         "frame:base_link": {
-          "visible": false
+          "visible": true
         },
         "frame:base": {
           "visible": false
@@ -185,22 +192,22 @@
           "visible": false
         },
         "frame:shoulder_link": {
-          "visible": false
+          "visible": true
         },
         "frame:upper_arm_link": {
-          "visible": false
+          "visible": true
         },
         "frame:forearm_link": {
-          "visible": false
+          "visible": true
         },
         "frame:wrist_1_link": {
-          "visible": false
+          "visible": true
         },
         "frame:wrist_2_link": {
-          "visible": false
+          "visible": true
         },
         "frame:wrist_3_link": {
-          "visible": false
+          "visible": true
         },
         "frame:flange": {
           "visible": false
@@ -245,7 +252,7 @@
           "visible": false
         },
         "frame:wrist_rgbd_camera_link": {
-          "visible": false
+          "visible": true
         },
         "frame:wrist_rgbd_camera_depth_frame": {
           "visible": false
@@ -272,7 +279,7 @@
           "visible": false
         },
         "frame:camera_camera_link": {
-          "visible": false
+          "visible": true
         }
       },
       "layers": {
@@ -312,140 +319,6 @@
       },
       "imageMode": {},
       "followTf": "base_link"
-    },
-    "Image!30uq953": {
-      "imageMode": {
-        "imageTopic": "/camera_depth_sensor/image_raw/compressed"
-      },
-      "cameraState": {
-        "distance": 20,
-        "perspective": true,
-        "phi": 60,
-        "target": [
-          0,
-          0,
-          0
-        ],
-        "targetOffset": [
-          0,
-          0,
-          0
-        ],
-        "targetOrientation": [
-          0,
-          0,
-          0,
-          1
-        ],
-        "thetaOffset": 45,
-        "fovy": 45,
-        "near": 0.5,
-        "far": 5000
-      },
-      "followMode": "follow-pose",
-      "scene": {},
-      "transforms": {},
-      "topics": {},
-      "layers": {},
-      "publish": {
-        "type": "point",
-        "poseTopic": "/move_base_simple/goal",
-        "pointTopic": "/clicked_point",
-        "poseEstimateTopic": "/initialpose",
-        "poseEstimateXDeviation": 0.5,
-        "poseEstimateYDeviation": 0.5,
-        "poseEstimateThetaDeviation": 0.26179939
-      }
-    },
-    "Image!1uv14k2": {
-      "cameraState": {
-        "distance": 20,
-        "perspective": true,
-        "phi": 60,
-        "target": [
-          0,
-          0,
-          0
-        ],
-        "targetOffset": [
-          0,
-          0,
-          0
-        ],
-        "targetOrientation": [
-          0,
-          0,
-          0,
-          1
-        ],
-        "thetaOffset": 45,
-        "fovy": 45,
-        "near": 0.5,
-        "far": 5000
-      },
-      "followMode": "follow-pose",
-      "scene": {},
-      "transforms": {},
-      "topics": {},
-      "layers": {},
-      "publish": {
-        "type": "point",
-        "poseTopic": "/move_base_simple/goal",
-        "pointTopic": "/clicked_point",
-        "poseEstimateTopic": "/initialpose",
-        "poseEstimateXDeviation": 0.5,
-        "poseEstimateYDeviation": 0.5,
-        "poseEstimateThetaDeviation": 0.26179939
-      },
-      "imageMode": {
-        "imageTopic": "/camera_depth_sensor/depth/image_raw",
-        "calibrationTopic": "/camera_depth_sensor/depth/camera_info"
-      }
-    },
-    "Image!21vy45r": {
-      "imageMode": {
-        "imageTopic": "/wrist_rgbd_depth_sensor/image_raw/compressed",
-        "calibrationTopic": "/wrist_rgbd_depth_sensor/camera_info"
-      },
-      "cameraState": {
-        "distance": 20,
-        "perspective": true,
-        "phi": 60,
-        "target": [
-          0,
-          0,
-          0
-        ],
-        "targetOffset": [
-          0,
-          0,
-          0
-        ],
-        "targetOrientation": [
-          0,
-          0,
-          0,
-          1
-        ],
-        "thetaOffset": 45,
-        "fovy": 45,
-        "near": 0.5,
-        "far": 5000
-      },
-      "followMode": "follow-pose",
-      "scene": {},
-      "transforms": {},
-      "topics": {},
-      "layers": {},
-      "publish": {
-        "type": "point",
-        "poseTopic": "/move_base_simple/goal",
-        "pointTopic": "/clicked_point",
-        "poseEstimateTopic": "/initialpose",
-        "poseEstimateXDeviation": 0.5,
-        "poseEstimateYDeviation": 0.5,
-        "poseEstimateThetaDeviation": 0.26179939
-      }
     },
     "Image!46fjbv8": {
       "cameraState": {
@@ -488,55 +361,73 @@
         "poseEstimateThetaDeviation": 0.26179939
       },
       "imageMode": {
-        "imageTopic": "/wrist_rgbd_depth_sensor/depth/image_raw",
-        "calibrationTopic": "/wrist_rgbd_depth_sensor/depth/camera_info"
-      }
-    },
-    "RosOut!18rxmkt": {
-      "searchTerms": [],
-      "minLogLevel": 2,
-      "nameFilter": {
-        "foxglove_bridge": {
-          "visible": false
-        },
-        "joint_trajectory_controller": {
-          "visible": true
-        },
-        "cup_detection": {
-          "visible": true
-        }
+        "imageTopic": "/D415/aligned_depth_to_color/image_raw",
+        "calibrationTopic": "/D415/aligned_depth_to_color/camera_info"
       },
-      "foxglovePanelTitle": ""
+      "foxglovePanelTitle": "Barista tray depth cam"
+    },
+    "Image!21vy45r": {
+      "imageMode": {
+        "imageTopic": "/D415/color/image_raw",
+        "calibrationTopic": "/D415/color/camera_info"
+      },
+      "cameraState": {
+        "distance": 20,
+        "perspective": true,
+        "phi": 60,
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOffset": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "thetaOffset": 45,
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "scene": {},
+      "transforms": {},
+      "topics": {},
+      "layers": {},
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "foxglovePanelTitle": "Barista tray cam"
     }
   },
   "layout": {
-    "first": {
-      "direction": "row",
-      "first": "CallService!3jm0wum",
+    "direction": "row",
+    "first": "CallService!3jm0wum",
+    "second": {
+      "first": "3D!19idsu8",
       "second": {
-        "first": "3D!19idsu8",
-        "second": {
-          "first": {
-            "first": "Image!30uq953",
-            "second": "Image!1uv14k2",
-            "direction": "row"
-          },
-          "second": {
-            "first": "Image!21vy45r",
-            "second": "Image!46fjbv8",
-            "direction": "row"
-          },
-          "direction": "column",
-          "splitPercentage": 49.72067039106145
-        },
-        "direction": "row",
-        "splitPercentage": 53.153791637136784
+        "first": "Image!46fjbv8",
+        "second": "Image!21vy45r",
+        "direction": "column",
+        "splitPercentage": 36.312849162011176
       },
-      "splitPercentage": 16.11177170035672
+      "direction": "row",
+      "splitPercentage": 62.650602409638566
     },
-    "second": "RosOut!18rxmkt",
-    "direction": "column",
-    "splitPercentage": 70.27932960893854
+    "splitPercentage": 16.11177170035672
   },
   "globalVariables": {},
   "playbackConfig": {
