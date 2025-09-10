@@ -175,15 +175,15 @@ private:
       executeGripperPlan("gripper_open");
 
       RCLCPP_INFO(LOGGER, "Approaching to grasp...");
-      executeCartesianPlan(+0.000, +0.000, -0.075, pregrasp_pos);
+      executeCartesianPlan(+0.000, +0.000, -0.07, pregrasp_pos);
       std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-      closeGripperIncremental();
-      // executeGripperPlan("gripper_grasp");
+      // closeGripperIncremental();
+      executeGripperPlan("gripper_grasp");
       attachObject("coffee_cup", pregrasp_pos);
 
       RCLCPP_INFO(LOGGER, "Retreating...");
-      executeCartesianPlan(+0.000, +0.000, +0.050, pregrasp_pos);
+      executeCartesianPlan(+0.000, +0.000, +0.100, pregrasp_pos);
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
       // ============ Placing phase =========================
@@ -231,7 +231,6 @@ private:
     auto future = octo_client_->async_send_request(request);
     RCLCPP_INFO(LOGGER, "Octomap cleared!");
   }
-
   void holeDetectionCallback(
       const starbots_detection_msgs::msg::DetectedCupholders::SharedPtr msg) {
     if (!goal_poses_received_) {
@@ -240,8 +239,8 @@ private:
         // RCLCPP_INFO(LOGGER, "===========================");
         // RCLCPP_INFO(LOGGER, "Cupholder ID: %u", cupholder.cupholder_id);
         // RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)",
-        // cupholder.position.x, cupholder.position.y,
-        // cupholder.position.z);
+        //             cupholder.position.x, cupholder.position.y,
+        //             cupholder.position.z);
         // RCLCPP_INFO(LOGGER, "Radius: %.2f", cupholder.radius);
         // RCLCPP_INFO(LOGGER, "Height: %.2f", cupholder.height);
       }
@@ -387,7 +386,7 @@ private:
     geometry_msgs::msg::Pose cup_pose;
     cup_pose.position = pregrasp_pos;
     cup_pose.position.z -= 0.3;
-    std::vector<double> cup_dimensions = {0.09, 0.035}; // {height, width}
+    std::vector<double> cup_dimensions = {0.1, 0.04}; // {height, width}
     moveit_msgs::msg::CollisionObject coffee_cup =
         createCollisionObject(object_id, "cylinder", cup_dimensions, cup_pose);
 
@@ -422,11 +421,11 @@ private:
     // Create scene objects arent visible in pointcloud
     geometry_msgs::msg::Pose counter_pose;
     counter_pose.orientation.w = 1.0;
-    counter_pose.position.x = 0.25;
-    counter_pose.position.y = 0.4;
-    counter_pose.position.z = -0.05;
-    std::vector<double> box_dimensions = {0.65, 1.6,
-                                          0.05}; // {length, width, height}
+    counter_pose.position.x = 0.24;
+    counter_pose.position.y = 0.35;
+    counter_pose.position.z = -0.04;
+    std::vector<double> box_dimensions = {0.66, 1.35,
+                                          0.08}; // {length, width, height}
     const moveit_msgs::msg::CollisionObject coffee_counter =
         createCollisionObject("coffee_counter", "box", box_dimensions,
                               counter_pose);
@@ -434,7 +433,7 @@ private:
     geometry_msgs::msg::Pose wall_pose;
     wall_pose.orientation.w = 1.0;
     wall_pose.position.x = 0.0;
-    wall_pose.position.y = -0.45;
+    wall_pose.position.y = -0.4;
     wall_pose.position.z = 0.0;
     std::vector<double> wall_dimensions = {1.5, 0.1,
                                            1.5}; // {length, width, height}
@@ -444,10 +443,10 @@ private:
     geometry_msgs::msg::Pose machine_pose;
     machine_pose.orientation.w = 1.0;
     machine_pose.position.x = 0.3;
-    machine_pose.position.y = 0.95;
-    machine_pose.position.z = 0.15;
+    machine_pose.position.y = 0.87;
+    machine_pose.position.z = 0.14;
     std::vector<double> machine_dimensions = {0.5, 0.22,
-                                              0.4}; // {length, width, height}
+                                              0.25}; // {length, width, height}
     const moveit_msgs::msg::CollisionObject coffee_machine =
         createCollisionObject("coffee_machine", "box", machine_dimensions,
                               machine_pose);
@@ -555,7 +554,7 @@ private:
     path_constraints_.orientation_constraints.push_back(ocm);
 
     // Changed planner for better orientation constrained planning
-    move_group_robot_->setPlannerId("KPIECEkConfigDefault");
+    move_group_robot_->setPlannerId("RRTkConfigDefault");
     move_group_robot_->setPathConstraints(path_constraints_);
     move_group_robot_->setStartStateToCurrentState();
     move_group_robot_->setPlanningTime(40.0);
