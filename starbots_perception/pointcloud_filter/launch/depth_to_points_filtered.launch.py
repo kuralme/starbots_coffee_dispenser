@@ -11,8 +11,8 @@ def generate_launch_description():
             executable='static_transform_publisher',
             name='static_transform_world_to_d415',
             arguments=[ # '-0.415', '-0.375', '0.31', '0.31', '1.57', '1.197', '0.0'
-                '-0.505', '-0.245', '0.410',          # Translation: X, Y, Z
-                '-0.354', '0.354', '0.612', '0.612',  # Rotation: Quaternion (xyzw)
+                '-0.525', '-0.335', '0.360',          # Translation: X, Y, Z
+                '-0.310', '0.310', '0.622', '0.612',  # Rotation: Quaternion (xyzw)
                 'world', 'D415_link'
             ],
             output='screen',
@@ -32,6 +32,11 @@ def generate_launch_description():
                         ('rgb/image_rect_color', '/D415/color/image_raw'),
                         ('depth_registered/image_rect', '/D415/aligned_depth_to_color/image_raw'),
                         ('points', '/D415/barista_points')],
+                    # plugin='depth_image_proc::PointCloudXyzNode',
+                    # remappings=[
+                    #     ('camera_info', '/D415/depth/camera_info'),
+                    #     ('image_rect', '/D415/depth/image_rect_raw'),
+                    #     ('points', '/D415/barista_points')],
                 ),
                 launch_ros.descriptions.ComposableNode(
                     package = 'pointcloud_filter',
