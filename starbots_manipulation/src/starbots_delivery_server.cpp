@@ -144,7 +144,7 @@ private:
     // ============ Receive detection phase =================
     geometry_msgs::msg::Point pregrasp_pos;
     pregrasp_pos.x = 0.23;
-    pregrasp_pos.y = 0.32; // actual .33
+    pregrasp_pos.y = 0.32; // actual 0.33
     pregrasp_pos.z = 0.37;
 
     int no_detection_count{0};
@@ -160,7 +160,7 @@ private:
     auto goal_position = goal_poses_[request->goal_cup_holder];
     // goal_position.x -= .005;
     // goal_position.y -= .02;
-    goal_position.z += .3;
+    goal_position.z += .35;
 
     try {
       // ============ Pregrasp phase =======================
@@ -175,19 +175,17 @@ private:
       executeGripperPlan("gripper_open");
 
       RCLCPP_INFO(LOGGER, "Approaching to grasp...");
-      executeCartesianPlan(+0.000, +0.000, -0.09, pregrasp_pos);
+      executeCartesianPlan(+0.000, +0.000, -0.075, pregrasp_pos);
       std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-      closeGripperIncremental(); // test this again
+      closeGripperIncremental();
       // executeGripperPlan("gripper_grasp");
-      // attachObject("coffee_cup", pregrasp_pos);
-      std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+      attachObject("coffee_cup", pregrasp_pos);
 
       RCLCPP_INFO(LOGGER, "Retreating...");
-      executeCartesianPlan(+0.000, +0.000, +0.000, pregrasp_pos);
+      executeCartesianPlan(+0.000, +0.000, +0.050, pregrasp_pos);
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-      return;
       // ============ Placing phase =========================
       createOrientationConstraint();
       RCLCPP_INFO(LOGGER, "Going to the Pre-drop Position: [%.3f, %.3f, %.3f]",
@@ -198,7 +196,7 @@ private:
       clearOrientationConstraints();
 
       RCLCPP_INFO(LOGGER, "Approaching to place...");
-      executeCartesianPlan(+0.000, +0.000, -0.069, goal_position);
+      executeCartesianPlan(+0.000, +0.000, -0.07, goal_position);
       std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
       executeGripperPlan("gripper_open");
@@ -276,7 +274,6 @@ private:
     target_pose_robot.orientation.w = quat_w;
     move_group_robot_->setPoseTarget(target_pose_robot);
   }
-
   void executeKinematicsPlan() {
     // move_group_robot_->setStartStateToCurrentState();
     MoveGroupInterface::Plan kinematics_trajectory_plan;
@@ -336,7 +333,6 @@ private:
     }
     cartesian_waypoints.clear();
   }
-
   void executeGripperPlan(std::string pose_name) {
     MoveGroupInterface::Plan gripper_trajectory_plan;
     move_group_gripper_->setNamedTarget(pose_name);
@@ -354,20 +350,20 @@ private:
   }
   void closeGripperIncremental() {
     float gripper_value = 0.4;
-    const float target_value = 0.05; // ~gripper_grasp
-    const float step_large = 0.31;
-    const float step_medium = 0.04;
-    // const float step_small = 0.003;
-
-    // Dynamically reduce step size for precision
-    if (gripper_value > 0.1)
-      gripper_value -= step_large;
-    else if (gripper_value > 0.03)
-      gripper_value -= step_medium;
-    //   else
-    //     gripper_value -= step_small;
+    const float target_value = 0.0; // ~gripper_grasp
+    const float step_large = 0.17;
+    const float step_medium = 0.07;
+    const float step_small = 0.02;
 
     while (gripper_value > target_value) {
+      // Dynamically reduce step size for precision
+      if (gripper_value > 0.1)
+        gripper_value -= step_large;
+      else if (gripper_value > 0.05)
+        gripper_value -= step_medium;
+      //   else
+      //     gripper_value -= step_small;
+
       joint_group_positions_gripper_[0] = gripper_value;
       move_group_gripper_->setJointValueTarget(joint_group_positions_gripper_);
 
@@ -390,7 +386,7 @@ private:
     // Add the cup to the planning scene
     geometry_msgs::msg::Pose cup_pose;
     cup_pose.position = pregrasp_pos;
-    cup_pose.position.z -= 0.38;
+    cup_pose.position.z -= 0.3;
     std::vector<double> cup_dimensions = {0.09, 0.035}; // {height, width}
     moveit_msgs::msg::CollisionObject coffee_cup =
         createCollisionObject(object_id, "cylinder", cup_dimensions, cup_pose);
@@ -426,7 +422,7 @@ private:
     // Create scene objects arent visible in pointcloud
     geometry_msgs::msg::Pose counter_pose;
     counter_pose.orientation.w = 1.0;
-    counter_pose.position.x = 0.2;
+    counter_pose.position.x = 0.25;
     counter_pose.position.y = 0.4;
     counter_pose.position.z = -0.05;
     std::vector<double> box_dimensions = {0.65, 1.6,
@@ -466,7 +462,6 @@ private:
     // Wait for MoveGroup to recieve and process the collision object message.
     rclcpp::sleep_for(std::chrono::seconds(1));
   }
-
   moveit_msgs::msg::CollisionObject createCollisionObject(
       const std::string &object_id,
       const std::string &type,               // Object type: "box" or "cylinder"
