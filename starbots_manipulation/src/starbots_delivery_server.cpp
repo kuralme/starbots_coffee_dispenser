@@ -239,8 +239,8 @@ private:
         // RCLCPP_INFO(LOGGER, "===========================");
         // RCLCPP_INFO(LOGGER, "Cupholder ID: %u", cupholder.cupholder_id);
         // RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)",
-        //             cupholder.position.x, cupholder.position.y,
-        //             cupholder.position.z);
+        // cupholder.position.x, cupholder.position.y,
+        // cupholder.position.z);
         // RCLCPP_INFO(LOGGER, "Radius: %.2f", cupholder.radius);
         // RCLCPP_INFO(LOGGER, "Height: %.2f", cupholder.height);
       }
@@ -352,7 +352,6 @@ private:
     const float target_value = 0.0; // ~gripper_grasp
     const float step_large = 0.17;
     const float step_medium = 0.07;
-    const float step_small = 0.02;
 
     while (gripper_value > target_value) {
       // Dynamically reduce step size for precision
@@ -360,8 +359,6 @@ private:
         gripper_value -= step_large;
       else if (gripper_value > 0.05)
         gripper_value -= step_medium;
-      //   else
-      //     gripper_value -= step_small;
 
       joint_group_positions_gripper_[0] = gripper_value;
       move_group_gripper_->setJointValueTarget(joint_group_positions_gripper_);
@@ -422,9 +419,9 @@ private:
     geometry_msgs::msg::Pose counter_pose;
     counter_pose.orientation.w = 1.0;
     counter_pose.position.x = 0.24;
-    counter_pose.position.y = 0.35;
+    counter_pose.position.y = 0.25;
     counter_pose.position.z = -0.04;
-    std::vector<double> box_dimensions = {0.66, 1.35,
+    std::vector<double> box_dimensions = {0.66, 1.5,
                                           0.08}; // {length, width, height}
     const moveit_msgs::msg::CollisionObject coffee_counter =
         createCollisionObject("coffee_counter", "box", box_dimensions,
@@ -433,7 +430,7 @@ private:
     geometry_msgs::msg::Pose wall_pose;
     wall_pose.orientation.w = 1.0;
     wall_pose.position.x = 0.0;
-    wall_pose.position.y = -0.4;
+    wall_pose.position.y = -0.5;
     wall_pose.position.z = 0.0;
     std::vector<double> wall_dimensions = {1.5, 0.1,
                                            1.5}; // {length, width, height}
@@ -554,7 +551,7 @@ private:
     path_constraints_.orientation_constraints.push_back(ocm);
 
     // Changed planner for better orientation constrained planning
-    move_group_robot_->setPlannerId("RRTkConfigDefault");
+    move_group_robot_->setPlannerId("KPIECEkConfigDefault");
     move_group_robot_->setPathConstraints(path_constraints_);
     move_group_robot_->setStartStateToCurrentState();
     move_group_robot_->setPlanningTime(40.0);
