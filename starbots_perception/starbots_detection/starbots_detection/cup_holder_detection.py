@@ -29,7 +29,7 @@ class CupHolderDetection(Node):
     def callback(self, msg: PointCloud2) -> None:
         try:
             cloud = self.from_ros_msg(msg)
-            filtered_cloud = self.filter_cloud(cloud, min_x=-0.7, max_x=-0.2, min_y=0.0, max_y=0.5, min_z=-0.6, max_z=-0.3)
+            filtered_cloud = self.filter_cloud(cloud, min_x=-0.7, max_x=-0.2, min_y=-0.1, max_y=0.5, min_z=-0.6, max_z=-0.3)
 
             # Plane segmentation and clustering
             plane_indices, plane_coefficients, tray_cloud = self.extract_plane(filtered_cloud)
@@ -279,7 +279,7 @@ class CupHolderDetection(Node):
             cylinder_marker.type = Marker.CYLINDER
             cylinder_marker.action = Marker.ADD
             cylinder_marker.pose.position.x = centroid[0]
-            cylinder_marker.pose.position.y = centroid[1] + 0.015
+            cylinder_marker.pose.position.y = centroid[1]
             cylinder_marker.pose.position.z = centroid[2] - height / 2
             cylinder_marker.pose.orientation.w = 1.0
             cylinder_marker.scale.x = radius * 2  # Diameter of the tray
@@ -300,7 +300,7 @@ class CupHolderDetection(Node):
             surface_msg = DetectedSurfaces()
             surface_msg.surface_id = idx
             surface_msg.position.x = centroid[0]
-            surface_msg.position.y = centroid[1] + 0.015
+            surface_msg.position.y = centroid[1]
             surface_msg.position.z = centroid[2]
             surface_msg.height = dimension[1]
             surface_msg.width = dimension[0]
