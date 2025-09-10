@@ -160,7 +160,7 @@ private:
     auto goal_position = goal_poses_[request->goal_cup_holder];
     // goal_position.x -= .005;
     // goal_position.y -= .02;
-    goal_position.z += .35;
+    goal_position.z += .4;
 
     try {
       // ============ Pregrasp phase =======================
@@ -195,13 +195,17 @@ private:
       executeKinematicsPlan();
       clearOrientationConstraints();
 
+      std::this_thread::sleep_for(std::chrono::seconds(5));
+
       RCLCPP_INFO(LOGGER, "Approaching to place...");
-      executeCartesianPlan(+0.000, +0.000, -0.07, goal_position);
+      executeCartesianPlan(+0.000, +0.000, -0.08, goal_position);
       std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
       executeGripperPlan("gripper_open");
       detachObject("coffee_cup");
       std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+      std::this_thread::sleep_for(std::chrono::seconds(5));
 
       RCLCPP_INFO(LOGGER, "Retreating...");
       executeCartesianPlan(+0.000, +0.000, +0.100, goal_position);
@@ -418,10 +422,10 @@ private:
     // Create scene objects arent visible in pointcloud
     geometry_msgs::msg::Pose counter_pose;
     counter_pose.orientation.w = 1.0;
-    counter_pose.position.x = 0.24;
+    counter_pose.position.x = 0.25;
     counter_pose.position.y = 0.25;
     counter_pose.position.z = -0.04;
-    std::vector<double> box_dimensions = {0.66, 1.5,
+    std::vector<double> box_dimensions = {0.7, 1.5,
                                           0.08}; // {length, width, height}
     const moveit_msgs::msg::CollisionObject coffee_counter =
         createCollisionObject("coffee_counter", "box", box_dimensions,
@@ -562,7 +566,7 @@ private:
     // move_group_robot_->clearPathConstraints();
     path_constraints_.orientation_constraints.clear();
     move_group_robot_->setPathConstraints(path_constraints_);
-    move_group_robot_->setPlannerId("BiTRRTkConfigDefault");
+    move_group_robot_->setPlannerId("APSConfigDefault");
     RCLCPP_INFO(LOGGER, "Cleared Orientation constraints");
   }
   void displayBoxConstraint(
