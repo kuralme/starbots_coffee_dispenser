@@ -423,9 +423,9 @@ private:
     geometry_msgs::msg::Pose counter_pose;
     counter_pose.orientation.w = 1.0;
     counter_pose.position.x = 0.25;
-    counter_pose.position.y = 0.25;
+    counter_pose.position.y = 0.3;
     counter_pose.position.z = -0.04;
-    std::vector<double> box_dimensions = {0.7, 1.5,
+    std::vector<double> box_dimensions = {0.7, 1.4,
                                           0.08}; // {length, width, height}
     const moveit_msgs::msg::CollisionObject coffee_counter =
         createCollisionObject("coffee_counter", "box", box_dimensions,
@@ -434,7 +434,7 @@ private:
     geometry_msgs::msg::Pose wall_pose;
     wall_pose.orientation.w = 1.0;
     wall_pose.position.x = 0.0;
-    wall_pose.position.y = -0.5;
+    wall_pose.position.y = -0.45;
     wall_pose.position.z = 0.0;
     std::vector<double> wall_dimensions = {1.5, 0.1,
                                            1.5}; // {length, width, height}

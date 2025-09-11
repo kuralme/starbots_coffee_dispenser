@@ -279,7 +279,7 @@ class CupHolderDetection(Node):
             cylinder_marker.type = Marker.CYLINDER
             cylinder_marker.action = Marker.ADD
             cylinder_marker.pose.position.x = centroid[0]
-            cylinder_marker.pose.position.y = centroid[1]
+            cylinder_marker.pose.position.y = centroid[1] + 0.012
             cylinder_marker.pose.position.z = centroid[2] - height / 2
             cylinder_marker.pose.orientation.w = 1.0
             cylinder_marker.scale.x = radius * 2  # Diameter of the tray
@@ -300,7 +300,7 @@ class CupHolderDetection(Node):
             surface_msg = DetectedSurfaces()
             surface_msg.surface_id = idx
             surface_msg.position.x = centroid[0]
-            surface_msg.position.y = centroid[1]
+            surface_msg.position.y = centroid[1] + 0.012
             surface_msg.position.z = centroid[2]
             surface_msg.height = dimension[1]
             surface_msg.width = dimension[0]
@@ -310,7 +310,7 @@ class CupHolderDetection(Node):
         """Publishes the detected cylindrical cupholder as markers."""
         marker_array = MarkerArray()
         radius = 0.032
-        height = 0.036
+        height = 0.045
         
         for idx, (centroid, dimensions) in enumerate(zip(cupholder_centroids, cupholder_dimensions)):
             cylinder_marker = Marker()
@@ -319,7 +319,7 @@ class CupHolderDetection(Node):
             cylinder_marker.type = Marker.CYLINDER
             cylinder_marker.action = Marker.ADD
             cylinder_marker.pose.position.x = centroid[0]
-            cylinder_marker.pose.position.y = centroid[1]
+            cylinder_marker.pose.position.y = centroid[1] - 0.008
             cylinder_marker.pose.position.z = tray_height - height / 2.
             cylinder_marker.pose.orientation.w = 1.0
             cylinder_marker.scale.x = radius * 2  # Diameter of the cylinder
@@ -338,12 +338,12 @@ class CupHolderDetection(Node):
         """Publishes detected cupholder information of the cupholders."""
         cupholders_msg = DetectedCupholders()
         radius = 0.032
-        height = 0.036
+        height = 0.045
 
         for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
             cupholder = DetectedCupholder()
             cupholder.cupholder_id = idx
-            cupholder.position = Point(x=centroid[0], y=centroid[1], z=(tray_height - height / 2.))
+            cupholder.position = Point(x=centroid[0], y=(centroid[1] - 0.008), z=(tray_height - height / 2.))
             cupholder.radius = radius
             cupholder.height = height
             cupholders_msg.cup_holders.append(cupholder)
