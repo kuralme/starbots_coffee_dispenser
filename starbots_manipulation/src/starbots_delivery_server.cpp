@@ -158,8 +158,8 @@ private:
       no_detection_count++;
     }
     auto goal_position = goal_poses_[request->goal_cup_holder];
-    // goal_position.x -= .005;
-    // goal_position.y -= .02;
+    goal_position.x += .05;
+    goal_position.y -= .05;
     goal_position.z += .4;
 
     try {
@@ -213,7 +213,6 @@ private:
       if (rclcpp::ok()) {
         response->result = "Coffee Delivery successful";
       }
-      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
       // ============ Back to initial phase ==================
       gotoPredefined("quick_pick");
@@ -226,15 +225,7 @@ private:
       response->result = "Coffee Delivery failed";
     }
   }
-  void clearOctomap() {
-    auto request = std::make_shared<std_srvs::srv::Empty::Request>();
-    if (!octo_client_->wait_for_service(std::chrono::seconds(2))) {
-      RCLCPP_WARN(LOGGER, "clear_octomap service not available");
-      return;
-    }
-    auto future = octo_client_->async_send_request(request);
-    RCLCPP_INFO(LOGGER, "Octomap cleared!");
-  }
+
   void holeDetectionCallback(
       const starbots_detection_msgs::msg::DetectedCupholders::SharedPtr msg) {
     if (!goal_poses_received_) {
@@ -387,7 +378,7 @@ private:
     geometry_msgs::msg::Pose cup_pose;
     cup_pose.position = pregrasp_pos;
     cup_pose.position.z -= 0.3;
-    std::vector<double> cup_dimensions = {0.1, 0.04}; // {height, width}
+    std::vector<double> cup_dimensions = {0.11, 0.04}; // {height, width}
     moveit_msgs::msg::CollisionObject coffee_cup =
         createCollisionObject(object_id, "cylinder", cup_dimensions, cup_pose);
 
@@ -516,29 +507,6 @@ private:
     return collision_object;
   }
 
-  void createTrajectoryConstraint() {
-    // Constraint for planning trajectory
-    shape_msgs::msg::SolidPrimitive box;
-    box.type = shape_msgs::msg::SolidPrimitive::BOX;
-    box.dimensions = {2.0, 2.0, 2.0};
-    geometry_msgs::msg::Pose box_pose;
-    box_pose.position.x = -0.1;
-    box_pose.position.y = 0.3;
-    box_pose.orientation.w = 1.0;
-    displayBoxConstraint(box_pose, box.dimensions);
-
-    moveit_msgs::msg::PositionConstraint box_constraint;
-    box_constraint.header.frame_id = move_group_robot_->getPlanningFrame();
-    box_constraint.link_name = move_group_robot_->getEndEffectorLink();
-    box_constraint.constraint_region.primitives.push_back(box);
-    box_constraint.constraint_region.primitive_poses.push_back(box_pose);
-    box_constraint.weight = 1.0;
-
-    path_constraints_.position_constraints.push_back(box_constraint);
-    move_group_robot_->setPathConstraints(path_constraints_);
-    move_group_robot_->setStartStateToCurrentState();
-    move_group_robot_->setPlanningTime(20.0);
-  }
   void createOrientationConstraint() {
     // "Gripper pointing down" orientation constraint
     moveit_msgs::msg::OrientationConstraint ocm;
@@ -558,7 +526,7 @@ private:
     move_group_robot_->setPlannerId("KPIECEkConfigDefault");
     move_group_robot_->setPathConstraints(path_constraints_);
     move_group_robot_->setStartStateToCurrentState();
-    move_group_robot_->setPlanningTime(40.0);
+    // move_group_robot_->setPlanningTime(40.0);
 
     RCLCPP_INFO(LOGGER, "Applied upright orientation constraint (Z down)");
   }
@@ -568,29 +536,6 @@ private:
     move_group_robot_->setPathConstraints(path_constraints_);
     move_group_robot_->setPlannerId("APSConfigDefault");
     RCLCPP_INFO(LOGGER, "Cleared Orientation constraints");
-  }
-  void displayBoxConstraint(
-      const geometry_msgs::msg::Pose &pose,
-      const rosidl_runtime_cpp::BoundedVector<double, 3, std::allocator<double>>
-          &dimensions) {
-    // Publish trajectory space constraint marker
-    visualization_msgs::msg::Marker marker;
-    marker.header.frame_id = move_group_robot_->getPlanningFrame();
-    marker.header.stamp = move_group_node_->now();
-    marker.ns = "/";
-    marker.id = 1;
-
-    marker.type = visualization_msgs::msg::Marker::CUBE;
-    marker.action = visualization_msgs::msg::Marker::ADD;
-    marker.lifetime = rclcpp::Duration::from_seconds(0.0);
-
-    marker.color.a = 0.2;
-    marker.pose = pose;
-    marker.scale.x = dimensions.at(0);
-    marker.scale.y = dimensions.at(1);
-    marker.scale.z = dimensions.at(2);
-
-    constraint_marker_pub_->publish(marker);
   }
 
   // declare class variables
