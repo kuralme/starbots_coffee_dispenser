@@ -43,14 +43,22 @@ def generate_launch_description():
         period=6.0, # seconds
         actions=[manipulation_node]
     )
-    detections_launch = IncludeLaunchDescription(
+    pointcloud_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
-                get_package_share_directory('starbots_detection'),
+                get_package_share_directory('pointcloud_filter'),
                 'launch',
-                'detections.launch.py'
+                'depth_to_points.launch.py'
             )
         )
+    )
+    cup_holder_detection_node = Node(
+        package = 'starbots_detection',
+        executable = 'cup_holder_detection',
+        name = 'cup_holder_detection',
+        output = 'screen',
+        parameters = [{'use_sim_time': False}],
+        arguments=['--ros-args', '--log-level', 'error'],
     )
     rviz_node = Node(
         package='rviz2',
@@ -63,7 +71,8 @@ def generate_launch_description():
 
     ld = LaunchDescription()
     ld.add_action(move_group_node)
-    ld.add_action(detections_launch)
+    ld.add_action(pointcloud_launch)
+    ld.add_action(cup_holder_detection_node)
     ld.add_action(delayed_manipulation_node)
     ld.add_action(rviz_node)
     return ld
