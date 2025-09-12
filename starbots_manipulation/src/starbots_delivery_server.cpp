@@ -426,10 +426,10 @@ private:
     geometry_msgs::msg::Pose wall_pose;
     wall_pose.orientation.w = 1.0;
     wall_pose.position.x = 0.0;
-    wall_pose.position.y = -0.5;
+    wall_pose.position.y = -0.47;
     wall_pose.position.z = 0.0;
     std::vector<double> wall_dimensions = {1.5, 0.1,
-                                           1.5}; // {length, width, height}
+                                           1.6}; // {length, width, height}
     const moveit_msgs::msg::CollisionObject wall =
         createCollisionObject("wall", "box", wall_dimensions, wall_pose);
 
@@ -444,10 +444,21 @@ private:
         createCollisionObject("coffee_machine", "box", machine_dimensions,
                               machine_pose);
 
+    geometry_msgs::msg::Pose cupdisp_pose;
+    cupdisp_pose.orientation.w = 1.0;
+    cupdisp_pose.position.x = 0.25;
+    cupdisp_pose.position.y = -0.35;
+    cupdisp_pose.position.z = 0.6;
+    std::vector<double> cuprack_dimensions = {0.4, 0.07}; // {height, radius}
+    const moveit_msgs::msg::CollisionObject cup_dispenser =
+        createCollisionObject("cup_dispenser", "cylinder", cuprack_dimensions,
+                              cupdisp_pose);
+
     std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
     collision_objects.push_back(wall);
     collision_objects.push_back(coffee_counter);
     collision_objects.push_back(coffee_machine);
+    collision_objects.push_back(cup_dispenser);
 
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
     planning_scene_interface.addCollisionObjects(collision_objects);
