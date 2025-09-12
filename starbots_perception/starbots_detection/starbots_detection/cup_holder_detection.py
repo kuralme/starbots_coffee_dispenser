@@ -119,7 +119,7 @@ class CupHolderDetection(Node):
                 indices.append(i)
         return cloud.extract(indices)
     
-    def filter_below_surface(self, cloud: pcl.PointCloud, surface_centroid: List[float], height_threshold=0.06, radius_limit=0.15) -> pcl.PointCloud:
+    def filter_below_surface(self, cloud: pcl.PointCloud, surface_centroid: List[float], height_threshold=0.06, radius_limit=0.14) -> pcl.PointCloud:
         """Filters points just below the tray surface and within a specified radius."""
         filtered_indices = []
         centroid = surface_centroid
@@ -279,7 +279,7 @@ class CupHolderDetection(Node):
             cylinder_marker.type = Marker.CYLINDER
             cylinder_marker.action = Marker.ADD
             cylinder_marker.pose.position.x = centroid[0]
-            cylinder_marker.pose.position.y = centroid[1] + 0.012
+            cylinder_marker.pose.position.y = centroid[1] - 0.015
             cylinder_marker.pose.position.z = centroid[2] - height / 2
             cylinder_marker.pose.orientation.w = 1.0
             cylinder_marker.scale.x = radius * 2  # Diameter of the tray
@@ -300,7 +300,7 @@ class CupHolderDetection(Node):
             surface_msg = DetectedSurfaces()
             surface_msg.surface_id = idx
             surface_msg.position.x = centroid[0]
-            surface_msg.position.y = centroid[1] + 0.012
+            surface_msg.position.y = centroid[1] - 0.015
             surface_msg.position.z = centroid[2]
             surface_msg.height = dimension[1]
             surface_msg.width = dimension[0]
@@ -318,8 +318,8 @@ class CupHolderDetection(Node):
             cylinder_marker.id = idx
             cylinder_marker.type = Marker.CYLINDER
             cylinder_marker.action = Marker.ADD
-            cylinder_marker.pose.position.x = centroid[0]
-            cylinder_marker.pose.position.y = centroid[1] - 0.008
+            cylinder_marker.pose.position.x = centroid[0] + 0.002
+            cylinder_marker.pose.position.y = centroid[1] - 0.007
             cylinder_marker.pose.position.z = tray_height - height / 2.
             cylinder_marker.pose.orientation.w = 1.0
             cylinder_marker.scale.x = radius * 2  # Diameter of the cylinder
@@ -343,7 +343,7 @@ class CupHolderDetection(Node):
         for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
             cupholder = DetectedCupholder()
             cupholder.cupholder_id = idx
-            cupholder.position = Point(x=centroid[0], y=(centroid[1] - 0.008), z=(tray_height - height / 2.))
+            cupholder.position = Point(x=(centroid[0] + 0.002), y=(centroid[1] - 0.007), z=(tray_height - height / 2.))
             cupholder.radius = radius
             cupholder.height = height
             cupholders_msg.cup_holders.append(cupholder)
