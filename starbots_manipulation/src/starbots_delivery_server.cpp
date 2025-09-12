@@ -86,6 +86,7 @@ public:
         joint_model_group_gripper_, joint_group_positions_gripper_);
     move_group_robot_->setStartStateToCurrentState();
     move_group_gripper_->setStartStateToCurrentState();
+    move_group_robot_->setPlanningTime(10.0);
 
     // Prepare ROS2 communiation
     rclcpp::CallbackGroup::SharedPtr callback_group;
@@ -158,8 +159,8 @@ private:
       no_detection_count++;
     }
     auto goal_position = goal_poses_[request->goal_cup_holder];
-    goal_position.x += .05;
-    goal_position.y -= .05;
+    goal_position.x += .08;
+    goal_position.y -= .11;
     goal_position.z += .4;
 
     try {
@@ -205,7 +206,7 @@ private:
       detachObject("coffee_cup");
       std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-      std::this_thread::sleep_for(std::chrono::seconds(5));
+      std::this_thread::sleep_for(std::chrono::seconds(7));
 
       RCLCPP_INFO(LOGGER, "Retreating...");
       executeCartesianPlan(+0.000, +0.000, +0.100, goal_position);
@@ -414,9 +415,9 @@ private:
     geometry_msgs::msg::Pose counter_pose;
     counter_pose.orientation.w = 1.0;
     counter_pose.position.x = 0.25;
-    counter_pose.position.y = 0.3;
+    counter_pose.position.y = 0.25;
     counter_pose.position.z = -0.04;
-    std::vector<double> box_dimensions = {0.7, 1.4,
+    std::vector<double> box_dimensions = {0.7, 1.5,
                                           0.08}; // {length, width, height}
     const moveit_msgs::msg::CollisionObject coffee_counter =
         createCollisionObject("coffee_counter", "box", box_dimensions,
@@ -425,7 +426,7 @@ private:
     geometry_msgs::msg::Pose wall_pose;
     wall_pose.orientation.w = 1.0;
     wall_pose.position.x = 0.0;
-    wall_pose.position.y = -0.45;
+    wall_pose.position.y = -0.5;
     wall_pose.position.z = 0.0;
     std::vector<double> wall_dimensions = {1.5, 0.1,
                                            1.5}; // {length, width, height}
@@ -526,7 +527,6 @@ private:
     move_group_robot_->setPlannerId("KPIECEkConfigDefault");
     move_group_robot_->setPathConstraints(path_constraints_);
     move_group_robot_->setStartStateToCurrentState();
-    // move_group_robot_->setPlanningTime(40.0);
 
     RCLCPP_INFO(LOGGER, "Applied upright orientation constraint (Z down)");
   }
