@@ -103,8 +103,6 @@ public:
         "/deliver_coffee",
         std::bind(&PickAndPlace::handleService, this, _1, _2),
         rmw_qos_profile_services_default, callback_group);
-    octo_client_ =
-        move_group_node_->create_client<std_srvs::srv::Empty>("/clear_octomap");
 
     createSceneObjects();
     gotoPredefined("quick_pick");
@@ -159,8 +157,8 @@ private:
       no_detection_count++;
     }
     auto goal_position = goal_poses_[request->goal_cup_holder];
-    goal_position.x += .08;
-    goal_position.y -= .11;
+    // goal_position.x += .08;
+    // goal_position.y -= .11;
     goal_position.z += .4;
 
     try {
@@ -426,7 +424,7 @@ private:
     geometry_msgs::msg::Pose wall_pose;
     wall_pose.orientation.w = 1.0;
     wall_pose.position.x = 0.0;
-    wall_pose.position.y = -0.47;
+    wall_pose.position.y = -0.45;
     wall_pose.position.z = 0.0;
     std::vector<double> wall_dimensions = {1.5, 0.1,
                                            1.6}; // {length, width, height}
@@ -447,9 +445,9 @@ private:
     geometry_msgs::msg::Pose cupdisp_pose;
     cupdisp_pose.orientation.w = 1.0;
     cupdisp_pose.position.x = 0.25;
-    cupdisp_pose.position.y = -0.35;
-    cupdisp_pose.position.z = 0.6;
-    std::vector<double> cuprack_dimensions = {0.4, 0.07}; // {height, radius}
+    cupdisp_pose.position.y = -0.33;
+    cupdisp_pose.position.z = 0.55;
+    std::vector<double> cuprack_dimensions = {0.5, 0.07}; // {height, radius}
     const moveit_msgs::msg::CollisionObject cup_dispenser =
         createCollisionObject("cup_dispenser", "cylinder", cuprack_dimensions,
                               cupdisp_pose);
@@ -562,7 +560,6 @@ private:
   rclcpp::Subscription<starbots_detection_msgs::msg::DetectedCupholders>::
       SharedPtr holepose_sub_;
   rclcpp::Service<DeliverCup>::SharedPtr service_server_;
-  rclcpp::Client<std_srvs::srv::Empty>::SharedPtr octo_client_;
   moveit_msgs::msg::Constraints path_constraints_;
 
   // declare detection variables
