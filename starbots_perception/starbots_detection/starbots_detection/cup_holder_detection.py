@@ -333,6 +333,8 @@ class CupHolderDetection(Node):
 
         if marker_array.markers:
             self.cupholder_marker_pub.publish(marker_array)
+        else:
+            self.cupholder_marker_pub.publish(MarkerArray())
 
     def pub_cup_holder_detected(self, centroids: List[List[float]], dimensions: List[List[float]], tray_height) -> None:
         """Publishes detected cupholder information of the cupholders."""
