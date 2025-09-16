@@ -284,20 +284,22 @@ class CupHolderDetection(Node):
 
             marker_array.markers.append(cylinder_marker)
 
-        if marker_array.markers:
-            self.tray_marker_pub.publish(marker_array)
+        # if marker_array.markers:
+        self.tray_marker_pub.publish(marker_array)
  
     def pub_surface_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
         """Publishes the detected surface information"""
+        surface_msg = DetectedSurfaces()
+
         for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
-            surface_msg = DetectedSurfaces()
             surface_msg.surface_id = idx
             surface_msg.position.x = centroid[0]
             surface_msg.position.y = centroid[1] + 0.015
             surface_msg.position.z = centroid[2]
             surface_msg.height = dimension[0]
             surface_msg.width = dimension[1]
-            self.tray_detected_pub.publish(surface_msg)
+        
+        self.tray_detected_pub.publish(surface_msg)
 
     def pub_cup_holder_markers(self, cupholder_centroids: List[List[float]], cupholder_dimensions: List[List[float]]) -> None:
         """Publishes the detected cylindrical cupholder as markers."""
@@ -328,8 +330,8 @@ class CupHolderDetection(Node):
 
             marker_array.markers.append(cylinder_marker)
 
-        if marker_array.markers:
-            self.cupholder_marker_pub.publish(marker_array)
+        # if marker_array.markers:
+        self.cupholder_marker_pub.publish(marker_array)
 
     def pub_cup_holder_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
         """Publishes detected cupholder information of 4 cupholders."""
