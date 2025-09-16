@@ -484,7 +484,7 @@ Visualization Manager:
       Namespaces:
         "": true
       Topic:
-        Depth: 5
+        Depth: 1
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
@@ -693,7 +693,7 @@ Visualization Manager:
       Namespaces:
         "": true
       Topic:
-        Depth: 5
+        Depth: 1
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
