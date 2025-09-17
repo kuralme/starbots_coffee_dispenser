@@ -270,11 +270,11 @@ class ObjectDetection(Node):
             marker.color.a = 0.5
             marker_array.markers.append(marker)
 
-        self.objects_marker_pub.publish(marker_array)
-        # if marker_array.markers:
-        #     self.objects_marker_pub.publish(marker_array)
-        # else:
-        #     self.get_logger().warning("No objects on flat surface markers to publish.")
+        if marker_array.markers:
+            self.objects_marker_pub.publish(marker_array)
+        else:
+            self.objects_marker_pub.publish(MarkerArray())
+            self.get_logger().warning("No objects on flat surface markers to publish.")
 
     def pub_object_detected(self, object_centroids: List[List[float]], object_dimensions: List[List[float]]) -> None:
         """Publishes the cylindrical objects information"""
@@ -292,7 +292,7 @@ class ObjectDetection(Node):
             object_msg.width = diameter
             object_msg.thickness = diameter
             object_msg.height = dimension[2]
-
+        
         self.object_detected_pub.publish(object_msg)
 
 def main(args=None) -> None:
