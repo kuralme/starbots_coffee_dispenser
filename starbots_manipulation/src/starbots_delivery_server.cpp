@@ -86,7 +86,7 @@ public:
         joint_model_group_gripper_, joint_group_positions_gripper_);
     move_group_robot_->setStartStateToCurrentState();
     move_group_gripper_->setStartStateToCurrentState();
-    move_group_robot_->setPlanningTime(10.0);
+    // move_group_robot_->setPlanningTime(20.0);
 
     // Prepare ROS2 communiation
     rclcpp::CallbackGroup::SharedPtr callback_group;
@@ -157,8 +157,8 @@ private:
       no_detection_count++;
     }
     auto goal_position = goal_poses_[request->goal_cup_holder];
-    // goal_position.x += .08;
-    // goal_position.y -= .11;
+    goal_position.x += .01;
+    // goal_position.y -= .02;
     goal_position.z += .4;
 
     try {
@@ -187,6 +187,13 @@ private:
 
       // ============ Placing phase =========================
       createOrientationConstraint();
+
+      RCLCPP_INFO(LOGGER, "Going to Intermediate Pose...");
+      setupPoseTarget(-0.150, 0.250, pregrasp_pos.z + .1, -1.000, 0.000, 0.000,
+                      0.000);
+      executeKinematicsPlan();
+      std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
       RCLCPP_INFO(LOGGER, "Going to the Pre-drop Position: [%.3f, %.3f, %.3f]",
                   goal_position.x, goal_position.y, goal_position.z);
       setupPoseTarget(goal_position.x, goal_position.y, goal_position.z, -1.000,
@@ -522,10 +529,14 @@ private:
     moveit_msgs::msg::OrientationConstraint ocm;
     ocm.link_name = move_group_robot_->getEndEffectorLink();
     ocm.header.frame_id = move_group_robot_->getPlanningFrame();
-    ocm.orientation.x = -1.0;
-    ocm.orientation.y = 0.0;
-    ocm.orientation.z = 0.0;
-    ocm.orientation.w = 0.0;
+
+    // Enforce Z-axis down (gripper pointing down)
+    tf2::Quaternion q;
+    q.setRPY(M_PI, 0, 0);
+    ocm.orientation.x = q.x();
+    ocm.orientation.y = q.y();
+    ocm.orientation.z = q.z();
+    ocm.orientation.w = q.w();
     ocm.absolute_x_axis_tolerance = 0.1;
     ocm.absolute_y_axis_tolerance = 0.1;
     ocm.absolute_z_axis_tolerance = M_PI;
@@ -533,9 +544,10 @@ private:
     path_constraints_.orientation_constraints.push_back(ocm);
 
     // Changed planner for better orientation constrained planning
-    move_group_robot_->setPlannerId("KPIECEkConfigDefault");
+    move_group_robot_->setPlannerId("RRTstarkConfigDefault");
     move_group_robot_->setPathConstraints(path_constraints_);
     move_group_robot_->setStartStateToCurrentState();
+    move_group_robot_->setPlanningTime(30.0);
 
     RCLCPP_INFO(LOGGER, "Applied upright orientation constraint (Z down)");
   }
@@ -543,7 +555,7 @@ private:
     // move_group_robot_->clearPathConstraints();
     path_constraints_.orientation_constraints.clear();
     move_group_robot_->setPathConstraints(path_constraints_);
-    move_group_robot_->setPlannerId("APSConfigDefault");
+    move_group_robot_->setPlannerId("BiTRRTkConfigDefault");
     RCLCPP_INFO(LOGGER, "Cleared Orientation constraints");
   }
 
