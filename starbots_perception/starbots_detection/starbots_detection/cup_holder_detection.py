@@ -311,6 +311,7 @@ class CupHolderDetection(Node):
         marker_array = MarkerArray()
         radius = 0.032
         height = 0.045
+        text_height_offset = 0.05
         
         for idx, (centroid, dimensions) in enumerate(zip(cupholder_centroids, cupholder_dimensions)):
             cylinder_marker = Marker()
@@ -330,6 +331,26 @@ class CupHolderDetection(Node):
             cylinder_marker.color.b = 1.0
             cylinder_marker.color.a = 0.9
             marker_array.markers.append(cylinder_marker)
+
+            # Create the ID text marker above the cupholder
+            text_marker = Marker()
+            text_marker.header.frame_id = "base_link"
+            text_marker.type = Marker.TEXT_VIEW_FACING
+            text_marker.id = idx + 1000  # Different ID to avoid conflicts with cylinder markers
+            text_marker.text = str(idx) # Set the text as the cup holder ID
+            text_marker.action = Marker.ADD
+            text_marker.pose.position.x = centroid[0] + 0.002
+            text_marker.pose.position.y = centroid[1] - 0.007
+            text_marker.pose.position.z = centroid[2] + text_height_offset
+            text_marker.pose.orientation.w = 1.0
+            text_marker.scale.x = 0.05
+            text_marker.scale.y = 0.05
+            text_marker.scale.z = 0.05
+            text_marker.color.r = 1.0
+            text_marker.color.g = 1.0
+            text_marker.color.b = 1.0
+            text_marker.color.a = 1.0
+            marker_array.markers.append(text_marker)
 
         if marker_array.markers:
             self.cupholder_marker_pub.publish(marker_array)
