@@ -156,6 +156,10 @@ private:
     auto goal_position = goal_poses_[request->goal_cup_holder];
     goal_position.z += .42;
 
+    robot_current_state_ = move_group_robot_->getCurrentState(10);
+    auto robot_pose = move_group_robot_->getCurrentPose().pose;
+    move_group_robot_->setStartStateToCurrentState();
+
     // ============ Pregrasp phase =======================
     RCLCPP_INFO(LOGGER, "Going to Pre-grasp Pose: [%.3f, %.3f, %.3f]",
                 pregrasp_pos.x, pregrasp_pos.y, pregrasp_pos.z);
@@ -168,8 +172,11 @@ private:
     executeGripperPlan("gripper_open");
 
     RCLCPP_INFO(LOGGER, "Approaching to grasp...");
-    clearOctomap();
+    // clearOctomap();
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    robot_current_state_ = move_group_robot_->getCurrentState(10);
+    auto robot_pose_up = move_group_robot_->getCurrentPose().pose;
+    move_group_robot_->setStartStateToCurrentState();
     executeCartesianPlan(+0.000, +0.000, -0.079, pregrasp_pos);
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
@@ -182,7 +189,7 @@ private:
     createOrientationConstraint();
 
     RCLCPP_INFO(LOGGER, "Going to Intermediate Pose...");
-    setupPoseTarget(-0.250, 0.200, pregrasp_pos.z + .1, -1.000, 0.000, 0.000, 0.000);
+    setupPoseTarget(-0.200, 0.100, pregrasp_pos.z, -1.000, 0.000, 0.000, 0.000);
     executeKinematicsPlan();
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
@@ -192,14 +199,15 @@ private:
                     0.000, 0.000, 0.000);
     executeKinematicsPlan();
     clearOrientationConstraints();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     RCLCPP_INFO(LOGGER, "Approaching to place...");
-    executeCartesianPlan(+0.000, +0.000, -0.079, goal_position);
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    executeCartesianPlan(+0.000, +0.000, -0.083, goal_position);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     executeGripperPlan("gripper_open");
     detachObject();
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     RCLCPP_INFO(LOGGER, "Retreating...");
     executeCartesianPlan(+0.000, +0.000, +0.100, goal_position);
@@ -212,7 +220,10 @@ private:
 
     // ============ Back to initial phase ==================
     gotoPredefined("quick_pick");
+    obj_position_ = geometry_msgs::msg::Point();
+    goal_poses_ = std::vector<geometry_msgs::msg::Point>();
     obj_pose_received_ = false;
+    goal_poses_received_ = false;
     RCLCPP_INFO(LOGGER, "Pick And Place Execution Complete");
   }
   void clearOctomap()
@@ -252,7 +263,6 @@ private:
   {
     // if (!goal_poses_received_)
     // {
-
     for (const auto &cupholder : msg->cup_holders)
     {
       goal_poses_.push_back(cupholder.position);
@@ -299,7 +309,7 @@ private:
 
   void executeKinematicsPlan()
   {
-    // move_group_robot_->setStartStateToCurrentState();
+    move_group_robot_->setStartStateToCurrentState();
     MoveGroupInterface::Plan kinematics_trajectory_plan;
     bool plan_success_robot_ =
         (move_group_robot_->plan(kinematics_trajectory_plan) ==
@@ -312,6 +322,7 @@ private:
       RCLCPP_INFO(LOGGER, "Trajectory has %zu points", num_points);
       if (num_points > 20)
       {
+        move_group_robot_->setStartStateToCurrentState();
         move_group_robot_->execute(kinematics_trajectory_plan);
         RCLCPP_INFO(LOGGER, "Executed trajectory.");
       }
@@ -477,12 +488,12 @@ private:
     // Create coffee counter part that isnt visible in pointcloud
     shape_msgs::msg::SolidPrimitive primitive;
     primitive.type = primitive.BOX;
-    primitive.dimensions = {0.65, 0.55, 0.05};
+    primitive.dimensions = {0.7, 1.5, 0.08};
     geometry_msgs::msg::Pose box_pose;
     box_pose.orientation.w = 1.0;
-    box_pose.position.x = 0.2;
-    box_pose.position.y = -0.2;
-    box_pose.position.z = -0.05;
+    box_pose.position.x = 0.25;
+    box_pose.position.y = 0.25;
+    box_pose.position.z = -0.04;
 
     moveit_msgs::msg::CollisionObject collision_object;
     collision_object.header.frame_id = move_group_robot_->getPlanningFrame();
@@ -525,10 +536,12 @@ private:
     moveit_msgs::msg::OrientationConstraint ocm;
     ocm.link_name = move_group_robot_->getEndEffectorLink();
     ocm.header.frame_id = move_group_robot_->getPlanningFrame();
-    ocm.orientation.x = -1.0;
-    ocm.orientation.y = 0.0;
-    ocm.orientation.z = 0.0;
-    ocm.orientation.w = 0.0;
+    tf2::Quaternion q;
+    q.setRPY(M_PI, 0, 0);
+    ocm.orientation.x = q.x();
+    ocm.orientation.y = q.y();
+    ocm.orientation.z = q.z();
+    ocm.orientation.w = q.w();
     ocm.absolute_x_axis_tolerance = 0.1;
     ocm.absolute_y_axis_tolerance = 0.1;
     ocm.absolute_z_axis_tolerance = M_PI;

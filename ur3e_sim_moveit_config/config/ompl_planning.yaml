@@ -7,6 +7,8 @@ request_adapters: >-
   default_planner_request_adapters/FixStartStatePathConstraints
   default_planner_request_adapters/AddTimeOptimalParameterization
 start_state_max_bounds_error: 0.1
+start_state_max_attempts: 300
+start_state_max_jiggle_distance: 0.2
 planner_configs:
   APSConfigDefault:
     type: geometric::AnytimePathShortening
@@ -40,6 +42,7 @@ planner_configs:
     border_fraction: 0.9  # Fraction of time focused on boarder default: 0.9 (0.0,1.]
     failed_expansion_score_factor: 0.5  # When extending motion fails, scale score by factor. default: 0.5
     min_valid_path_fraction: 0.5  # Accept partially valid moves above fraction. default: 0.5
+    optimization_objective: MaximizeMinClearanceObjective
   RRTkConfigDefault:
     type: geometric::RRT
     range: 0.0  # Max motion added to tree. ==> maxDistance_ default: 0.0, if 0.0, set on setup()
@@ -170,6 +173,6 @@ ur_manipulator:
     - TrajOptDefault
   default_planner_config: BiTRRTkConfigDefault
   projection_evaluator: joints(elbow_joint, shoulder_lift_joint, shoulder_pan_joint, wrist_1_joint, wrist_2_joint, wrist_3_joint)
-  longest_valid_segment_fraction: 0.01
-  maximum_waypoint_distance: 0.1
+  longest_valid_segment_fraction: 0.005
+  maximum_waypoint_distance: 0.01
   enforce_constrained_state_space: true
