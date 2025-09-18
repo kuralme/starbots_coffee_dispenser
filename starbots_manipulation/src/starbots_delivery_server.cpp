@@ -157,8 +157,8 @@ private:
       no_detection_count++;
     }
     auto goal_position = goal_poses_[request->goal_cup_holder];
-    goal_position.x += .01;
-    // goal_position.y -= .02;
+    // goal_position.x += .01;
+    goal_position.y -= .01;
     goal_position.z += .4;
 
     try {
@@ -544,7 +544,7 @@ private:
     path_constraints_.orientation_constraints.push_back(ocm);
 
     // Changed planner for better orientation constrained planning
-    move_group_robot_->setPlannerId("RRTstarkConfigDefault");
+    move_group_robot_->setPlannerId("KPIECEkConfigDefault");
     move_group_robot_->setPathConstraints(path_constraints_);
     move_group_robot_->setStartStateToCurrentState();
     move_group_robot_->setPlanningTime(30.0);
