@@ -7,6 +7,8 @@ request_adapters: >-
   default_planner_request_adapters/FixStartStatePathConstraints
   default_planner_request_adapters/AddTimeOptimalParameterization
 start_state_max_bounds_error: 0.1
+start_state_max_attempts: 300
+start_state_max_jiggle_distance: 0.2
 planner_configs:
   APSConfigDefault:
     type: geometric::AnytimePathShortening
