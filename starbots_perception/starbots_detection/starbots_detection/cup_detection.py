@@ -278,13 +278,13 @@ class ObjectDetection(Node):
 
     def pub_object_detected(self, object_centroids: List[List[float]], object_dimensions: List[List[float]]) -> None:
         """Publishes the cylindrical objects information"""
-        object_msg = DetectedObjects()
         for idx, (centroid, dimension) in enumerate(zip(object_centroids, object_dimensions)):
 
             diameter = max(dimension[0], dimension[1])
             if diameter > 0.1 or diameter < 0.06 or dimension[2] < 0.05 or dimension[2] > 0.12:
                 continue
             
+            object_msg = DetectedObjects()
             object_msg.object_id = idx
             object_msg.position.x = centroid[0] - diameter / 4.
             object_msg.position.y = centroid[1] - 0.016
@@ -292,8 +292,7 @@ class ObjectDetection(Node):
             object_msg.width = diameter
             object_msg.thickness = diameter
             object_msg.height = dimension[2]
-        
-        self.object_detected_pub.publish(object_msg)
+            self.object_detected_pub.publish(object_msg)
 
 def main(args=None) -> None:
     rclpy.init(args=args)
