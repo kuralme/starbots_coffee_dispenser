@@ -47,7 +47,7 @@ public:
 
     // start move_group node in a seperate thread and spin it
     auto move_group_executor =
-        std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+        std::make_shared<rclcpp::executors::MultiThreadedExecutor>(rclcpp::ExecutorOptions(), 2);
     move_group_executor->add_node(move_group_node_);
     std::thread([move_group_executor]()
                 { move_group_executor->spin(); })
@@ -134,7 +134,6 @@ private:
   void handleService(const std::shared_ptr<DeliverCup::Request> request,
                      std::shared_ptr<DeliverCup::Response> response)
   {
-
     RCLCPP_INFO(LOGGER, "Coffee Delivery Requested");
     RCLCPP_INFO(LOGGER, "Goal cup holder on tray: %d",
                 request->goal_cup_holder);
@@ -154,11 +153,12 @@ private:
       std::this_thread::sleep_for(std::chrono::milliseconds(3000));
     }
     auto goal_position = goal_poses_[request->goal_cup_holder];
-    goal_position.z += .42;
+    goal_position.z += .44;
 
-    robot_current_state_ = move_group_robot_->getCurrentState(10);
-    auto robot_pose = move_group_robot_->getCurrentPose().pose;
-    move_group_robot_->setStartStateToCurrentState();
+    // robot_current_state_ = move_group_robot_->getCurrentState(10);
+    // auto robot_pose_up = move_group_robot_->getCurrentPose().pose;
+    // RCLCPP_INFO(LOGGER, "Current pose: [%.3f, %.3f, %.3f]",
+    //             robot_pose_up.position.x, robot_pose_up.position.y, robot_pose_up.position.z);
 
     // ============ Pregrasp phase =======================
     RCLCPP_INFO(LOGGER, "Going to Pre-grasp Pose: [%.3f, %.3f, %.3f]",
@@ -174,16 +174,13 @@ private:
     RCLCPP_INFO(LOGGER, "Approaching to grasp...");
     // clearOctomap();
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
-    robot_current_state_ = move_group_robot_->getCurrentState(10);
-    auto robot_pose_up = move_group_robot_->getCurrentPose().pose;
-    move_group_robot_->setStartStateToCurrentState();
-    executeCartesianPlan(+0.000, +0.000, -0.079, pregrasp_pos);
+    executeCartesianPlan(+0.000, +0.000, -0.079);
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
     closeGripperIncremental();
     attachObject();
 
-    executeCartesianPlan(+0.000, +0.000, +0.000, pregrasp_pos);
+    executeCartesianPlan(+0.000, +0.000, +0.079);
 
     // ============ Placing phase =========================
     createOrientationConstraint();
@@ -202,7 +199,7 @@ private:
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     RCLCPP_INFO(LOGGER, "Approaching to place...");
-    executeCartesianPlan(+0.000, +0.000, -0.083, goal_position);
+    executeCartesianPlan(+0.000, +0.000, -0.100);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     executeGripperPlan("gripper_open");
@@ -210,7 +207,7 @@ private:
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     RCLCPP_INFO(LOGGER, "Retreating...");
-    executeCartesianPlan(+0.000, +0.000, +0.100, goal_position);
+    executeCartesianPlan(+0.000, +0.000, +0.200);
 
     if (rclcpp::ok())
     {
@@ -322,7 +319,6 @@ private:
       RCLCPP_INFO(LOGGER, "Trajectory has %zu points", num_points);
       if (num_points > 20)
       {
-        move_group_robot_->setStartStateToCurrentState();
         move_group_robot_->execute(kinematics_trajectory_plan);
         RCLCPP_INFO(LOGGER, "Executed trajectory.");
       }
@@ -336,23 +332,16 @@ private:
       RCLCPP_ERROR(LOGGER, "Planning failed — no execution.");
     }
   }
-  void executeCartesianPlan(float x_delta, float y_delta, float z_delta,
-                            geometry_msgs::msg::Point target_position)
+  void executeCartesianPlan(float x_delta, float y_delta, float z_delta)
   {
-
-    geometry_msgs::msg::Pose target_pose_robot;
-    target_pose_robot.position = target_position;
-    target_pose_robot.orientation.x = -1.0;
-    target_pose_robot.orientation.y = 0.0;
-    target_pose_robot.orientation.z = 0.0;
-    target_pose_robot.orientation.w = 0.0;
-
+    move_group_robot_->setStartStateToCurrentState();
+    geometry_msgs::msg::Pose robot_pose = move_group_robot_->getCurrentPose().pose;
     std::vector<geometry_msgs::msg::Pose> cartesian_waypoints;
-    cartesian_waypoints.push_back(target_pose_robot);
-    target_pose_robot.position.x += x_delta;
-    target_pose_robot.position.y += y_delta;
-    target_pose_robot.position.z += z_delta;
-    cartesian_waypoints.push_back(target_pose_robot);
+    cartesian_waypoints.push_back(robot_pose);
+    robot_pose.position.x += x_delta;
+    robot_pose.position.y += y_delta;
+    robot_pose.position.z += z_delta;
+    cartesian_waypoints.push_back(robot_pose);
 
     RCLCPP_INFO(LOGGER, "Plan & Execute Cartesian Trajectory...");
     const double jump_threshold_ = 0.0;
@@ -365,7 +354,6 @@ private:
     // Check plan: 0.0 to 1.0 = success and -1.0 = failure
     if (plan_fraction_robot_ >= 0.0)
     {
-      move_group_robot_->setStartStateToCurrentState();
       move_group_robot_->execute(cartesian_trajectory_plan_);
       RCLCPP_INFO(LOGGER, "Cartesian Trajectory Success !");
     }
@@ -527,7 +515,6 @@ private:
 
     path_constraints_.position_constraints.push_back(box_constraint);
     move_group_robot_->setPathConstraints(path_constraints_);
-    move_group_robot_->setStartStateToCurrentState();
     move_group_robot_->setPlanningTime(20.0);
   }
   void createOrientationConstraint()
@@ -551,7 +538,6 @@ private:
     // Changed planner for better orientation constrained planning
     move_group_robot_->setPlannerId("KPIECEkConfigDefault");
     move_group_robot_->setPathConstraints(path_constraints_);
-    move_group_robot_->setStartStateToCurrentState();
     move_group_robot_->setPlanningTime(20.0);
 
     RCLCPP_INFO(LOGGER, "Applied upright orientation constraint (Z down)");
