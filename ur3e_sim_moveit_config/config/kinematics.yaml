@@ -2,6 +2,6 @@ ur_manipulator:
   kinematics_solver: lma_kinematics_plugin/LMAKinematicsPlugin
   kinematics_solver_search_resolution: 0.005
   kinematics_solver_timeout: 0.05
-  min_pose_distance: 0.01
-  min_joint_config_distance: 0.1
-  kinematics_solver_attempts: 3
+  # min_pose_distance: 0.01
+  # min_joint_config_distance: 0.1
+  # kinematics_solver_attempts: 3
