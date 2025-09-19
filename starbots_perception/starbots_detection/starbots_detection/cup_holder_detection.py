@@ -37,7 +37,7 @@ class CupHolderDetection(Node):
 
             # Filter points just below the tray surface and cluster cylinder cup holders
             cupholder_cloud = self.filter_below_surface(filtered_cloud, surface_centroids[0])
-            cup_holder_centroids, cup_holder_dimensions = self.extract_cylinders(cupholder_cloud)
+            cup_holder_centroids, cup_holder_dimensions = self.extract_cylinders(cupholder_cloud, filtered_cloud)
 
             # Publish detected tray markers and info
             self.pub_surface_marker(surface_centroids, surface_dimensions)
@@ -219,10 +219,10 @@ class CupHolderDetection(Node):
         # Return the filtered table clusters, centroids and cluster dimensions
         return object_clusters, cluster_centroids, cluster_dimensions
 
-    def extract_cylinders(self, cloud, min_distance=0.05, min_height=0.02, min_radius=0.02, max_radius=0.04)  -> Tuple[List[List[float]], List[List[float]]]:
-        """Segmentation: Extracts cylindrical cupholder from the point cloud."""
-        tree = cloud.make_kdtree()
-        ec = cloud.make_EuclideanClusterExtraction()
+    def extract_cylinders(self, cupholder_cloud, filtered_cloud, min_distance=0.05, min_height=0.02, min_radius=0.02, max_radius=0.04)  -> Tuple[List[List[float]], List[List[float]]]:
+        """Segmentation: Extracts cylindrical cupholder from the point cloud"""
+        tree = cupholder_cloud.make_kdtree()
+        ec = cupholder_cloud.make_EuclideanClusterExtraction()
         ec.set_ClusterTolerance(0.04)
         ec.set_MinClusterSize(30)
         ec.set_MaxClusterSize(100000)
@@ -233,20 +233,25 @@ class CupHolderDetection(Node):
         cupholder_dimensions = []
 
         for idx, indices in enumerate(cluster_indices):
-            # Extract points belonging to the current cluster
-            cluster = cloud.extract(indices)
-
-            # Calculate centroid of the cluster
+            cluster = cupholder_cloud.extract(indices)
             centroid = np.mean(cluster.to_array(), axis=0)
-
-            # Compute dimensions: the min/max coordinates
             min_coords = np.min(cluster.to_array(), axis=0)
             max_coords = np.max(cluster.to_array(), axis=0)
             dimensions = max_coords - min_coords
-
-            # Filter out non-desired clusters
-            radius = dimensions[0] / 2
+            radius = dimensions[0] / 2.
             height = dimensions[2]
+
+            # Filter out clusters that have points above the tray surface (likely occupied by a cup)
+            points_above = []
+            for i in range(filtered_cloud.size):
+                pt = filtered_cloud[i]
+                xy_dist = np.linalg.norm(pt[:2] - centroid[:2])
+                if xy_dist < radius + 0.01 and pt[2] > centroid[2] + 0.04:
+                    points_above.append(pt)
+            if len(points_above) > 10:
+                self.get_logger().info(f"Skipping cluster {idx+1}: likely occupied by a cup.")
+                continue
+                
             if min_radius <= radius <= max_radius:
                 cupholder_centroids.append(centroid.tolist())
                 cupholder_dimensions.append(dimensions.tolist())
@@ -307,7 +312,7 @@ class CupHolderDetection(Node):
             self.tray_detected_pub.publish(surface_msg)
 
     def pub_cup_holder_markers(self, cupholder_centroids: List[List[float]], cupholder_dimensions: List[List[float]], tray_height) -> None:
-        """Publishes the detected cylindrical cupholder as markers."""
+        """Publishes the detected cylindrical cupholder as markers"""
         marker_array = MarkerArray()
         radius = 0.032
         height = 0.045
@@ -356,9 +361,10 @@ class CupHolderDetection(Node):
             self.cupholder_marker_pub.publish(marker_array)
         else:
             self.cupholder_marker_pub.publish(MarkerArray())
+            self.get_logger().warning("No cup holder markers to publish.")
 
     def pub_cup_holder_detected(self, centroids: List[List[float]], dimensions: List[List[float]], tray_height) -> None:
-        """Publishes detected cupholder information of the cupholders."""
+        """Publishes detected cupholder information of the cupholders"""
         cupholders_msg = DetectedCupholders()
         radius = 0.032
         height = 0.045
