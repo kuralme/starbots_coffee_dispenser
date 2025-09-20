@@ -45,7 +45,8 @@ public:
 
     // start move_group node in a seperate thread and spin it
     auto move_group_executor =
-        std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+        std::make_shared<rclcpp::executors::MultiThreadedExecutor>(
+            rclcpp::ExecutorOptions(), 2);
     move_group_executor->add_node(move_group_node_);
     std::thread([move_group_executor]() {
       move_group_executor->spin();
@@ -86,7 +87,7 @@ public:
         joint_model_group_gripper_, joint_group_positions_gripper_);
     move_group_robot_->setStartStateToCurrentState();
     move_group_gripper_->setStartStateToCurrentState();
-    // move_group_robot_->setPlanningTime(20.0);
+    move_group_robot_->setPlanningTime(15.0);
 
     // Prepare ROS2 communiation
     rclcpp::CallbackGroup::SharedPtr callback_group;
@@ -105,34 +106,17 @@ public:
         rmw_qos_profile_services_default, callback_group);
 
     createSceneObjects();
-    gotoPredefined("quick_pick");
-    RCLCPP_INFO(LOGGER, "UR3e ready for coffee delivery");
+    if (gotoPredefined("quick_pick")) {
+      RCLCPP_INFO(LOGGER, "UR3e ready for coffee delivery");
+    } else {
+      RCLCPP_ERROR(LOGGER, "UR3e not ready for coffee delivery!");
+    }
   }
   ~PickAndPlace() {
     RCLCPP_INFO(LOGGER, "Class Terminated: UR3e Coffee Dispenser");
   }
 
 private:
-  void gotoPredefined(std::string pose_name) {
-    // Move robot(joints) to predefined home configuration
-    RCLCPP_INFO(LOGGER, "Going to '%s' Pose...", pose_name.c_str());
-    RCLCPP_INFO(LOGGER, "Preparing Joint Value Trajectory...");
-    move_group_robot_->setNamedTarget(pose_name);
-
-    MoveGroupInterface::Plan kinematics_trajectory_plan;
-    bool plan_success_robot_ =
-        (move_group_robot_->plan(kinematics_trajectory_plan) ==
-         moveit::core::MoveItErrorCode::SUCCESS);
-    if (plan_success_robot_) {
-      size_t num_points =
-          kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
-      if (num_points > 1) {
-        move_group_robot_->execute(kinematics_trajectory_plan);
-      } else {
-        RCLCPP_INFO(LOGGER, "Already at the '%s' pose.", pose_name.c_str());
-      }
-    }
-  }
   void handleService(const std::shared_ptr<DeliverCup::Request> request,
                      std::shared_ptr<DeliverCup::Response> response) {
 
@@ -140,12 +124,7 @@ private:
     RCLCPP_INFO(LOGGER, "Goal cup holder on tray: %d",
                 request->goal_cup_holder);
 
-    // ============ Receive detection phase =================
-    geometry_msgs::msg::Point pregrasp_pos;
-    pregrasp_pos.x = 0.23;
-    pregrasp_pos.y = 0.32; // actual 0.33
-    pregrasp_pos.z = 0.37;
-
+    // ============ Validate detections =====================
     int no_detection_count{0};
     while (!goal_poses_received_) {
       RCLCPP_WARN(LOGGER, "Cup Holder Poses not received yet!");
@@ -156,76 +135,84 @@ private:
       }
       no_detection_count++;
     }
-    auto goal_position = goal_poses_[request->goal_cup_holder];
-    // goal_position.x += .01;
-    goal_position.y -= .01;
-    goal_position.z += .4;
 
     try {
-      // ============ Pregrasp phase =======================
-      RCLCPP_INFO(LOGGER, "Going to Pre-grasp Position: [%.3f, %.3f, %.3f]",
-                  pregrasp_pos.x, pregrasp_pos.y, pregrasp_pos.z);
-      setupPoseTarget(pregrasp_pos.x, pregrasp_pos.y, pregrasp_pos.z, -1.000,
-                      0.000, 0.000, 0.000);
-      executeKinematicsPlan();
+      // ============ Pre-picking phase =======================
+      geometry_msgs::msg::Point cup_pos;
+      cup_pos.x = 0.23;
+      cup_pos.y = 0.32; // actual 0.33
+      cup_pos.z = 0.07;
+      RCLCPP_INFO(LOGGER, "Going to Pre-picking Position: [%.3f, %.3f, %.3f]",
+                  cup_pos.x, cup_pos.y, cup_pos.z);
+      if (!executeKinematicsPlan(cup_pos.x, cup_pos.y, cup_pos.z + 0.3)) {
+        throw std::runtime_error("Planning failed!");
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
       // ============ Picking phase ========================
-      RCLCPP_INFO(LOGGER, "Opening Gripper...");
-      executeGripperPlan("gripper_open");
+      createOrientationConstraint();
 
-      RCLCPP_INFO(LOGGER, "Approaching to grasp...");
-      executeCartesianPlan(+0.000, +0.000, -0.07, pregrasp_pos);
-      std::this_thread::sleep_for(std::chrono::milliseconds(300));
+      RCLCPP_INFO(LOGGER, "Approaching to pick...");
+      executeGripperPlan("gripper_open");
+      executeCartesianPlan(+0.000, +0.000, -0.070);
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
       // closeGripperIncremental();
       executeGripperPlan("gripper_grasp");
-      attachObject("coffee_cup", pregrasp_pos);
+      attachGripperObject("coffee_cup", cup_pos);
 
-      RCLCPP_INFO(LOGGER, "Retreating...");
-      executeCartesianPlan(+0.000, +0.000, +0.100, pregrasp_pos);
+      executeCartesianPlan(+0.000, +0.000, +0.070);
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-      // ============ Placing phase =========================
-      createOrientationConstraint();
+      // ============ Pre-placing phase =======================
+      auto goal_position = goal_poses_[request->goal_cup_holder];
+      //   goal_position.x += .06;
+      goal_position.y += .007;
+      goal_position.z += .57;
 
-      RCLCPP_INFO(LOGGER, "Going to Intermediate Pose...");
-      setupPoseTarget(-0.150, 0.250, pregrasp_pos.z + .1, -1.000, 0.000, 0.000,
-                      0.000);
-      executeKinematicsPlan();
-      std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-      RCLCPP_INFO(LOGGER, "Going to the Pre-drop Position: [%.3f, %.3f, %.3f]",
+      //   RCLCPP_INFO(LOGGER, "Going to Intermediate Pose...");
+      //   executeKinematicsPlan(-0.200, 0.150, 0.400);
+      //   std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      RCLCPP_INFO(LOGGER,
+                  "Going to the Pre-placing Position: [%.3f, %.3f, %.3f]",
                   goal_position.x, goal_position.y, goal_position.z);
-      setupPoseTarget(goal_position.x, goal_position.y, goal_position.z, -1.000,
-                      0.000, 0.000, 0.000);
-      executeKinematicsPlan();
-      clearOrientationConstraints();
+      if (!executeKinematicsPlan(goal_position.x, goal_position.y,
+                                 goal_position.z)) {
+        move_group_robot_->clearPoseTargets();
+        executeCartesianPlan(+0.000, +0.000, -0.070);
+        executeGripperPlan("gripper_open");
+        throw std::runtime_error("Planning failed!");
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-      std::this_thread::sleep_for(std::chrono::seconds(5));
-
+      // ============ Placing phase ===========================
       RCLCPP_INFO(LOGGER, "Approaching to place...");
-      executeCartesianPlan(+0.000, +0.000, -0.08, goal_position);
-      std::this_thread::sleep_for(std::chrono::milliseconds(300));
+      if (!executeKinematicsPlan(goal_position.x, goal_position.y,
+                                 goal_position.z - 0.230)) {
+        executeCartesianPlan(+0.000, +0.000, -0.230);
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
       executeGripperPlan("gripper_open");
-      detachObject("coffee_cup");
-      std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-      std::this_thread::sleep_for(std::chrono::seconds(7));
+      detachGripperObject("coffee_cup");
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
       RCLCPP_INFO(LOGGER, "Retreating...");
-      executeCartesianPlan(+0.000, +0.000, +0.100, goal_position);
-
-      if (rclcpp::ok()) {
-        response->result = "Coffee Delivery successful";
+      if (!executeKinematicsPlan(goal_position.x, goal_position.y,
+                                 goal_position.z)) {
+        executeCartesianPlan(+0.000, +0.000, +0.300);
       }
+      clearOrientationConstraints();
 
       // ============ Back to initial phase ==================
       gotoPredefined("quick_pick");
+      goal_poses_ = std::vector<geometry_msgs::msg::Point>();
       goal_poses_received_ = false;
       RCLCPP_INFO(LOGGER, "Coffee Delivery Completed");
+      response->result = "Coffee Delivery successful";
 
     } catch (const std::exception &e) {
+      gotoPredefined("quick_pick");
       RCLCPP_ERROR(LOGGER, "Error during Coffee Delivery execution: %s",
                    e.what());
       response->result = "Coffee Delivery failed";
@@ -249,33 +236,48 @@ private:
       goal_poses_received_ = true;
     }
   }
+  bool gotoPredefined(std::string pose_name) {
+    // Move robot(joints) to predefined configuration
+    RCLCPP_INFO(LOGGER, "Going to '%s' Pose...", pose_name.c_str());
+    move_group_robot_->setNamedTarget(pose_name);
+    move_group_robot_->setStartStateToCurrentState();
 
-  void setupJointTarget(float angle0, float angle1, float angle2, float angle3,
-                        float angle4, float angle5) {
-    // set the joint values for each joint of robot arm
-    joint_group_positions_robot_[0] = angle0; // Shoulder Pan
-    joint_group_positions_robot_[1] = angle1; // Shoulder Lift
-    joint_group_positions_robot_[2] = angle2; // Elbow
-    joint_group_positions_robot_[3] = angle3; // Wrist 1
-    joint_group_positions_robot_[4] = angle4; // Wrist 2
-    joint_group_positions_robot_[5] = angle5; // Wrist 3
-    move_group_robot_->setJointValueTarget(joint_group_positions_robot_);
+    MoveGroupInterface::Plan kinematics_trajectory_plan;
+    bool plan_success_robot_ =
+        (move_group_robot_->plan(kinematics_trajectory_plan) ==
+         moveit::core::MoveItErrorCode::SUCCESS);
+    if (plan_success_robot_) {
+      size_t num_points =
+          kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
+      if (num_points > 1) {
+        if (move_group_robot_->execute(kinematics_trajectory_plan) ==
+            moveit::core::MoveItErrorCode::SUCCESS)
+          return true;
+        else
+          return false;
+      } else {
+        RCLCPP_INFO(LOGGER, "Already at the '%s' pose.", pose_name.c_str());
+        return true;
+      }
+    } else {
+      return false;
+    }
   }
-  void setupPoseTarget(float pos_x, float pos_y, float pos_z, float quat_x,
-                       float quat_y, float quat_z, float quat_w) {
-    // set the pose values for end effector of robot arm
-    geometry_msgs::msg::Pose target_pose_robot;
-    target_pose_robot.position.x = pos_x;
-    target_pose_robot.position.y = pos_y;
-    target_pose_robot.position.z = pos_z;
-    target_pose_robot.orientation.x = quat_x;
-    target_pose_robot.orientation.y = quat_y;
-    target_pose_robot.orientation.z = quat_z;
-    target_pose_robot.orientation.w = quat_w;
-    move_group_robot_->setPoseTarget(target_pose_robot);
-  }
-  void executeKinematicsPlan() {
-    // move_group_robot_->setStartStateToCurrentState();
+  bool executeKinematicsPlan(float pos_x, float pos_y, float pos_z) {
+
+    robot_current_state_ = move_group_robot_->getCurrentState(10);
+    move_group_robot_->setStartStateToCurrentState();
+
+    geometry_msgs::msg::Pose target_pose;
+    target_pose.position.x = pos_x;
+    target_pose.position.y = pos_y;
+    target_pose.position.z = pos_z;
+    target_pose.orientation.x = -1.0;
+    target_pose.orientation.y = 0.0;
+    target_pose.orientation.z = 0.0;
+    target_pose.orientation.w = 0.0;
+    move_group_robot_->setPoseTarget(target_pose);
+
     MoveGroupInterface::Plan kinematics_trajectory_plan;
     bool plan_success_robot_ =
         (move_group_robot_->plan(kinematics_trajectory_plan) ==
@@ -285,36 +287,35 @@ private:
       size_t num_points =
           kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
       RCLCPP_INFO(LOGGER, "Trajectory has %zu points", num_points);
-      if (num_points > 10) {
+      if (num_points > 3) {
         move_group_robot_->execute(kinematics_trajectory_plan);
-        RCLCPP_INFO(LOGGER, "Executed trajectory.");
+        move_group_robot_->clearPoseTargets();
+        return true;
       } else {
-        gotoPredefined("quick_pick"); // Return to initial pose
-        throw std::runtime_error("Trajectory too short — execution failed");
+        RCLCPP_WARN(LOGGER, "Trajectory too short — nothing to execute.");
+        move_group_robot_->clearPoseTargets();
+        return false;
       }
     } else {
-      gotoPredefined("quick_pick"); // Return to initial pose
-      throw std::runtime_error("Kinematic Planning failed — execution failed");
+      RCLCPP_WARN(LOGGER, "Planning failed — no execution.");
+      move_group_robot_->clearPoseTargets();
+      return false;
     }
   }
-  void executeCartesianPlan(float x_delta, float y_delta, float z_delta,
-                            geometry_msgs::msg::Point target_position) {
+  void executeCartesianPlan(float x_delta, float y_delta, float z_delta) {
 
-    geometry_msgs::msg::Pose target_pose_robot;
-    target_pose_robot.position = target_position;
-    target_pose_robot.orientation.x = -1.0;
-    target_pose_robot.orientation.y = 0.0;
-    target_pose_robot.orientation.z = 0.0;
-    target_pose_robot.orientation.w = 0.0;
+    robot_current_state_ = move_group_robot_->getCurrentState(10);
+    move_group_robot_->setStartStateToCurrentState();
 
     std::vector<geometry_msgs::msg::Pose> cartesian_waypoints;
-    cartesian_waypoints.push_back(target_pose_robot);
-    target_pose_robot.position.x += x_delta;
-    target_pose_robot.position.y += y_delta;
-    target_pose_robot.position.z += z_delta;
-    cartesian_waypoints.push_back(target_pose_robot);
+    geometry_msgs::msg::Pose target_pose =
+        move_group_robot_->getCurrentPose().pose;
+    cartesian_waypoints.push_back(target_pose);
+    target_pose.position.x += x_delta;
+    target_pose.position.y += y_delta;
+    target_pose.position.z += z_delta;
+    cartesian_waypoints.push_back(target_pose);
 
-    RCLCPP_INFO(LOGGER, "Plan & Execute Cartesian Trajectory...");
     const double jump_threshold_ = 0.0;
     const double end_effector_step_ = 0.01;
     moveit_msgs::msg::RobotTrajectory cartesian_trajectory_plan_;
@@ -324,11 +325,9 @@ private:
 
     // Check plan: 0.0 to 1.0 = success and -1.0 = failure
     if (plan_fraction_robot_ >= 0.0) {
-      move_group_robot_->setStartStateToCurrentState();
       move_group_robot_->execute(cartesian_trajectory_plan_);
-      RCLCPP_INFO(LOGGER, "Cartesian Trajectory Success !");
     } else {
-      gotoPredefined("quick_pick"); // Return to initial pose
+      cartesian_waypoints.clear();
       throw std::runtime_error("Cartesian planning failed !");
     }
     cartesian_waypoints.clear();
@@ -377,13 +376,41 @@ private:
       }
     }
   }
+  void createOrientationConstraint() {
+    moveit_msgs::msg::OrientationConstraint ocm;
+    ocm.link_name = move_group_robot_->getEndEffectorLink();
+    ocm.header.frame_id = move_group_robot_->getPlanningFrame();
 
-  void attachObject(const std::string &object_id,
-                    geometry_msgs::msg::Point pregrasp_pos) {
+    // Enforce Z-axis down (gripper pointing down)
+    tf2::Quaternion q;
+    q.setRPY(M_PI, 0, 0);
+    ocm.orientation.x = q.x();
+    ocm.orientation.y = q.y();
+    ocm.orientation.z = q.z();
+    ocm.orientation.w = q.w();
+    ocm.absolute_x_axis_tolerance = 0.1;
+    ocm.absolute_y_axis_tolerance = 0.1;
+    ocm.absolute_z_axis_tolerance = M_PI;
+    ocm.weight = 1.0;
+    path_constraints_.orientation_constraints.push_back(ocm);
+
+    // Changed planner for better orientation constrained planning
+    move_group_robot_->setPlannerId("KPIECEkConfigDefault");
+    move_group_robot_->setPathConstraints(path_constraints_);
+    RCLCPP_INFO(LOGGER, "Applied upright orientation constraint (Z down)");
+  }
+  void clearOrientationConstraints() {
+    // move_group_robot_->clearPathConstraints();
+    path_constraints_.orientation_constraints.clear();
+    move_group_robot_->setPathConstraints(path_constraints_);
+    move_group_robot_->setPlannerId("BiTRRTkConfigDefault");
+    RCLCPP_INFO(LOGGER, "Cleared Orientation constraints");
+  }
+  void attachGripperObject(const std::string &object_id,
+                           geometry_msgs::msg::Point cup_position) {
     // Add the cup to the planning scene
     geometry_msgs::msg::Pose cup_pose;
-    cup_pose.position = pregrasp_pos;
-    cup_pose.position.z -= 0.3;
+    cup_pose.position = cup_position;
     std::vector<double> cup_dimensions = {0.11, 0.04}; // {height, width}
     moveit_msgs::msg::CollisionObject coffee_cup =
         createCollisionObject(object_id, "cylinder", cup_dimensions, cup_pose);
@@ -399,7 +426,7 @@ private:
 
     RCLCPP_INFO(LOGGER, "Cup attached to gripper");
   }
-  void detachObject(const std::string &object_id) {
+  void detachGripperObject(const std::string &object_id) {
     // Detach the cup from the gripper
     moveit_msgs::msg::AttachedCollisionObject detach_object;
     detach_object.link_name = move_group_robot_->getEndEffectorLink();
@@ -492,25 +519,23 @@ private:
         RCLCPP_ERROR(
             LOGGER,
             "Box requires exactly 3 dimensions: {length, width, height}");
-        return collision_object; // Return empty object in case of error
+        return collision_object;
       }
     } else if (type == "cylinder") {
       primitive.type = primitive.CYLINDER;
       if (dimensions.size() == 2) {
         // Assuming dimensions are {height, radius}
         primitive.dimensions.resize(2);
-        primitive.dimensions[primitive.CYLINDER_HEIGHT] =
-            dimensions[0]; // height
-        primitive.dimensions[primitive.CYLINDER_RADIUS] =
-            dimensions[1]; // radius
+        primitive.dimensions[primitive.CYLINDER_HEIGHT] = dimensions[0];
+        primitive.dimensions[primitive.CYLINDER_RADIUS] = dimensions[1];
       } else {
         RCLCPP_ERROR(
             LOGGER, "Cylinder requires exactly 2 dimensions: {height, radius}");
-        return collision_object; // Return empty object in case of error
+        return collision_object;
       }
     } else {
       RCLCPP_ERROR(LOGGER, "Unsupported object type: %s", type.c_str());
-      return collision_object; // Return an empty object if type is unsupported
+      return collision_object;
     }
 
     // Set up collision object properties
@@ -524,42 +549,6 @@ private:
     return collision_object;
   }
 
-  void createOrientationConstraint() {
-    // "Gripper pointing down" orientation constraint
-    moveit_msgs::msg::OrientationConstraint ocm;
-    ocm.link_name = move_group_robot_->getEndEffectorLink();
-    ocm.header.frame_id = move_group_robot_->getPlanningFrame();
-
-    // Enforce Z-axis down (gripper pointing down)
-    tf2::Quaternion q;
-    q.setRPY(M_PI, 0, 0);
-    ocm.orientation.x = q.x();
-    ocm.orientation.y = q.y();
-    ocm.orientation.z = q.z();
-    ocm.orientation.w = q.w();
-    ocm.absolute_x_axis_tolerance = 0.1;
-    ocm.absolute_y_axis_tolerance = 0.1;
-    ocm.absolute_z_axis_tolerance = M_PI;
-    ocm.weight = 1.0;
-    path_constraints_.orientation_constraints.push_back(ocm);
-
-    // Changed planner for better orientation constrained planning
-    move_group_robot_->setPlannerId("KPIECEkConfigDefault");
-    move_group_robot_->setPathConstraints(path_constraints_);
-    move_group_robot_->setStartStateToCurrentState();
-    move_group_robot_->setPlanningTime(30.0);
-
-    RCLCPP_INFO(LOGGER, "Applied upright orientation constraint (Z down)");
-  }
-  void clearOrientationConstraints() {
-    // move_group_robot_->clearPathConstraints();
-    path_constraints_.orientation_constraints.clear();
-    move_group_robot_->setPathConstraints(path_constraints_);
-    move_group_robot_->setPlannerId("BiTRRTkConfigDefault");
-    RCLCPP_INFO(LOGGER, "Cleared Orientation constraints");
-  }
-
-  // declare class variables
   rclcpp::Node::SharedPtr move_group_node_;
   std::shared_ptr<MoveGroupInterface> move_group_robot_, move_group_gripper_;
   const moveit::core::JointModelGroup *joint_model_group_robot_,
@@ -573,8 +562,6 @@ private:
       SharedPtr holepose_sub_;
   rclcpp::Service<DeliverCup>::SharedPtr service_server_;
   moveit_msgs::msg::Constraints path_constraints_;
-
-  // declare detection variables
   std::vector<geometry_msgs::msg::Point> goal_poses_;
   bool goal_poses_received_;
 }; // class PickAndPlace
