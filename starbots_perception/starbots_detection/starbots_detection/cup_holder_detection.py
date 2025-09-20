@@ -36,6 +36,8 @@ class CupHolderDetection(Node):
             surface_clusters, surface_centroids, surface_dimensions = self.extract_clusters(tray_cloud, "Tray Cloud")
 
             # Filter points just below the tray surface and cluster cylinder cup holders
+            surface_centroids[0][0] += 0.007
+            surface_centroids[0][1] += 0.02
             cupholder_cloud = self.filter_below_surface(filtered_cloud, surface_centroids[0])
             cup_holder_centroids, cup_holder_dimensions = self.extract_cylinders(cupholder_cloud, filtered_cloud)
 
@@ -119,7 +121,7 @@ class CupHolderDetection(Node):
                 indices.append(i)
         return cloud.extract(indices)
     
-    def filter_below_surface(self, cloud: pcl.PointCloud, surface_centroid: List[float], height_threshold=0.06, radius_limit=0.14) -> pcl.PointCloud:
+    def filter_below_surface(self, cloud: pcl.PointCloud, surface_centroid: List[float], height_threshold=0.06, radius_limit=0.15) -> pcl.PointCloud:
         """Filters points just below the tray surface and within a specified radius."""
         filtered_indices = []
         centroid = surface_centroid
@@ -219,7 +221,7 @@ class CupHolderDetection(Node):
         # Return the filtered table clusters, centroids and cluster dimensions
         return object_clusters, cluster_centroids, cluster_dimensions
 
-    def extract_cylinders(self, cupholder_cloud, filtered_cloud, min_distance=0.05, min_height=0.02, min_radius=0.02, max_radius=0.04)  -> Tuple[List[List[float]], List[List[float]]]:
+    def extract_cylinders(self, cupholder_cloud, filtered_cloud, min_distance=0.05, min_height=0.01, max_height=0.04, min_radius=0.02, max_radius=0.04)  -> Tuple[List[List[float]], List[List[float]]]:
         """Segmentation: Extracts cylindrical cupholder from the point cloud"""
         tree = cupholder_cloud.make_kdtree()
         ec = cupholder_cloud.make_EuclideanClusterExtraction()
@@ -246,20 +248,23 @@ class CupHolderDetection(Node):
             for i in range(filtered_cloud.size):
                 pt = filtered_cloud[i]
                 xy_dist = np.linalg.norm(pt[:2] - centroid[:2])
-                if xy_dist < radius + 0.01 and pt[2] > centroid[2] + 0.04:
+                if xy_dist < radius + 0.01 and pt[2] > centroid[2] + height/2. + 0.03:
                     points_above.append(pt)
             if len(points_above) > 10:
                 self.get_logger().info(f"Skipping cluster {idx+1}: likely occupied by a cup.")
                 continue
                 
-            if min_radius <= radius <= max_radius:
+            # Filter by cupholder dimensions
+            if min_radius <= radius <= max_radius and min_height <= height <= max_height:
                 cupholder_centroids.append(centroid.tolist())
                 cupholder_dimensions.append(dimensions.tolist())
 
             self.get_logger().info(
-                f"Cluster {idx + 1} has {len(indices)} points\n"
+                f"\n=============================================\n"
+                f"Cluster {idx + 1} has {len(indices)} points:\n"
                 f"Centroid of cluster {idx + 1}: {centroid}\n"
-                f"Dimensions of cluster {idx + 1}: {dimensions}"
+                f"Radius of cluster {idx + 1}: {radius}\n"
+                f"Height of cluster {idx + 1}: {height}"
             )
 
         if not cupholder_centroids:
@@ -284,7 +289,7 @@ class CupHolderDetection(Node):
             cylinder_marker.type = Marker.CYLINDER
             cylinder_marker.action = Marker.ADD
             cylinder_marker.pose.position.x = centroid[0]
-            cylinder_marker.pose.position.y = centroid[1] - 0.012
+            cylinder_marker.pose.position.y = centroid[1]
             cylinder_marker.pose.position.z = centroid[2] - height / 2
             cylinder_marker.pose.orientation.w = 1.0
             cylinder_marker.scale.x = radius * 2  # Diameter of the tray
@@ -305,7 +310,7 @@ class CupHolderDetection(Node):
             surface_msg = DetectedSurfaces()
             surface_msg.surface_id = idx
             surface_msg.position.x = centroid[0]
-            surface_msg.position.y = centroid[1] - 0.012
+            surface_msg.position.y = centroid[1]
             surface_msg.position.z = centroid[2]
             surface_msg.height = dimension[1]
             surface_msg.width = dimension[0]
@@ -324,7 +329,7 @@ class CupHolderDetection(Node):
             cylinder_marker.id = idx
             cylinder_marker.type = Marker.CYLINDER
             cylinder_marker.action = Marker.ADD
-            cylinder_marker.pose.position.x = centroid[0] + 0.002
+            cylinder_marker.pose.position.x = centroid[0]
             cylinder_marker.pose.position.y = centroid[1] - 0.007
             cylinder_marker.pose.position.z = tray_height - height / 2.
             cylinder_marker.pose.orientation.w = 1.0
@@ -344,7 +349,7 @@ class CupHolderDetection(Node):
             text_marker.id = idx + 1000  # Different ID to avoid conflicts with cylinder markers
             text_marker.text = str(idx) # Set the text as the cup holder ID
             text_marker.action = Marker.ADD
-            text_marker.pose.position.x = centroid[0] + 0.002
+            text_marker.pose.position.x = centroid[0]
             text_marker.pose.position.y = centroid[1] - 0.007
             text_marker.pose.position.z = centroid[2] + text_height_offset
             text_marker.pose.orientation.w = 1.0
