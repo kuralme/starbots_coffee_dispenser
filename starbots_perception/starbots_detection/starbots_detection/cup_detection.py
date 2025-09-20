@@ -258,7 +258,7 @@ class ObjectDetection(Node):
             marker.type = Marker.CYLINDER
             marker.action = Marker.ADD
             marker.pose.position.x = centroid[0] - diameter / 4.
-            marker.pose.position.y = centroid[1] - 0.016
+            marker.pose.position.y = centroid[1] - 0.017
             marker.pose.position.z = centroid[2]
             marker.pose.orientation.w = 1.0
             marker.scale.x = diameter
@@ -286,8 +286,8 @@ class ObjectDetection(Node):
             
             object_msg = DetectedObjects()
             object_msg.object_id = idx
-            object_msg.position.x = centroid[0] - diameter / 4.
-            object_msg.position.y = centroid[1] - 0.016
+            object_msg.position.x = centroid[0] - 0.021
+            object_msg.position.y = centroid[1] - 0.017
             object_msg.position.z = centroid[2]
             object_msg.width = diameter
             object_msg.thickness = diameter

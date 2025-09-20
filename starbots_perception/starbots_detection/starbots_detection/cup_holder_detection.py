@@ -324,8 +324,8 @@ class CupHolderDetection(Node):
             cylinder_marker.id = idx
             cylinder_marker.type = Marker.CYLINDER
             cylinder_marker.action = Marker.ADD
-            cylinder_marker.pose.position.x = centroid[0]
-            cylinder_marker.pose.position.y = centroid[1] - 0.011
+            cylinder_marker.pose.position.x = centroid[0] - 0.001
+            cylinder_marker.pose.position.y = centroid[1] - 0.013
             cylinder_marker.pose.position.z = centroid[2] + 0.01
             cylinder_marker.pose.orientation.w = 1.0
             cylinder_marker.scale.x = radius * 2  # Diameter of the cylinder
@@ -370,7 +370,7 @@ class CupHolderDetection(Node):
         for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
             cupholder = DetectedCupholder()
             cupholder.cupholder_id = idx
-            cupholder.position = Point(x=centroid[0], y=(centroid[1] - 0.011), z=(centroid[2] + 0.01))
+            cupholder.position = Point(x=centroid[0]- 0.001, y=(centroid[1] - 0.013), z=(centroid[2] + 0.01))
             cupholder.radius = float(dimension[0]) / 2
             cupholder.height = dimension[1]
             cupholders_msg.cup_holders.append(cupholder)
