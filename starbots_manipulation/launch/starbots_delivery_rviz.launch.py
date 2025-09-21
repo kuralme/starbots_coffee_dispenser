@@ -8,7 +8,7 @@ from moveit_configs_utils import MoveItConfigsBuilder
 
 def generate_launch_description():
 
-    rviz_config = os.path.join(get_package_share_directory('ur3e_manipulation'),'rviz','starbots_ur3e.rviz')
+    rviz_config = os.path.join(get_package_share_directory('starbots_manipulation'),'rviz','starbots_ur3e.rviz')
     moveit_config = (
         MoveItConfigsBuilder("ur_manipulator", package_name="ur3e_sim_moveit_config")
         .robot_description_semantic(file_path="config/name.srdf")
@@ -32,7 +32,7 @@ def generate_launch_description():
     )
     manipulation_node = Node(
         name="starbots_delivery_server_node",
-        package="ur3e_manipulation",
+        package="starbots_manipulation",
         executable="starbots_delivery_server",
         output="screen",
         parameters=[

@@ -33,7 +33,7 @@ services:
       - "9090:9090"
     restart: always
     entrypoint: /ros_entrypoint.sh
-    command: ["sleep 22 && ros2 launch ur3e_manipulation starbots_delivery_rviz.launch.py & \
+    command: ["sleep 22 && ros2 launch starbots_manipulation starbots_delivery_rviz.launch.py & \
       sleep 27 && ros2 launch starbots_webapp start_foxglove.launch.xml port:=8765 > /dev/null 2>&1"]
 
 volumes:

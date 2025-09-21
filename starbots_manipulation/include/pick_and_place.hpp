@@ -19,7 +19,7 @@
 #include <starbots_detection_msgs/msg/detected_cupholders.hpp>
 #include <starbots_detection_msgs/msg/detected_objects.hpp>
 #include <starbots_detection_msgs/msg/detected_surfaces.hpp>
-#include <ur3e_manipulation/srv/deliver_cup.hpp>
+#include <starbots_manipulation/srv/deliver_cup.hpp>
 
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("move_group_node");
 static const std::string PLANNING_GROUP_ROBOT = "ur_manipulator";
@@ -29,7 +29,7 @@ using namespace std::chrono_literals;
 using std::placeholders::_1;
 using std::placeholders::_2;
 using MoveGroupInterface = moveit::planning_interface::MoveGroupInterface;
-using DeliverCup = ur3e_manipulation::srv::DeliverCup;
+using DeliverCup = starbots_manipulation::srv::DeliverCup;
 
 class PickAndPlace : public rclcpp::Node
 {
