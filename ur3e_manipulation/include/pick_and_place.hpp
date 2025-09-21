@@ -1,5 +1,5 @@
-#ifndef STARBOTS_DELIVERY_SERVER_HPP
-#define STARBOTS_DELIVERY_SERVER_HPP
+#ifndef PICK_AND_PLACE_HPP
+#define PICK_AND_PLACE_HPP
 
 #include "geometry_msgs/msg/detail/point__struct.hpp"
 #include "geometry_msgs/msg/detail/pose__struct.hpp"
@@ -37,9 +37,8 @@ public:
     PickAndPlace(const rclcpp::NodeOptions &node_options = rclcpp::NodeOptions());
     ~PickAndPlace();
 
-private:
     void gotoPredefined(std::string pose_name);
-    void handleService(const std::shared_ptr<DeliverCup::Request> request, std::shared_ptr<DeliverCup::Response> response);
+    // void handleService(const std::shared_ptr<DeliverCup::Request> request, std::shared_ptr<DeliverCup::Response> response);
     void clearOctomap();
     void objectDetectionCallback(const starbots_detection_msgs::msg::DetectedObjects::SharedPtr msg);
     void holeDetectionCallback(const starbots_detection_msgs::msg::DetectedCupholders::SharedPtr msg);
@@ -77,4 +76,4 @@ private:
     bool obj_pose_received_, goal_poses_received_;
 };
 
-#endif // STARBOTS_DELIVERY_SERVER_HPP
+#endif // PICK_AND_PLACE_HPP

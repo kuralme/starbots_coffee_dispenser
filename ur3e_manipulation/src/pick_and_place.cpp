@@ -1,4 +1,4 @@
-#include "starbots_delivery_server.hpp"
+#include "pick_and_place.hpp"
 
 PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
     : Node("starbots_delivery_service_server", node_options),
@@ -73,10 +73,10 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
       starbots_detection_msgs::msg::DetectedCupholders>(
       "/cup_holder_detected", 100,
       std::bind(&PickAndPlace::holeDetectionCallback, this, _1), sub_options);
-  service_server_ = move_group_node_->create_service<DeliverCup>(
-      "/deliver_coffee",
-      std::bind(&PickAndPlace::handleService, this, _1, _2),
-      rmw_qos_profile_services_default, callback_group);
+  // service_server_ = move_group_node_->create_service<DeliverCup>(
+  //     "/deliver_coffee",
+  //     std::bind(&PickAndPlace::handleService, this, _1, _2),
+  //     rmw_qos_profile_services_default, callback_group);
   octo_client_ =
       move_group_node_->create_client<std_srvs::srv::Empty>("/clear_octomap");
 
@@ -87,133 +87,6 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
 PickAndPlace::~PickAndPlace()
 {
   RCLCPP_INFO(LOGGER, "Class Terminated: UR3e Coffee Dispenser");
-}
-
-void PickAndPlace::gotoPredefined(std::string pose_name)
-{
-  // Move robot(joints) to predefined home configuration
-  RCLCPP_INFO(LOGGER, "Going to '%s' Pose...", pose_name.c_str());
-  RCLCPP_INFO(LOGGER, "Preparing Joint Value Trajectory...");
-  move_group_robot_->setNamedTarget(pose_name);
-  move_group_robot_->setStartStateToCurrentState();
-
-  MoveGroupInterface::Plan kinematics_trajectory_plan;
-  bool plan_success_robot_ =
-      (move_group_robot_->plan(kinematics_trajectory_plan) ==
-       moveit::core::MoveItErrorCode::SUCCESS);
-  if (plan_success_robot_)
-  {
-    size_t num_points =
-        kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
-    if (num_points > 1)
-    {
-      move_group_robot_->execute(kinematics_trajectory_plan);
-    }
-    else
-    {
-      RCLCPP_INFO(LOGGER, "Already at the '%s' pose.", pose_name.c_str());
-    }
-  }
-}
-void PickAndPlace::handleService(const std::shared_ptr<DeliverCup::Request> request,
-                                 std::shared_ptr<DeliverCup::Response> response)
-{
-  RCLCPP_INFO(LOGGER, "Coffee Delivery Requested");
-  RCLCPP_INFO(LOGGER, "Goal cup holder on tray: %d",
-              request->goal_cup_holder);
-
-  // ============ Validate detections =====================
-  while (!obj_pose_received_ || obj_position_.y * obj_height_ * obj_radius_ == 0.0)
-  {
-    RCLCPP_WARN(LOGGER, "Cup Pose not received yet!");
-    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-  }
-  while (!goal_poses_received_)
-  {
-    RCLCPP_WARN(LOGGER, "Cup Holder Poses not received yet!");
-    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-  }
-
-  // ============ Pre-pick phase =========================
-  auto prepick_pos = obj_position_;
-  prepick_pos.z += .3;
-  RCLCPP_INFO(LOGGER, "Going to Pre-pick Pose: [%.3f, %.3f, %.3f]",
-              prepick_pos.x, prepick_pos.y, prepick_pos.z);
-  executeKinematicsPlan(prepick_pos.x, prepick_pos.y, prepick_pos.z);
-
-  // ============ Picking phase ===========================
-  createOrientationConstraint();
-
-  RCLCPP_INFO(LOGGER, "Approaching to pick...");
-  executeGripperPlan("gripper_open");
-  clearOctomap();
-  std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-  executeCartesianPlan(+0.000, +0.000, -0.079);
-  std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-  closeGripperIncremental();
-  attachObject();
-  executeCartesianPlan(+0.000, +0.000, +0.079);
-
-  // ============ Pre-placing phase =======================
-  auto goal_position = goal_poses_[request->goal_cup_holder];
-  goal_position.z += .55;
-  RCLCPP_INFO(LOGGER, "Going to the Pre-placing Pose: [%.3f, %.3f, %.3f]",
-              goal_position.x, goal_position.y, goal_position.z);
-  if (!executeKinematicsPlan(goal_position.x, goal_position.y, goal_position.z))
-  {
-    RCLCPP_WARN(LOGGER, "Delivery failed...");
-    move_group_robot_->clearPoseTargets();
-    executeCartesianPlan(+0.000, +0.000, -0.079);
-    executeGripperPlan("gripper_open");
-    gotoPredefined("quick_pick");
-    response->result = "Coffee Delivery failed!";
-  }
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-  // ============ Placing phase ===========================
-  RCLCPP_INFO(LOGGER, "Approaching to place...");
-  clearOctomap();
-  if (!executeKinematicsPlan(goal_position.x, goal_position.y, goal_position.z - 0.230))
-  {
-    move_group_robot_->clearPoseTargets();
-    executeCartesianPlan(+0.000, +0.000, -0.240);
-  }
-  std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-  executeGripperPlan("gripper_open");
-  detachObject();
-  std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-  RCLCPP_INFO(LOGGER, "Retreating...");
-  if (!executeKinematicsPlan(goal_position.x, goal_position.y, goal_position.z))
-  {
-    move_group_robot_->clearPoseTargets();
-    executeCartesianPlan(+0.000, +0.000, +0.300);
-  }
-  clearOrientationConstraints();
-
-  // ============ Back to initial phase ==================
-  gotoPredefined("quick_pick");
-  obj_position_ = geometry_msgs::msg::Point();
-  obj_height_ = obj_radius_ = obj_thickness_ = 0.0;
-  goal_poses_ = std::vector<geometry_msgs::msg::Point>();
-  obj_pose_received_ = false;
-  goal_poses_received_ = false;
-  RCLCPP_INFO(LOGGER, "Coffee Delivery successful");
-  response->result = "Coffee Delivery successful";
-}
-void PickAndPlace::clearOctomap()
-{
-  auto request = std::make_shared<std_srvs::srv::Empty::Request>();
-  if (!octo_client_->wait_for_service(std::chrono::seconds(2)))
-  {
-    RCLCPP_WARN(LOGGER, "clear_octomap service not available");
-    return;
-  }
-  auto future = octo_client_->async_send_request(request);
-  RCLCPP_INFO(LOGGER, "Octomap cleared!");
 }
 
 void PickAndPlace::objectDetectionCallback(
@@ -256,19 +129,32 @@ void PickAndPlace::holeDetectionCallback(
   }
 }
 
-void PickAndPlace::setupJointTarget(float angle0, float angle1, float angle2, float angle3,
-                                    float angle4, float angle5)
+void PickAndPlace::gotoPredefined(std::string pose_name)
 {
-  // set the joint values for each joint of robot arm
-  joint_group_positions_robot_[0] = angle0; // Shoulder Pan
-  joint_group_positions_robot_[1] = angle1; // Shoulder Lift
-  joint_group_positions_robot_[2] = angle2; // Elbow
-  joint_group_positions_robot_[3] = angle3; // Wrist 1
-  joint_group_positions_robot_[4] = angle4; // Wrist 2
-  joint_group_positions_robot_[5] = angle5; // Wrist 3
-  move_group_robot_->setJointValueTarget(joint_group_positions_robot_);
-}
+  // Move robot(joints) to predefined home configuration
+  RCLCPP_INFO(LOGGER, "Going to '%s' Pose...", pose_name.c_str());
+  RCLCPP_INFO(LOGGER, "Preparing Joint Value Trajectory...");
+  move_group_robot_->setNamedTarget(pose_name);
+  move_group_robot_->setStartStateToCurrentState();
 
+  MoveGroupInterface::Plan kinematics_trajectory_plan;
+  bool plan_success_robot_ =
+      (move_group_robot_->plan(kinematics_trajectory_plan) ==
+       moveit::core::MoveItErrorCode::SUCCESS);
+  if (plan_success_robot_)
+  {
+    size_t num_points =
+        kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
+    if (num_points > 1)
+    {
+      move_group_robot_->execute(kinematics_trajectory_plan);
+    }
+    else
+    {
+      RCLCPP_INFO(LOGGER, "Already at the '%s' pose.", pose_name.c_str());
+    }
+  }
+}
 bool PickAndPlace::executeKinematicsPlan(float pos_x, float pos_y, float pos_z)
 {
   robot_current_state_ = move_group_robot_->getCurrentState(10);
@@ -481,6 +367,17 @@ void PickAndPlace::createSceneObjects()
   planning_scene_interface.applyCollisionObject(collision_object);
 }
 
+void PickAndPlace::clearOctomap()
+{
+  auto request = std::make_shared<std_srvs::srv::Empty::Request>();
+  if (!octo_client_->wait_for_service(std::chrono::seconds(2)))
+  {
+    RCLCPP_WARN(LOGGER, "clear_octomap service not available");
+    return;
+  }
+  auto future = octo_client_->async_send_request(request);
+  RCLCPP_INFO(LOGGER, "Octomap cleared!");
+}
 void PickAndPlace::createTrajectoryConstraint()
 {
   // Constraint for planning trajectory
