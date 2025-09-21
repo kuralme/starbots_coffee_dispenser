@@ -34,7 +34,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/DeliverCup.srv"
 )
 
-add_executable(starbots_delivery_server src/starbots_delivery_server.cpp)
+add_executable(starbots_delivery_server src/main.cpp src/starbots_delivery_server.cpp)
+target_include_directories(starbots_delivery_server PRIVATE ${CMAKE_SOURCE_DIR}/include)
 ament_target_dependencies(starbots_delivery_server 
 	ament_cmake 
 	rclcpp 
@@ -46,17 +47,18 @@ ament_target_dependencies(starbots_delivery_server
 	shape_msgs
 	starbots_detection_msgs
 )
+
 rosidl_target_interfaces(starbots_delivery_server
   ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 install(TARGETS 
 	starbots_delivery_server
-    DESTINATION lib/${PROJECT_NAME}
+  DESTINATION lib/${PROJECT_NAME}
 )
 install(DIRECTORY 
 	srv
 	rviz
-    launch
-    DESTINATION share/${PROJECT_NAME}
+  launch
+  DESTINATION share/${PROJECT_NAME}
 )
 ament_package()
