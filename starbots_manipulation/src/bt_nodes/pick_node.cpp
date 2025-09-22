@@ -9,14 +9,14 @@ BT::NodeStatus Pick::tick() {
 
   RCLCPP_INFO(LOGGER, "Approaching to pick...");
   robot_->executeGripperPlan("gripper_open");
-  robot_->executeCartesianPlan(+0.000, +0.000, -0.070);
+  robot_->executeCartesianPlan(+0.000, +0.000, -0.075);
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
   robot_->executeGripperPlan("gripper_grasp");
   robot_->attachGripperObject("coffee_cup");
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-  robot_->executeCartesianPlan(+0.000, +0.000, +0.070);
+  robot_->executeCartesianPlan(+0.000, +0.000, +0.075);
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
   return BT::NodeStatus::SUCCESS;
