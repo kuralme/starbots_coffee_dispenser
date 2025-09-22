@@ -36,12 +36,14 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 )
 
 add_executable(starbots_delivery_server src/bt_main.cpp src/pick_and_place.cpp
-    src/bt_nodes/pick_node.cpp
-    src/bt_nodes/place_node.cpp
-    src/bt_nodes/prepick_node.cpp
-    src/bt_nodes/preplace_node.cpp
-    src/bt_nodes/return_node.cpp
     src/bt_nodes/validate_detection_node.cpp
+    src/bt_nodes/prepick_node.cpp
+    src/bt_nodes/pick_node.cpp
+    src/bt_nodes/preplace_node.cpp
+    src/bt_nodes/place_node.cpp
+    src/bt_nodes/putback_node.cpp
+    src/bt_nodes/return_node.cpp
+    src/observer.cpp
 )
 target_include_directories(starbots_delivery_server PRIVATE ${CMAKE_SOURCE_DIR}/include)
 ament_target_dependencies(starbots_delivery_server 
@@ -65,7 +67,7 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME}
 )
 install(DIRECTORY 
-  config
+  bt_config
 	srv
 	rviz
   launch

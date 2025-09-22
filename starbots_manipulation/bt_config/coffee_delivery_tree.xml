@@ -1,0 +1,20 @@
+<root BTCPP_format="4" >
+  <BehaviorTree ID="MainTree">
+    <Sequence name="MainSequence">
+      <Sequence name="Coffee Delivery">
+        <ValidateDetection name="Validate Detection"/>
+        <PrePick name="Pre-pick"/>
+        <Pick name="Pick"/>
+        <Fallback name="PlaceOrRecover">
+          <Sequence name="TrytoPlace">
+            <PrePlace name="Pre-place"/>
+            <Place name="Place"/>
+          </Sequence>
+          <PutBack name="Put Back"/>
+          <Return name="Return"/>
+        </Fallback>
+      </Sequence>
+      <Return name="Return"/>
+    </Sequence>
+  </BehaviorTree>
+</root>

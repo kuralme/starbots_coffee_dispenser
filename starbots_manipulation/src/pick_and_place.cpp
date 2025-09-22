@@ -73,10 +73,6 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
       starbots_detection_msgs::msg::DetectedCupholders>(
       "/cup_holder_detected", 100,
       std::bind(&PickAndPlace::holeDetectionCallback, this, _1), sub_options);
-  // service_server_ = move_group_node_->create_service<DeliverCup>(
-  //     "/deliver_coffee",
-  //     std::bind(&PickAndPlace::handleService, this, _1, _2),
-  //     rmw_qos_profile_services_default, callback_group);
   octo_client_ =
       move_group_node_->create_client<std_srvs::srv::Empty>("/clear_octomap");
 
@@ -123,9 +119,10 @@ void PickAndPlace::holeDetectionCallback(
       // RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)", cupholder.position.x, cupholder.position.y, cupholder.position.z);
       // RCLCPP_INFO(LOGGER, "Radius: %.2f", cupholder.radius);
       // RCLCPP_INFO(LOGGER, "Height: %.2f", cupholder.height);
+      // }
+      // RCLCPP_INFO(LOGGER, "===========================");
+      goal_poses_received_ = true;
     }
-    // RCLCPP_INFO(LOGGER, "===========================");
-    goal_poses_received_ = true;
   }
 }
 
@@ -157,6 +154,7 @@ void PickAndPlace::gotoPredefined(std::string pose_name)
 }
 bool PickAndPlace::executeKinematicsPlan(float pos_x, float pos_y, float pos_z)
 {
+  move_group_robot_->clearPoseTargets();
   robot_current_state_ = move_group_robot_->getCurrentState(10);
   move_group_robot_->setStartStateToCurrentState();
 
@@ -199,6 +197,7 @@ bool PickAndPlace::executeKinematicsPlan(float pos_x, float pos_y, float pos_z)
 }
 void PickAndPlace::executeCartesianPlan(float x_delta, float y_delta, float z_delta)
 {
+  move_group_robot_->clearPoseTargets();
   robot_current_state_ = move_group_robot_->getCurrentState(10);
   move_group_robot_->setStartStateToCurrentState();
   geometry_msgs::msg::Pose target_pose = move_group_robot_->getCurrentPose().pose;
