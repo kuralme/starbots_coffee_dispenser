@@ -6,10 +6,12 @@ Starbots Coffee Dispenser is a robotics **simulation** project that performs a c
 
 The project integrates **MoveIt2** for motion planning and execution, and employs perception pipeline with object detection and point cloud processing to locate and interact with objects in the environment. Point cloud data is also used to construct an **OctoMap**, enabling MoveIt2 to consider the surrounding environment as part of its collision-aware planning. The current branch supports seamless operation in  Gazebo simulation setup.
 
-This system is built on ROS 2 and offers modular launch files to execute the full task pipeline — from perception and planning to actuation in simulated environment. Additionally, Docker is used to build and containerize the system, and Docker Compose is leveraged to manage and start the multiple services, ensuring a consistent and efficient deployment across different setups.
+To orchestrate the robot's high-level behavior, the system uses a **Behavior Tree (BT)**-based control logic. This modular and reactive framework manages task execution, such as cup detection, picking, placing, and error handling, ensuring robust and flexible control over the coffee delivery process.
+
+This system is built on ROS 2 and offers modular launch files to execute the full task pipeline — from perception and planning to actuation in a simulated environment. Additionally, Docker is used to build and containerize the system, and Docker Compose is leveraged to manage and start the multiple services, ensuring a consistent and efficient deployment across different setups.
 
 ---
-[![Sim video](./media/coffee_delivery_sim_webapp.gif)](https://www.youtube.com/watch?v=bQpeCSoZZug)
+[![Sim video](./media/coffee_delivery_sim.gif)](https://www.youtube.com/watch?v=bQpeCSoZZug)
 
 ## Prerequisites
 
@@ -17,7 +19,6 @@ This system is built on ROS 2 and offers modular launch files to execute the ful
 
 - ROS 2 Humble
 - Starbots Coffee/UR3e Gazebo package
-- Physical UR3e robot and a Point Cloud camera for real-world testing
 - `MoveIt2`, `colcon`, and `rosdep` installed
 
 #### For docker setup
@@ -139,20 +140,20 @@ ros2 launch starbots_detection detections.launch.py
 #### Start starbots delivery service server
 
 ```bash
-ros2 launch ur3e_manipulation starbots_delivery.launch.py
+ros2 launch starbots_manipulation starbots_delivery.launch.py
 # with rviz
-ros2 launch ur3e_manipulation starbots_delivery_rviz.launch.py
+ros2 launch starbots_manipulation starbots_delivery_rviz.launch.py
 ```
 
 Send coffee delivery request to with given cup holder:
 
 ```bash
-ros2 service call /deliver_coffee ur3e_manipulation/srv/DeliverCup "{goal_cup_holder: 1}"
+ros2 service call /deliver_coffee starbots_manipulation/srv/DeliverCup "{goal_cup_holder: 1}"
 ```
 
 ### Webapp
 
-Visualize with foxglove webapp:
+Visualize with foxglove webapp on browser:
 
 - Start foxglove bridge
 
