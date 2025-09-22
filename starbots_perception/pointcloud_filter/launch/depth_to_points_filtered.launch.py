@@ -11,8 +11,8 @@ def generate_launch_description():
             executable='static_transform_publisher',
             name='static_transform_world_to_d415',
             arguments=[ # '-0.425', '-0.375', '0.352', '-0.285', '0.240', '0.482', '0.405'
-                '-0.415', '-0.345', '0.395',          # Translation: X, Y, Z
-                '-0.110', '0.100', '0.210', '0.195',  # Rotation: Quaternion (xyzw)
+                '-0.427', '-0.330', '0.348',          # Translation: X, Y, Z
+                '-0.110', '0.100', '0.218', '0.225',  # Rotation: Quaternion (xyzw)
                 'world', 'D415_link'
             ],
             output='screen',
