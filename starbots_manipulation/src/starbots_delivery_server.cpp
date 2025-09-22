@@ -167,7 +167,7 @@ private:
       // ============ Pre-placing phase =======================
       auto goal_position = goal_poses_[request->goal_cup_holder];
       //   goal_position.x += .06;
-      goal_position.y += .007;
+      //   goal_position.y += .007;
       goal_position.z += .57;
 
       //   RCLCPP_INFO(LOGGER, "Going to Intermediate Pose...");
@@ -448,9 +448,9 @@ private:
     counter_pose.orientation.w = 1.0;
     counter_pose.position.x = 0.25;
     counter_pose.position.y = 0.25;
-    counter_pose.position.z = -0.04;
-    std::vector<double> box_dimensions = {0.7, 1.5,
-                                          0.08}; // {length, width, height}
+    counter_pose.position.z = -0.03;
+    std::vector<double> box_dimensions = {0.68, 1.5,
+                                          0.06}; // {length, width, height}
     const moveit_msgs::msg::CollisionObject coffee_counter =
         createCollisionObject("coffee_counter", "box", box_dimensions,
                               counter_pose);
