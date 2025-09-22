@@ -17,6 +17,7 @@
   <depend>visualization_msgs</depend>
   <depend>starbots_detection_msgs</depend>
   <depend>rosidl_default_generators</depend>
+  <depend>behaviortree_cpp</depend>
 
   <member_of_group>rosidl_interface_packages</member_of_group>
 
