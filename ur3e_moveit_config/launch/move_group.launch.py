@@ -7,6 +7,7 @@ def generate_launch_description():
     moveit_config = (
         MoveItConfigsBuilder("ur3e", package_name="ur3e_moveit_config")
         .robot_description_semantic(file_path="config/ur3e.srdf")
+        .sensors_3d(file_path="config/sensors_3d.yaml")
         .planning_pipelines(
             pipelines=["ompl", "pilz_industrial_motion_planner"]
         )
