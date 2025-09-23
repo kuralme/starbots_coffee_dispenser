@@ -26,13 +26,17 @@ BT::NodeStatus PrePlace::tick() {
       !future_result.get()) {
 
     RCLCPP_INFO(LOGGER, "Going to Intermediate Pose...");
-    executeKinematicsPlan(-0.200, 0.150, 0.400);
+    robot_->executeKinematicsPlan(-0.200, 0.150, 0.400);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     // If the second attempt also fails, return failure
-    if (future_result.wait_for(std::chrono::seconds(20)) !=
+    auto future_result2 = std::async(std::launch::async, [&]() {
+      return robot_->executeKinematicsPlan(goal_position.x, goal_position.y,
+                                           goal_position.z);
+    });
+    if (future_result2.wait_for(std::chrono::seconds(20)) !=
             std::future_status::ready ||
-        !future_result.get()) {
+        !future_result2.get()) {
       robot_->move_group_robot_->stop();
       robot_->clearOrientationConstraints();
       RCLCPP_ERROR(LOGGER, "PrePlace: Both attempts to reach goal failed.");

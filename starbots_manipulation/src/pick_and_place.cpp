@@ -73,7 +73,7 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
 
   // Hardcoded coffee cup position
   cup_position_.x = 0.23;
-  cup_position_.y = 0.32; // actual 0.33
+  cup_position_.y = 0.33; // actual 0.33
   cup_position_.z = 0.07;
 
   createSceneObjects();
@@ -149,11 +149,11 @@ bool PickAndPlace::executeKinematicsPlan(float pos_x, float pos_y,
   move_group_robot_->setPoseTarget(target_pose);
 
   MoveGroupInterface::Plan kinematics_trajectory_plan;
-  bool plan_success_robot_ =
+  bool plan_success_robot =
       (move_group_robot_->plan(kinematics_trajectory_plan) ==
        moveit::core::MoveItErrorCode::SUCCESS);
 
-  if (plan_success_robot_) {
+  if (plan_success_robot) {
     size_t num_points =
         kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
     RCLCPP_INFO(LOGGER, "Trajectory has %zu points", num_points);
@@ -194,16 +194,17 @@ void PickAndPlace::executeCartesianPlan(float x_delta, float y_delta,
   target_pose.position.z += z_delta;
   cartesian_waypoints.push_back(target_pose);
 
-  const double jump_threshold_ = 0.0;
-  const double end_effector_step_ = 0.01;
-  moveit_msgs::msg::RobotTrajectory cartesian_trajectory_plan_;
+  const double jump_threshold = 0.0;
+  const double end_effector_step = 0.01;
+  const bool collision_aware = true;
+  moveit_msgs::msg::RobotTrajectory cartesian_trajectory_plan;
   double plan_fraction_robot_ = move_group_robot_->computeCartesianPath(
-      cartesian_waypoints, end_effector_step_, jump_threshold_,
-      cartesian_trajectory_plan_);
+      cartesian_waypoints, end_effector_step, jump_threshold,
+      cartesian_trajectory_plan, collision_aware);
 
   // Check plan: 0.0 to 1.0 = success and -1.0 = failure
   if (plan_fraction_robot_ >= 0.0) {
-    move_group_robot_->execute(cartesian_trajectory_plan_);
+    move_group_robot_->execute(cartesian_trajectory_plan);
   } else {
     cartesian_waypoints.clear();
     // throw std::runtime_error("Cartesian planning failed !");
@@ -297,45 +298,64 @@ void PickAndPlace::createSceneObjects() {
   counter_pose.position.x = 0.25;
   counter_pose.position.y = 0.25;
   counter_pose.position.z = -0.03;
-  std::vector<double> box_dimensions = {0.68, 1.5,
-                                        0.06}; // {length, width, height}
+  std::vector<double> counter_dimensions = {0.68, 1.5,
+                                            0.06}; // {length, width, height}
   const moveit_msgs::msg::CollisionObject coffee_counter =
-      createCollisionObject("coffee_counter", "box", box_dimensions,
+      createCollisionObject("coffee_counter", "box", counter_dimensions,
                             counter_pose);
+
+  geometry_msgs::msg::Pose clamp1_pose;
+  clamp1_pose.orientation.w = 1.0;
+  clamp1_pose.position.x = -0.07;
+  clamp1_pose.position.y = 0.5;
+  clamp1_pose.position.z = -0.03;
+  std::vector<double> clamp1_dim = {0.1, 0.03, 0.1}; // {length, width, height}
+  const moveit_msgs::msg::CollisionObject clamp1 =
+      createCollisionObject("clamp1", "box", clamp1_dim, clamp1_pose);
+
+  geometry_msgs::msg::Pose clamp2_pose;
+  clamp2_pose.orientation.w = 1.0;
+  clamp2_pose.position.x = -0.07;
+  clamp2_pose.position.y = 0.12;
+  clamp2_pose.position.z = -0.03;
+  std::vector<double> clamp2_dimentions = {0.1, 0.03,
+                                           0.1}; // {length, width, height}
+  const moveit_msgs::msg::CollisionObject clamp2 =
+      createCollisionObject("clamp2", "box", clamp2_dimentions, clamp2_pose);
 
   geometry_msgs::msg::Pose wall_pose;
   wall_pose.orientation.w = 1.0;
   wall_pose.position.x = 0.0;
   wall_pose.position.y = -0.45;
   wall_pose.position.z = 0.0;
-  std::vector<double> wall_dimensions = {1.5, 0.1,
-                                         1.6}; // {length, width, height}
+  std::vector<double> wall_dim = {1.5, 0.1, 1.6}; // {length, width, height}
   const moveit_msgs::msg::CollisionObject wall =
-      createCollisionObject("wall", "box", wall_dimensions, wall_pose);
+      createCollisionObject("wall", "box", wall_dim, wall_pose);
 
   geometry_msgs::msg::Pose machine_pose;
   machine_pose.orientation.w = 1.0;
   machine_pose.position.x = 0.3;
   machine_pose.position.y = 0.87;
   machine_pose.position.z = 0.14;
-  std::vector<double> machine_dimensions = {0.5, 0.22,
-                                            0.25}; // {length, width, height}
+  std::vector<double> machine_dim = {0.5, 0.22,
+                                     0.25}; // {length, width, height}
   const moveit_msgs::msg::CollisionObject coffee_machine =
-      createCollisionObject("coffee_machine", "box", machine_dimensions,
-                            machine_pose);
+      createCollisionObject("coffee_machine", "box", machine_dim, machine_pose);
 
   geometry_msgs::msg::Pose cupdisp_pose;
   cupdisp_pose.orientation.w = 1.0;
   cupdisp_pose.position.x = 0.25;
   cupdisp_pose.position.y = -0.33;
   cupdisp_pose.position.z = 0.55;
-  std::vector<double> cuprack_dimensions = {0.5, 0.07}; // {height, radius}
+  std::vector<double> cuprack_dim = {0.5, 0.07}; // {height, radius}
   const moveit_msgs::msg::CollisionObject cup_dispenser = createCollisionObject(
-      "cup_dispenser", "cylinder", cuprack_dimensions, cupdisp_pose);
+      "cup_dispenser", "cylinder", cuprack_dim, cupdisp_pose);
 
   std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
   collision_objects.push_back(wall);
   collision_objects.push_back(coffee_counter);
+  collision_objects.push_back(clamp1);
+  collision_objects.push_back(clamp2);
   collision_objects.push_back(coffee_machine);
   collision_objects.push_back(cup_dispenser);
 
