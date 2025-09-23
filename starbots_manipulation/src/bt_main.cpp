@@ -1,3 +1,4 @@
+#include <fstream>
 #include <rclcpp/rclcpp.hpp>
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include <behaviortree_cpp/bt_factory.h>
@@ -57,9 +58,17 @@ int main(int argc, char **argv)
                                         return std::make_unique<Return>(name, config, robot_node.get());
                                     });
 
-    std::string tree_file = ament_index_cpp::get_package_share_directory("starbots_manipulation") + "/bt_config/coffee_delivery_tree.xml";
+    // Load BT from XML file
+    std::string bt_config_dir = ament_index_cpp::get_package_share_directory("starbots_manipulation") + "/bt_config/";
+    std::string tree_file = bt_config_dir + "/coffee_delivery_tree.xml";
     auto tree = factory.createTreeFromFile(tree_file);
-    std::string xml_models = BT::writeTreeNodesModelXML(factory);
+
+    // Extract the tree model for Groot2
+    // std::string xml_models = BT::writeTreeNodesModelXML(factory);
+    // std::string output_path = bt_config_dir + "/delivery_tree_nodes_model.xml";
+    // std::ofstream out(output_path);
+    // out << xml_models;
+    // out.close();
 
     // Service callback triggers BT execution
     auto service = btros_node->create_service<DeliverCup>(

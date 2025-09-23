@@ -28,5 +28,5 @@ BT::NodeStatus PutBack::tick()
 
     auto blackboard_ = config().blackboard;
     blackboard_->set("place_failed", true);
-    return BT::NodeStatus::FAILURE;
+    return BT::NodeStatus::SUCCESS;
 }
