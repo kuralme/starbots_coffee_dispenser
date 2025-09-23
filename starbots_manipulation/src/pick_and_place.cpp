@@ -58,22 +58,16 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
   move_group_robot_->setPlanningTime(15.0);
 
   // Prepare ROS2 communiation
-  rclcpp::CallbackGroup::SharedPtr callback_group;
-  callback_group = move_group_node_->create_callback_group(
-      rclcpp::CallbackGroupType::Reentrant);
-  rclcpp::SubscriptionOptions sub_options;
-  sub_options.callback_group = callback_group;
-
   holepose_sub_ = move_group_node_->create_subscription<
       starbots_detection_msgs::msg::DetectedCupholders>(
       "/cup_holder_detected", 100,
-      std::bind(&PickAndPlace::holeDetectionCallback, this, _1), sub_options);
+      std::bind(&PickAndPlace::holeDetectionCallback, this, _1));
   octo_client_ =
       move_group_node_->create_client<std_srvs::srv::Empty>("/clear_octomap");
 
   // Hardcoded coffee cup position
-  cup_position_.x = 0.23;
-  cup_position_.y = 0.33; // actual 0.33
+  cup_position_.x = 0.222; // guess 0.23
+  cup_position_.y = 0.334; // guess 0.33
   cup_position_.z = 0.07;
 
   createSceneObjects();
@@ -228,9 +222,9 @@ void PickAndPlace::executeGripperPlan(std::string pose_name) {
 }
 void PickAndPlace::closeGripperIncremental() {
   float gripper_value = 0.4;
-  const float target_value = 0.0; // ~gripper_grasp
-  const float step_large = 0.17;
-  const float step_medium = 0.07;
+  const float target_value = -0.1; // ~gripper_grasp
+  const float step_large = 0.2;
+  const float step_medium = 0.06;
 
   while (gripper_value > target_value) {
     // Dynamically reduce step size for precision
@@ -296,9 +290,9 @@ void PickAndPlace::createSceneObjects() {
   geometry_msgs::msg::Pose counter_pose;
   counter_pose.orientation.w = 1.0;
   counter_pose.position.x = 0.25;
-  counter_pose.position.y = 0.25;
+  counter_pose.position.y = 0.30;
   counter_pose.position.z = -0.03;
-  std::vector<double> counter_dimensions = {0.68, 1.5,
+  std::vector<double> counter_dimensions = {0.68, 1.6,
                                             0.06}; // {length, width, height}
   const moveit_msgs::msg::CollisionObject coffee_counter =
       createCollisionObject("coffee_counter", "box", counter_dimensions,
@@ -306,20 +300,26 @@ void PickAndPlace::createSceneObjects() {
 
   geometry_msgs::msg::Pose clamp1_pose;
   clamp1_pose.orientation.w = 1.0;
-  clamp1_pose.position.x = -0.07;
-  clamp1_pose.position.y = 0.5;
+  clamp1_pose.position.x = -0.08;
+  clamp1_pose.position.y = 0.6;
   clamp1_pose.position.z = -0.03;
-  std::vector<double> clamp1_dim = {0.1, 0.03, 0.1}; // {length, width, height}
+  std::vector<double> clamp1_dim = {0.06, 0.02,
+                                    0.12}; // {length, width, height}
   const moveit_msgs::msg::CollisionObject clamp1 =
       createCollisionObject("clamp1", "box", clamp1_dim, clamp1_pose);
 
   geometry_msgs::msg::Pose clamp2_pose;
-  clamp2_pose.orientation.w = 1.0;
-  clamp2_pose.position.x = -0.07;
-  clamp2_pose.position.y = 0.12;
+  tf2::Quaternion q;
+  q.setRPY(0, 0, -M_PI / 4.);
+  clamp2_pose.orientation.x = q.x();
+  clamp2_pose.orientation.y = q.y();
+  clamp2_pose.orientation.z = q.z();
+  clamp2_pose.orientation.w = q.w();
+  clamp2_pose.position.x = -0.08;
+  clamp2_pose.position.y = 0.15;
   clamp2_pose.position.z = -0.03;
-  std::vector<double> clamp2_dimentions = {0.1, 0.03,
-                                           0.1}; // {length, width, height}
+  std::vector<double> clamp2_dimentions = {0.06, 0.02,
+                                           0.12}; // {length, width, height}
   const moveit_msgs::msg::CollisionObject clamp2 =
       createCollisionObject("clamp2", "box", clamp2_dimentions, clamp2_pose);
 
@@ -335,7 +335,7 @@ void PickAndPlace::createSceneObjects() {
   geometry_msgs::msg::Pose machine_pose;
   machine_pose.orientation.w = 1.0;
   machine_pose.position.x = 0.3;
-  machine_pose.position.y = 0.87;
+  machine_pose.position.y = 0.95;
   machine_pose.position.z = 0.14;
   std::vector<double> machine_dim = {0.5, 0.22,
                                      0.25}; // {length, width, height}

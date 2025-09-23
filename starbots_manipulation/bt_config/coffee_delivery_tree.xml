@@ -3,15 +3,13 @@
   <BehaviorTree ID="MainTree">
     <Sequence name="MainSequence">
       <Sequence name="Coffee Delivery">
-        <ValidateDetection name="Validate Detection"
-                           _description="Checks if the cup and holder are detected"/>
+        <ValidateDetection name="Validate Detection" _description="Checks if the cup and holder are detected"/>
         <PrePick name="Pre-pick"
                  _description="Moves robot to pre-pick position"/>
         <Pick _description="Picks up the cup"/>
         <Fallback name="PlaceOrRecover">
           <Sequence name="TrytoPlace">
-            <PrePlace name="Pre-place"
-                      _description="Moves robot to pre-place position"/>
+            <PrePlace name="Pre-place" _description="Moves robot to pre-place position"/>
             <Place _description="Approaches and places the cup in the holder"/>
           </Sequence>
           <Inverter>
@@ -30,10 +28,8 @@
     <Action ID="Place"/>
     <Action ID="PrePick"/>
     <Action ID="PrePlace"/>
-    <Action ID="PutBack">
-    </Action>
+    <Action ID="PutBack"/>
     <Action ID="Return"/>
     <Action ID="ValidateDetection"/>
   </TreeNodesModel>
-
 </root>
