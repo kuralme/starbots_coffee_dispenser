@@ -36,7 +36,7 @@ class CupHolderDetection(Node):
             surface_clusters, surface_centroids, surface_dimensions = self.extract_clusters(tray_cloud, "Tray Cloud")
 
             # Filter points just below the tray surface and cluster cylinder cup holders
-            surface_centroids[0][1] += 0.018
+            # surface_centroids[0][1] += 0.018
             cupholder_cloud = self.filter_below_surface(filtered_cloud, surface_centroids[0])
             cup_holder_centroids, cup_holder_dimensions = self.extract_cylinders(cupholder_cloud, filtered_cloud)
 
@@ -272,6 +272,13 @@ class CupHolderDetection(Node):
         # Filter out centroids that are too close to each other based on minimum distance
         cupholder_centroids = self.filter_close_cupholder(cupholder_centroids, min_distance)
 
+        # Sort cupholders by height (Z value of centroid)
+        sorted_results = sorted(
+            zip(cupholder_centroids, cupholder_dimensions),
+            key=lambda x: x[0][0]
+        )
+        cupholder_centroids, cupholder_dimensions = map(list, zip(*sorted_results)) if sorted_results else ([], [])
+
         return cupholder_centroids, cupholder_dimensions
 
     def pub_surface_marker(self, surface_centroids: List[List[float]], surface_dimensions: List[List[float]]) -> None:
@@ -288,7 +295,7 @@ class CupHolderDetection(Node):
             cylinder_marker.type = Marker.CYLINDER
             cylinder_marker.action = Marker.ADD
             cylinder_marker.pose.position.x = centroid[0]
-            cylinder_marker.pose.position.y = centroid[1]
+            cylinder_marker.pose.position.y = centroid[1] + 0.015
             cylinder_marker.pose.position.z = centroid[2] - height / 2
             cylinder_marker.pose.orientation.w = 1.0
             cylinder_marker.scale.x = radius * 2  # Diameter of the tray
@@ -309,7 +316,7 @@ class CupHolderDetection(Node):
             surface_msg = DetectedSurfaces()
             surface_msg.surface_id = idx
             surface_msg.position.x = centroid[0]
-            surface_msg.position.y = centroid[1]
+            surface_msg.position.y = centroid[1] + 0.015
             surface_msg.position.z = centroid[2]
             surface_msg.height = dimension[1]
             surface_msg.width = dimension[0]
@@ -329,7 +336,7 @@ class CupHolderDetection(Node):
             cylinder_marker.type = Marker.CYLINDER
             cylinder_marker.action = Marker.ADD
             cylinder_marker.pose.position.x = centroid[0]
-            cylinder_marker.pose.position.y = centroid[1] - 0.006
+            cylinder_marker.pose.position.y = centroid[1] - 0.015
             cylinder_marker.pose.position.z = tray_height - height / 2.
             cylinder_marker.pose.orientation.w = 1.0
             cylinder_marker.scale.x = radius * 2  # Diameter of the cylinder
@@ -349,7 +356,7 @@ class CupHolderDetection(Node):
             text_marker.text = str(idx) # Set the text as the cup holder ID
             text_marker.action = Marker.ADD
             text_marker.pose.position.x = centroid[0]
-            text_marker.pose.position.y = centroid[1]
+            text_marker.pose.position.y = centroid[1] - 0.015
             text_marker.pose.position.z = centroid[2] + text_height_offset
             text_marker.pose.orientation.w = 1.0
             text_marker.scale.x = 0.05
@@ -372,11 +379,15 @@ class CupHolderDetection(Node):
         cupholders_msg = DetectedCupholders()
         radius = 0.032
         height = 0.045
-
+        
         for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
+            if idx == 0:
+                hole_offset = 0.015
+            else:
+                hole_offset = 0.0
             cupholder = DetectedCupholder()
             cupholder.cupholder_id = idx
-            cupholder.position = Point(x=centroid[0], y=(centroid[1] - 0.006), z=(tray_height - height / 2.))
+            cupholder.position = Point(x=(centroid[0] + hole_offset), y=(centroid[1] - 0.015), z=(tray_height - height / 2.))
             cupholder.radius = radius
             cupholder.height = height
             cupholders_msg.cup_holders.append(cupholder)

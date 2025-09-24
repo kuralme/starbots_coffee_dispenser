@@ -16,8 +16,12 @@ find_package(pcl_conversions REQUIRED)
 add_executable(pointcloud_filter_node src/pointcloud_filter_node.cpp)
 ament_target_dependencies(pointcloud_filter_node rclcpp sensor_msgs PCL pcl_conversions)
 
+add_executable(pcl_qos_conv src/pcl_qos_conv.cpp)
+ament_target_dependencies(pcl_qos_conv rclcpp sensor_msgs PCL)
+
 install(TARGETS
   pointcloud_filter_node
+  pcl_qos_conv
   DESTINATION lib/${PROJECT_NAME}
 )
 install(DIRECTORY 

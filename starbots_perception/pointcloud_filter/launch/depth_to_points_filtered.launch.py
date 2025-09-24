@@ -10,9 +10,9 @@ def generate_launch_description():
             package='tf2_ros',
             executable='static_transform_publisher',
             name='static_transform_world_to_d415',
-            arguments=[ # '-0.425', '-0.375', '0.352', '-0.285', '0.240', '0.482', '0.405'
-                '-0.427', '-0.330', '0.348',          # Translation: X, Y, Z
-                '-0.110', '0.100', '0.218', '0.225',  # Rotation: Quaternion (xyzw)
+            arguments=[
+                '-0.405', '-0.300', '0.390',          # Translation: X, Y, Z
+                '-0.115', '0.104', '0.215', '0.210',  # Rotation: Quaternion (xyzw)
                 'world', 'D415_link'
             ],
             output='screen',
