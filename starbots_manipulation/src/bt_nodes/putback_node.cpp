@@ -2,10 +2,7 @@
 
 PutBack::PutBack(const std::string &name, const BT::NodeConfig &config, PickAndPlace *robot)
     : BT::SyncActionNode(name, config), robot_(robot) {}
-BT::PortsList PutBack::providedPorts()
-{
-    return {BT::InputPort<bool>("place_failed")};
-}
+BT::PortsList PutBack::providedPorts() { return {}; }
 
 BT::NodeStatus PutBack::tick()
 {

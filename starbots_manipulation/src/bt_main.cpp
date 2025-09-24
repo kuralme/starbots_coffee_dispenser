@@ -3,6 +3,7 @@
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include <behaviortree_cpp/bt_factory.h>
 #include "behaviortree_cpp/xml_parsing.h"
+#include "behaviortree_cpp/loggers/groot2_publisher.h"
 #include "observer.hpp"
 #include "bt_nodes/validate_detection_node.hpp"
 #include "bt_nodes/prepick_node.hpp"
@@ -62,7 +63,7 @@ int main(int argc, char **argv)
     std::string bt_config_dir = ament_index_cpp::get_package_share_directory("starbots_manipulation") + "/bt_config/";
     std::string tree_file = bt_config_dir + "/coffee_delivery_tree.xml";
     auto tree = factory.createTreeFromFile(tree_file);
-
+    BT::Groot2Publisher publisher(tree);
     // Extract the tree model for Groot2
     // std::string xml_models = BT::writeTreeNodesModelXML(factory);
     // std::string output_path = bt_config_dir + "/delivery_tree_nodes_model.xml";

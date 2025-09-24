@@ -12,7 +12,7 @@ BT::NodeStatus Place::tick()
     RCLCPP_INFO(LOGGER, "Approaching to place...");
 
     robot_->createOrientationConstraint();
-    robot_->clearOctomap();
+    // robot_->clearOctomap();
     if (!robot_->executeKinematicsPlan(robot_pose.position.x, robot_pose.position.y, robot_pose.position.z - 0.230))
     {
         robot_->executeCartesianPlan(+0.000, +0.000, -0.250);
@@ -26,7 +26,7 @@ BT::NodeStatus Place::tick()
     RCLCPP_INFO(LOGGER, "Retreating...");
     if (!robot_->executeKinematicsPlan(robot_pose.position.x, robot_pose.position.y, robot_pose.position.z))
     {
-        robot_->executeCartesianPlan(+0.000, +0.000, +0.300);
+        robot_->executeCartesianPlan(+0.000, +0.000, +0.230);
     }
 
     robot_->clearOrientationConstraints();

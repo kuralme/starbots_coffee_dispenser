@@ -29,6 +29,7 @@ services:
     networks:
       - starbots-network
     ports:
+      - "1667:1667"
       - "8765:8765"
       - "9090:9090"
     restart: always
