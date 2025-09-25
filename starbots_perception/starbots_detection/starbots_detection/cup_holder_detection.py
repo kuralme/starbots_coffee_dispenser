@@ -23,7 +23,7 @@ class CupHolderDetection(Node):
     def callback(self, msg: PointCloud2) -> None:
         try:
             cloud = self.from_ros_msg(msg)
-            filtered_cloud = self.filter_cloud(cloud, min_x=-0.6, max_x=-0.2, min_y=-0.2, max_y=0.2, min_z=-0.75, max_z=-0.4)
+            filtered_cloud = self.filter_cloud(cloud, min_x=-0.6, max_x=-0.2, min_y=-0.2, max_y=0.2, min_z=-0.75, max_z=0.0)
 
             # Plane segmentation and clustering
             plane_indices, plane_coefficients, tray_cloud = self.extract_plane(filtered_cloud)
