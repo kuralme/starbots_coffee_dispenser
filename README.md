@@ -161,7 +161,7 @@ Visualize with foxglove webapp on browser:
     ros2 launch starbots_webapp start_foxglove.launch.xml
     ```
 
-- Get rosbridge address for connection
+- Get rosbridge address for connection (for The Construct env only)
 
     ```bash
     rosbridge_address
@@ -187,6 +187,12 @@ sudo chmod +x ros_entrypoint.sh
 docker-compose up
 ```
 
-The foxglove bridge also starts within containers (with port 8765).
+The foxglove bridge also starts within the containers (with port 8765 as default).
 
-To call coffee delivery service either follow using webapp steps or send it in command line.
+To call coffee delivery service either follow webapp instructions step or use desktop app depending on your environment. [Desktop app](<https://foxglove.dev/download>) is recommended. Either set panels on your own or use _starbots_webapp/starbots_webapp_sim.json_
+
+Spawn another cup:
+
+```bash
+docker exec starbots-ros2-gazebo bash /ros2_ws/src/spawn_cup.sh
+```

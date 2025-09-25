@@ -4,7 +4,7 @@ RANDOM_ID=$(( RANDOM % 9000 + 1000 ))
 ENTITY_NAME="cup${RANDOM_ID}"
 
 # Path to the model
-MODEL_PATH="./starbots_ur3e_gazebo/the_construct_office_gazebo/models/portable_cup_2/model.sdf"
+MODEL_PATH="/ros2_ws/src/starbots_ur3e_gazebo/the_construct_office_gazebo/models/portable_cup_2/model.sdf"
 
 # Spawn pose
 X=14.1
@@ -15,6 +15,7 @@ P=0
 YAW=0
 
 # Run the ros2 spawn command
+source /opt/ros/humble/setup.bash
 ros2 run gazebo_ros spawn_entity.py \
     -file "${MODEL_PATH}" \
     -x "${X}" -y "${Y}" -z "${Z}" \
