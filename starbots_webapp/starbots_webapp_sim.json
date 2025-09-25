@@ -1,14 +1,5 @@
 {
   "configById": {
-    "CallService!3jm0wum": {
-      "requestPayload": "{\n  \"goal_cup_holder\": 0\n}",
-      "layout": "vertical",
-      "timeoutSeconds": 500,
-      "foxglovePanelTitle": "Coffee Delivery Service",
-      "serviceName": "/deliver_coffee",
-      "buttonTooltip": "Enter target hole & Order Coffee",
-      "buttonText": "Order Coffee"
-    },
     "3D!19idsu8": {
       "topics": {
         "/camera_depth_sensor/points": {
@@ -92,13 +83,13 @@
       },
       "cameraState": {
         "perspective": true,
-        "distance": 1.5388995055322197,
-        "phi": 57.55474895145814,
-        "thetaOffset": 147.58158904963622,
+        "distance": 1.7948966386113767,
+        "phi": 58.24159037379437,
+        "thetaOffset": 107.21875587077139,
         "targetOffset": [
-          -0.1880838292865908,
-          0.3107527931937546,
-          0.1250838756730442
+          -0.21216546951666232,
+          0.3582153697784547,
+          0.12508387567304344
         ],
         "target": [
           0,
@@ -120,8 +111,8 @@
         "transforms": {
           "visible": true,
           "lineWidth": 0.5,
-          "axisScale": 0.5,
-          "labelSize": 0.04
+          "axisScale": 0.3,
+          "labelSize": 0.03
         }
       },
       "transforms": {
@@ -177,13 +168,13 @@
           "visible": false
         },
         "frame:base_link": {
-          "visible": true
+          "visible": false
         },
         "frame:base": {
           "visible": false
         },
         "frame:base_link_inertia": {
-          "visible": false
+          "visible": true
         },
         "frame:shoulder_link": {
           "visible": true
@@ -314,11 +305,62 @@
       "imageMode": {},
       "followTf": "base_link"
     },
-    "Image!30uq953": {
+    "CallService!3jm0wum": {
+      "requestPayload": "{\n  \"goal_cup_holder\": 0\n}",
+      "layout": "vertical",
+      "timeoutSeconds": 500,
+      "foxglovePanelTitle": "Coffee Delivery Service",
+      "serviceName": "/deliver_coffee",
+      "buttonTooltip": "Enter target hole & Order Coffee",
+      "buttonText": "Order Coffee"
+    },
+    "Image!1xbsj5h": {
+      "cameraState": {
+        "distance": 20,
+        "perspective": true,
+        "phi": 60,
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOffset": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "thetaOffset": 45,
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "scene": {},
+      "transforms": {},
+      "topics": {},
+      "layers": {},
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
       "imageMode": {
         "imageTopic": "/camera_depth_sensor/image_raw",
         "calibrationTopic": "/camera_depth_sensor/camera_info"
       },
+      "foxglovePanelTitle": "Counter Camera"
+    },
+    "Image!32f041e": {
       "cameraState": {
         "distance": 20,
         "perspective": true,
@@ -358,174 +400,56 @@
         "poseEstimateYDeviation": 0.5,
         "poseEstimateThetaDeviation": 0.26179939
       },
-      "foxglovePanelTitle": "Counter top cam"
-    },
-    "Image!1uv14k2": {
-      "cameraState": {
-        "distance": 20,
-        "perspective": true,
-        "phi": 60,
-        "target": [
-          0,
-          0,
-          0
-        ],
-        "targetOffset": [
-          0,
-          0,
-          0
-        ],
-        "targetOrientation": [
-          0,
-          0,
-          0,
-          1
-        ],
-        "thetaOffset": 45,
-        "fovy": 45,
-        "near": 0.5,
-        "far": 5000
-      },
-      "followMode": "follow-pose",
-      "scene": {},
-      "transforms": {},
-      "topics": {},
-      "layers": {},
-      "publish": {
-        "type": "point",
-        "poseTopic": "/move_base_simple/goal",
-        "pointTopic": "/clicked_point",
-        "poseEstimateTopic": "/initialpose",
-        "poseEstimateXDeviation": 0.5,
-        "poseEstimateYDeviation": 0.5,
-        "poseEstimateThetaDeviation": 0.26179939
-      },
-      "imageMode": {
-        "imageTopic": "/camera_depth_sensor/depth/image_raw",
-        "calibrationTopic": "/camera_depth_sensor/depth/camera_info"
-      },
-      "foxglovePanelTitle": "Counter top depth cam"
-    },
-    "Image!21vy45r": {
       "imageMode": {
         "imageTopic": "/wrist_rgbd_depth_sensor/image_raw",
         "calibrationTopic": "/wrist_rgbd_depth_sensor/camera_info"
       },
-      "cameraState": {
-        "distance": 20,
-        "perspective": true,
-        "phi": 60,
-        "target": [
-          0,
-          0,
-          0
-        ],
-        "targetOffset": [
-          0,
-          0,
-          0
-        ],
-        "targetOrientation": [
-          0,
-          0,
-          0,
-          1
-        ],
-        "thetaOffset": 45,
-        "fovy": 45,
-        "near": 0.5,
-        "far": 5000
-      },
-      "followMode": "follow-pose",
-      "scene": {},
-      "transforms": {},
-      "topics": {},
-      "layers": {},
-      "publish": {
-        "type": "point",
-        "poseTopic": "/move_base_simple/goal",
-        "pointTopic": "/clicked_point",
-        "poseEstimateTopic": "/initialpose",
-        "poseEstimateXDeviation": 0.5,
-        "poseEstimateYDeviation": 0.5,
-        "poseEstimateThetaDeviation": 0.26179939
-      },
-      "foxglovePanelTitle": "Barista tray cam"
+      "foxglovePanelTitle": "Barista Camera"
     },
-    "Image!46fjbv8": {
-      "cameraState": {
-        "distance": 20,
-        "perspective": true,
-        "phi": 60,
-        "target": [
-          0,
-          0,
-          0
-        ],
-        "targetOffset": [
-          0,
-          0,
-          0
-        ],
-        "targetOrientation": [
-          0,
-          0,
-          0,
-          1
-        ],
-        "thetaOffset": 45,
-        "fovy": 45,
-        "near": 0.5,
-        "far": 5000
-      },
-      "followMode": "follow-pose",
-      "scene": {},
-      "transforms": {},
-      "topics": {},
-      "layers": {},
-      "publish": {
-        "type": "point",
-        "poseTopic": "/move_base_simple/goal",
-        "pointTopic": "/clicked_point",
-        "poseEstimateTopic": "/initialpose",
-        "poseEstimateXDeviation": 0.5,
-        "poseEstimateYDeviation": 0.5,
-        "poseEstimateThetaDeviation": 0.26179939
-      },
-      "imageMode": {
-        "imageTopic": "/wrist_rgbd_depth_sensor/depth/image_raw",
-        "calibrationTopic": "/wrist_rgbd_depth_sensor/depth/camera_info"
-      },
-      "foxglovePanelTitle": "Barista tray depth cam"
+    "StateTransitions!zl1vfg": {
+      "paths": [
+        {
+          "value": "/bt_node_status.data",
+          "timestampMethod": "receiveTime",
+          "customStates": {
+            "type": "discrete",
+            "states": []
+          }
+        }
+      ],
+      "isSynced": true,
+      "xAxisLabel": "Behaviour State",
+      "foxglovePanelTitle": "Robot State Transition"
     }
   },
   "layout": {
-    "direction": "row",
-    "first": "CallService!3jm0wum",
-    "second": {
+    "first": {
       "first": "3D!19idsu8",
       "second": {
-        "first": {
-          "first": "Image!30uq953",
-          "second": "Image!1uv14k2",
-          "direction": "row"
-        },
+        "first": "CallService!3jm0wum",
         "second": {
-          "first": "Image!21vy45r",
-          "second": "Image!46fjbv8",
+          "first": "Image!1xbsj5h",
+          "second": "Image!32f041e",
           "direction": "row"
         },
         "direction": "column",
-        "splitPercentage": 49.72067039106145
+        "splitPercentage": 66.11039794608473
       },
       "direction": "row",
-      "splitPercentage": 62.650602409638566
+      "splitPercentage": 53.44418052256532
     },
-    "splitPercentage": 16.11177170035672
+    "second": "StateTransitions!zl1vfg",
+    "direction": "column",
+    "splitPercentage": 83.40163934426229
   },
   "globalVariables": {},
   "playbackConfig": {
     "speed": 1
   },
-  "userNodes": {}
+  "userNodes": {
+    "eddd93f5-5652-4e50-b27f-ecfd20f38a2d": {
+      "sourceCode": "import { Input, Message } from \"./types\";\n\ntype Output = {};\n\nexport const inputs = [\"/topic\"];\nexport const output = \"/foxglove_script/output_topic\";\n\nexport default function script(event: Input<\"/topic\">): Output {\n  return {};\n};\n",
+      "name": "eddd93f5"
+    }
+  }
 }
