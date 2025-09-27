@@ -10,7 +10,7 @@ BT::NodeStatus PrePlace::tick() {
   auto request =
       blackboard_->get<std::shared_ptr<DeliverCup::Request>>("request");
   auto goal_position = robot_->goal_poses_[request->goal_cup_holder];
-  goal_position.z += .57;
+  goal_position.z += .6;
 
   robot_->createOrientationConstraint();
   RCLCPP_INFO(LOGGER, "Going to the Pre-placing Pose: [%.3f, %.3f, %.3f]",

@@ -24,5 +24,6 @@ BT::NodeStatus PrePick::tick() {
     robot_->move_group_robot_->stop();
     return BT::NodeStatus::FAILURE;
   }
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
   return BT::NodeStatus::SUCCESS;
 }

@@ -67,7 +67,7 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
 
   // Hardcoded coffee cup position
   cup_position_.x = 0.222; // guess 0.23
-  cup_position_.y = 0.334; // guess 0.33
+  cup_position_.y = 0.333; // guess 0.33
   cup_position_.z = 0.07;
 
   createSceneObjects();
@@ -83,20 +83,20 @@ PickAndPlace::~PickAndPlace() {
 
 void PickAndPlace::holeDetectionCallback(
     const starbots_detection_msgs::msg::DetectedCupholders::SharedPtr msg) {
-  if (!goal_poses_received_) {
-    for (const auto &cupholder : msg->cup_holders) {
-      goal_poses_.push_back(cupholder.position);
-      // RCLCPP_INFO(LOGGER, "===========================");
-      // RCLCPP_INFO(LOGGER, "Cupholder ID: %u", cupholder.cupholder_id);
-      // RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)",
-      // cupholder.position.x, cupholder.position.y,
-      // cupholder.position.z);
-      // RCLCPP_INFO(LOGGER, "Radius: %.2f", cupholder.radius);
-      // RCLCPP_INFO(LOGGER, "Height: %.2f", cupholder.height);
-    }
-    //   RCLCPP_INFO(LOGGER, "===========================");
-    goal_poses_received_ = true;
+  //   if (!goal_poses_received_) {
+  for (const auto &cupholder : msg->cup_holders) {
+    goal_poses_.push_back(cupholder.position);
+    // RCLCPP_INFO(LOGGER, "===========================");
+    // RCLCPP_INFO(LOGGER, "Cupholder ID: %u", cupholder.cupholder_id);
+    // RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)",
+    // cupholder.position.x, cupholder.position.y,
+    // cupholder.position.z);
+    // RCLCPP_INFO(LOGGER, "Radius: %.2f", cupholder.radius);
+    // RCLCPP_INFO(LOGGER, "Height: %.2f", cupholder.height);
   }
+  //   RCLCPP_INFO(LOGGER, "===========================");
+  goal_poses_received_ = true;
+  //   }
 }
 bool PickAndPlace::gotoPredefined(std::string pose_name) {
   // Move robot(joints) to predefined configuration
@@ -301,7 +301,7 @@ void PickAndPlace::createSceneObjects() {
   geometry_msgs::msg::Pose clamp1_pose;
   clamp1_pose.orientation.w = 1.0;
   clamp1_pose.position.x = -0.08;
-  clamp1_pose.position.y = 0.6;
+  clamp1_pose.position.y = 0.48;
   clamp1_pose.position.z = -0.03;
   std::vector<double> clamp1_dim = {0.06, 0.02,
                                     0.12}; // {length, width, height}
@@ -310,13 +310,13 @@ void PickAndPlace::createSceneObjects() {
 
   geometry_msgs::msg::Pose clamp2_pose;
   tf2::Quaternion q;
-  q.setRPY(0, 0, -M_PI / 4.);
+  q.setRPY(0, 0, -M_PI / 5.);
   clamp2_pose.orientation.x = q.x();
   clamp2_pose.orientation.y = q.y();
   clamp2_pose.orientation.z = q.z();
   clamp2_pose.orientation.w = q.w();
   clamp2_pose.position.x = -0.08;
-  clamp2_pose.position.y = 0.15;
+  clamp2_pose.position.y = 0.16;
   clamp2_pose.position.z = -0.03;
   std::vector<double> clamp2_dimentions = {0.06, 0.02,
                                            0.12}; // {length, width, height}

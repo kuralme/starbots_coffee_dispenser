@@ -16,8 +16,9 @@ BT::NodeStatus Place::tick() {
   if (!robot_->executeKinematicsPlan(robot_pose.position.x,
                                      robot_pose.position.y,
                                      robot_pose.position.z - 0.230)) {
-    robot_->executeCartesianPlan(+0.000, +0.000, -0.230);
-    // return BT::NodeStatus::FAILURE;
+    // robot_->executeCartesianPlan(+0.000, +0.000, -0.230);
+    RCLCPP_INFO(LOGGER, "Place failed!");
+    return BT::NodeStatus::FAILURE;
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
