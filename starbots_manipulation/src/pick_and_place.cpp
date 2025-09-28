@@ -55,7 +55,7 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
       joint_model_group_gripper_, joint_group_positions_gripper_);
   move_group_robot_->setStartStateToCurrentState();
   move_group_gripper_->setStartStateToCurrentState();
-  move_group_robot_->setPlanningTime(15.0);
+  move_group_robot_->setPlanningTime(20.0);
 
   // Prepare ROS2 communiation
   rclcpp::CallbackGroup::SharedPtr callback_group;

@@ -6,16 +6,20 @@ BT::PortsList Place::providedPorts() { return {}; }
 
 BT::NodeStatus Place::tick()
 {
-    // robot_current_state_ = robot_->move_group_robot_->getCurrentState(10);
+    RCLCPP_INFO(LOGGER, "Approaching to place...");
     geometry_msgs::msg::Pose robot_pose = robot_->move_group_robot_->getCurrentPose().pose;
 
-    RCLCPP_INFO(LOGGER, "Approaching to place...");
-
     robot_->createOrientationConstraint();
-    // robot_->clearOctomap();
-    if (!robot_->executeKinematicsPlan(robot_pose.position.x, robot_pose.position.y, robot_pose.position.z - 0.230))
+    robot_->move_group_robot_->setPlanningTime(3.0);
+    if (!robot_->executeKinematicsPlan(robot_pose.position.x, robot_pose.position.y, robot_pose.position.z - 0.230) &&
+        !robot_->executeKinematicsPlan(robot_pose.position.x, robot_pose.position.y, robot_pose.position.z - 0.215) &&
+        !robot_->executeKinematicsPlan(robot_pose.position.x, robot_pose.position.y, robot_pose.position.z - 0.188))
     {
-        robot_->executeCartesianPlan(+0.000, +0.000, -0.250);
+        RCLCPP_ERROR(LOGGER, "Place kinematics plan failed!");
+        robot_->move_group_robot_->stop();
+        robot_->clearOrientationConstraints();
+        robot_->move_group_robot_->setPlanningTime(20.0); // For future runs
+        return BT::NodeStatus::FAILURE;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
@@ -24,11 +28,18 @@ BT::NodeStatus Place::tick()
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
     RCLCPP_INFO(LOGGER, "Retreating...");
-    if (!robot_->executeKinematicsPlan(robot_pose.position.x, robot_pose.position.y, robot_pose.position.z))
+    if (!robot_->executeKinematicsPlan(robot_pose.position.x, robot_pose.position.y, robot_pose.position.z) &&
+        !robot_->executeKinematicsPlan(robot_pose.position.x, robot_pose.position.y, robot_pose.position.z - 0.02) &&
+        !robot_->executeKinematicsPlan(robot_pose.position.x, robot_pose.position.y, robot_pose.position.z + 0.02))
     {
-        robot_->executeCartesianPlan(+0.000, +0.000, +0.230);
+        RCLCPP_ERROR(LOGGER, "Retreat kinematics plan failed!");
+        robot_->move_group_robot_->stop();
+        robot_->clearOrientationConstraints();
+        robot_->move_group_robot_->setPlanningTime(20.0); // For future runs
+        return BT::NodeStatus::FAILURE;
     }
 
     robot_->clearOrientationConstraints();
+    robot_->move_group_robot_->setPlanningTime(20.0);
     return BT::NodeStatus::SUCCESS;
 }
