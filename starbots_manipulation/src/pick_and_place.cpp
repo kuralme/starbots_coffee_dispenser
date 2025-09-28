@@ -55,7 +55,7 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
       joint_model_group_gripper_, joint_group_positions_gripper_);
   move_group_robot_->setStartStateToCurrentState();
   move_group_gripper_->setStartStateToCurrentState();
-  move_group_robot_->setPlanningTime(15.0);
+  move_group_robot_->setPlanningTime(20.0);
 
   // Prepare ROS2 communiation
   holepose_sub_ = move_group_node_->create_subscription<
@@ -250,7 +250,7 @@ void PickAndPlace::closeGripperIncremental() {
   }
 }
 
-void PickAndPlace::attachGripperObject(const std::string &object_id) {
+void PickAndPlace::attachCollisionObject(const std::string &object_id) {
   // Add the cup to the planning scene
   geometry_msgs::msg::Pose cup_pose;
   cup_pose.position = cup_position_;
@@ -269,7 +269,7 @@ void PickAndPlace::attachGripperObject(const std::string &object_id) {
 
   RCLCPP_INFO(LOGGER, "Cup attached to gripper");
 }
-void PickAndPlace::detachGripperObject(const std::string &object_id) {
+void PickAndPlace::detachCollisionObject(const std::string &object_id) {
   // Detach the cup from the gripper
   moveit_msgs::msg::AttachedCollisionObject detach_object;
   detach_object.link_name = move_group_robot_->getEndEffectorLink();
