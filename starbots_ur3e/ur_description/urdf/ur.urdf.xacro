@@ -4,8 +4,8 @@
    <xacro:arg name="name" default="ur"/>
    <!-- import main macro -->
    <xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
-   <!--<xacro:include filename="$(find robotiq_85_description)/urdf/robotiq_85_gripper_macro_gz.urdf.xacro" />-->
-   <xacro:include filename="$(find rg2_gripper_description)/urdf/rg2_gripper.urdf.xacro" />
+   <xacro:include filename="$(find robotiq_85_description)/urdf/robotiq_85_gripper_macro_gz.urdf.xacro" />
+   <!-- <xacro:include filename="$(find rg2_gripper_description)/urdf/rg2_gripper.urdf.xacro" /> -->
    <xacro:include filename="$(find ur_description)/urdf/intel_d415.urdf.xacro" />
    <!-- <xacro:include filename="$(find robotnik_sensors)/urdf/all_sensors.urdf.xacro" /> -->
 
@@ -96,15 +96,15 @@
      <origin xyz="0 0 0" rpy="0 0 0" />          <!-- position robot in the world -->
    </xacro:ur_robot>
 
-   <!-- <xacro:robotiq_85_gripper prefix="" parent="tool0" >
+   <xacro:robotiq_85_gripper prefix="" parent="tool0" >
+       <origin xyz="0.0 0.0 0.0" rpy="0 -1.57 1.57"/>
+   </xacro:robotiq_85_gripper>
+
+   <!-- <xacro:rg2_gripper prefix="rg2_gripper" parent="tool0" >
        <origin xyz="0.0 0 0.0" rpy="0 -1.57 1.57"/>
-   </xacro:robotiq_85_gripper> -->
+   </xacro:rg2_gripper> -->
 
-   <xacro:rg2_gripper prefix="rg2_gripper" parent="tool0" >
-       <!--<origin xyz="0.0 0 0.0" rpy="0 -1.57 1.57"/>-->
-   </xacro:rg2_gripper>
-
-   <xacro:sensor_d415 
+   <!-- <xacro:sensor_d415 
         name="D415" 
         parent="base_link" 
         flag_color="1" 
@@ -112,7 +112,7 @@
         flag_depth="1" 
         updaterate="30" >
         <origin xyz="0.5 0.75 0.1" rpy="0 ${pi/6} ${-pi/2}"/>
-    </xacro:sensor_d415>
+    </xacro:sensor_d415> -->
 
    <xacro:if value="$(arg sim_gazebo)">
     <!-- Gazebo plugins -->
