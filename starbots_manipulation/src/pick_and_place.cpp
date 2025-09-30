@@ -258,10 +258,10 @@ void PickAndPlace::executeGripperPlan(std::string pose_name)
 void PickAndPlace::closeGripperIncremental()
 {
   float gripper_value = 0.4;
-  const float target_value = 0.0;
-  const float step_large = 0.07;
-  const float step_medium = 0.02;
-  const float step_small = 0.003;
+  const float target_value = -0.01;
+  const float step_large = 0.09;
+  const float step_medium = 0.03;
+  const float step_small = 0.015;
 
   while (gripper_value > target_value)
   {
@@ -286,10 +286,12 @@ void PickAndPlace::closeGripperIncremental()
     // Dynamically reduce step size for precision
     if (gripper_value > 0.1)
       gripper_value -= step_large;
-    else if (gripper_value > 0.03)
+    else if (gripper_value > 0.02)
       gripper_value -= step_medium;
     else
       gripper_value -= step_small;
+
+    gripper_value = std::max(gripper_value, target_value);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
   }

@@ -244,7 +244,7 @@ class CupHolderDetection(Node):
                 xy_dist = np.linalg.norm(pt[:2] - centroid[:2])
                 if xy_dist < radius + 0.01 and pt[2] > centroid[2] + 0.04:
                     points_above.append(pt)
-            if len(points_above) > 10:  # Threshold: enough points above surface
+            if len(points_above) > 20:  # Threshold: enough points above surface
                 self.get_logger().info(f"Skipping cluster {idx+1}: likely occupied by a cup.")
                 continue
 
@@ -324,7 +324,7 @@ class CupHolderDetection(Node):
             cylinder_marker.id = idx
             cylinder_marker.type = Marker.CYLINDER
             cylinder_marker.action = Marker.ADD
-            cylinder_marker.pose.position.x = centroid[0] - 0.001
+            cylinder_marker.pose.position.x = centroid[0] - 0.004
             cylinder_marker.pose.position.y = centroid[1] - 0.013
             cylinder_marker.pose.position.z = centroid[2] + 0.01
             cylinder_marker.pose.orientation.w = 1.0
@@ -344,8 +344,8 @@ class CupHolderDetection(Node):
             text_marker.id = idx + 1000  # Different ID to avoid conflicts with cylinder markers
             text_marker.text = str(idx) # Set the text as the cup holder ID
             text_marker.action = Marker.ADD
-            text_marker.pose.position.x = centroid[0] - 0.001
-            text_marker.pose.position.y = centroid[1] - 0.01
+            text_marker.pose.position.x = centroid[0] - 0.004
+            text_marker.pose.position.y = centroid[1] - 0.013
             text_marker.pose.position.z = centroid[2] + text_height_offset
             text_marker.pose.orientation.w = 1.0
             text_marker.scale.x = 0.05
