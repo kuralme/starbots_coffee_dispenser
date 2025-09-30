@@ -12,7 +12,7 @@ BT::NodeStatus Pick::tick() {
   robot_->executeCartesianPlan(+0.000, +0.000, -0.075);
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-  robot_->executeGripperPlan("gripper_grasp");
+  robot_->gripperGrasp();
   robot_->attachCollisionObject("coffee_cup");
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 

@@ -220,33 +220,21 @@ void PickAndPlace::executeGripperPlan(std::string pose_name) {
     RCLCPP_INFO(LOGGER, "Gripper Action Command Failed !");
   }
 }
-void PickAndPlace::closeGripperIncremental() {
-  float gripper_value = 0.4;
-  const float target_value = -0.1; // ~gripper_grasp
-  const float step_large = 0.2;
-  const float step_medium = 0.06;
-
-  while (gripper_value > target_value) {
-    // Dynamically reduce step size for precision
-    if (gripper_value > 0.1)
-      gripper_value -= step_large;
-    else if (gripper_value > 0.05)
-      gripper_value -= step_medium;
-
-    joint_group_positions_gripper_[0] = gripper_value;
-    move_group_gripper_->setJointValueTarget(joint_group_positions_gripper_);
-
-    MoveGroupInterface::Plan plan;
-    bool success = move_group_gripper_->plan(plan) ==
-                   moveit::core::MoveItErrorCode::SUCCESS;
-
-    if (success) {
-      move_group_gripper_->execute(plan);
-    } else {
-      RCLCPP_ERROR(LOGGER, "Failed to plan gripper motion at value: %.3f",
-                   gripper_value);
-      break;
-    }
+void PickAndPlace::gripperGrasp() {
+  // Close the gripper gradually by incrementing the gripper joint position
+  float gripper_value = 0.3;
+  MoveGroupInterface::Plan gripper_plan;
+  joint_group_positions_gripper_[2] = gripper_value;
+  move_group_gripper_->setJointValueTarget(joint_group_positions_gripper_);
+  RCLCPP_INFO(LOGGER, "Closing gripper: %.3f.", gripper_value);
+  if (move_group_gripper_->plan(gripper_plan) ==
+          moveit::core::MoveItErrorCode::SUCCESS &&
+      move_group_gripper_->execute(gripper_plan) ==
+          moveit::core::MoveItErrorCode::SUCCESS) {
+    gripper_value += 0.001;
+  } else {
+    RCLCPP_ERROR(LOGGER, "Failed to close gripper. Aborting.");
+    // rclcpp::shutdown();
   }
 }
 
@@ -262,8 +250,8 @@ void PickAndPlace::attachCollisionObject(const std::string &object_id) {
   moveit_msgs::msg::AttachedCollisionObject attached_object;
   attached_object.link_name = move_group_robot_->getEndEffectorLink();
   attached_object.object = coffee_cup;
-  attached_object.touch_links = {"rg2_gripper_right_thumb",
-                                 "rg2_gripper_left_thumb"};
+  attached_object.touch_links = {"robotiq_85_right_finger_tip_link",
+                                 "robotiq_85_left_finger_tip_link"};
   moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
   planning_scene_interface.applyAttachedCollisionObject(attached_object);
 
@@ -304,7 +292,7 @@ void PickAndPlace::createSceneObjects() {
   clamp1_pose.position.y = 0.48;
   clamp1_pose.position.z = -0.03;
   std::vector<double> clamp1_dim = {0.06, 0.02,
-                                    0.12}; // {length, width, height}
+                                    0.11}; // {length, width, height}
   const moveit_msgs::msg::CollisionObject clamp1 =
       createCollisionObject("clamp1", "box", clamp1_dim, clamp1_pose);
 
@@ -316,10 +304,10 @@ void PickAndPlace::createSceneObjects() {
   clamp2_pose.orientation.z = q.z();
   clamp2_pose.orientation.w = q.w();
   clamp2_pose.position.x = -0.08;
-  clamp2_pose.position.y = 0.16;
+  clamp2_pose.position.y = 0.14;
   clamp2_pose.position.z = -0.03;
   std::vector<double> clamp2_dimentions = {0.06, 0.02,
-                                           0.12}; // {length, width, height}
+                                           0.11}; // {length, width, height}
   const moveit_msgs::msg::CollisionObject clamp2 =
       createCollisionObject("clamp2", "box", clamp2_dimentions, clamp2_pose);
 

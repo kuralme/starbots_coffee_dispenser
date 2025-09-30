@@ -42,7 +42,7 @@ public:
   bool executeKinematicsPlan(float pos_x, float pos_y, float pos_z);
   void executeCartesianPlan(float x_delta, float y_delta, float z_delta);
   void executeGripperPlan(std::string pose_name);
-  void closeGripperIncremental();
+  void gripperGrasp();
   void attachCollisionObject(const std::string &object_id);
   void detachCollisionObject(const std::string &object_id);
   void createSceneObjects();
