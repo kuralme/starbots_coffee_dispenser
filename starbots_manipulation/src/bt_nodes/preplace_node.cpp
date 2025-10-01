@@ -15,10 +15,10 @@ BT::NodeStatus PrePlace::tick()
     RCLCPP_INFO(LOGGER, "Going to the Pre-placing Pose: [%.3f, %.3f, %.3f]",
                 goal_position.x, goal_position.y, goal_position.z);
 
-    // Timeout after 30 seconds to avoid hanging indefinitely
+    // Timeout to avoid hanging indefinitely
     auto future_result = std::async(std::launch::async, [&]()
                                     { return robot_->executeKinematicsPlan(goal_position.x, goal_position.y, goal_position.z); });
-    if (future_result.wait_for(std::chrono::seconds(30)) != std::future_status::ready || !future_result.get())
+    if (future_result.wait_for(std::chrono::seconds(40)) != std::future_status::ready || !future_result.get())
     {
         RCLCPP_ERROR(LOGGER, "PrePlace: Kinematics plan failed or timed out.");
         robot_->move_group_robot_->stop();
