@@ -152,6 +152,22 @@ void PickAndPlace::gotoPredefined(std::string pose_name)
     }
   }
 }
+bool PickAndPlace::ensureElbowUp()
+{
+  auto robot_state = move_group_robot_->getCurrentState();
+  std::vector<double> joint_values;
+  robot_state->copyJointGroupPositions(move_group_robot_->getName(), joint_values);
+  if (joint_values[2] < 0.0)
+  {
+    RCLCPP_INFO(LOGGER, "Elbow down detected.");
+    gotoPredefined("quick_pick");
+  }
+  else
+  {
+    RCLCPP_INFO(LOGGER, "Elbow is already up.");
+    return true;
+  }
+}
 bool PickAndPlace::executeKinematicsPlan(float pos_x, float pos_y, float pos_z)
 {
   move_group_robot_->clearPoseTargets();

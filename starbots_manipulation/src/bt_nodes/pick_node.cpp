@@ -14,6 +14,8 @@ BT::NodeStatus Pick::tick()
 
     robot_->closeGripperIncremental();
     robot_->attachObject();
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
     robot_->executeCartesianPlan(+0.000, +0.000, +0.079);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 

@@ -43,6 +43,7 @@ public:
     void objectDetectionCallback(const starbots_detection_msgs::msg::DetectedObjects::SharedPtr msg);
     void holeDetectionCallback(const starbots_detection_msgs::msg::DetectedCupholders::SharedPtr msg);
     void setupJointTarget(float angle0, float angle1, float angle2, float angle3, float angle4, float angle5);
+    bool ensureElbowUp();
     bool executeKinematicsPlan(float pos_x, float pos_y, float pos_z);
     void executeCartesianPlan(float x_delta, float y_delta, float z_delta);
     void executeGripperPlan(std::string pose_name);

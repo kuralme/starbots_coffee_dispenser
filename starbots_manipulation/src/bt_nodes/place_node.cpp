@@ -13,7 +13,7 @@ BT::NodeStatus Place::tick()
     robot_->move_group_robot_->setPlanningTime(3.0);
     if (!robot_->executeKinematicsPlan(robot_pose.position.x, robot_pose.position.y, robot_pose.position.z - 0.230) &&
         !robot_->executeKinematicsPlan(robot_pose.position.x, robot_pose.position.y, robot_pose.position.z - 0.215) &&
-        !robot_->executeKinematicsPlan(robot_pose.position.x, robot_pose.position.y, robot_pose.position.z - 0.188))
+        !robot_->executeKinematicsPlan(robot_pose.position.x, robot_pose.position.y, robot_pose.position.z - 0.189))
     {
         RCLCPP_ERROR(LOGGER, "Place kinematics plan failed!");
         robot_->move_group_robot_->stop();
