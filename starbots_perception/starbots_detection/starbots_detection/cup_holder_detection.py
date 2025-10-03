@@ -324,7 +324,7 @@ class CupHolderDetection(Node):
             cylinder_marker.id = idx
             cylinder_marker.type = Marker.CYLINDER
             cylinder_marker.action = Marker.ADD
-            cylinder_marker.pose.position.x = centroid[0] - 0.004
+            cylinder_marker.pose.position.x = centroid[0] - 0.0055
             cylinder_marker.pose.position.y = centroid[1] - 0.013
             cylinder_marker.pose.position.z = centroid[2] + 0.01
             cylinder_marker.pose.orientation.w = 1.0
@@ -344,7 +344,7 @@ class CupHolderDetection(Node):
             text_marker.id = idx + 1000  # Different ID to avoid conflicts with cylinder markers
             text_marker.text = str(idx) # Set the text as the cup holder ID
             text_marker.action = Marker.ADD
-            text_marker.pose.position.x = centroid[0] - 0.004
+            text_marker.pose.position.x = centroid[0] - 0.0055
             text_marker.pose.position.y = centroid[1] - 0.013
             text_marker.pose.position.z = centroid[2] + text_height_offset
             text_marker.pose.orientation.w = 1.0
@@ -370,7 +370,7 @@ class CupHolderDetection(Node):
         for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
             cupholder = DetectedCupholder()
             cupholder.cupholder_id = idx
-            cupholder.position = Point(x=(centroid[0] - 0.004), y=(centroid[1] - 0.013), z=(centroid[2] + 0.01))
+            cupholder.position = Point(x=(centroid[0] - 0.0055), y=(centroid[1] - 0.013), z=(centroid[2] + 0.01))
             cupholder.radius = float(dimension[0]) / 2
             cupholder.height = dimension[1]
             cupholders_msg.cup_holders.append(cupholder)
