@@ -16,7 +16,7 @@ public:
         this->create_publisher<sensor_msgs::msg::PointCloud2>(
             "/D415/barista_points", pub_qos);
     baristacam_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        "/D415/barista_points_beff", sub_qos,
+        "/D415/barista_points_be", sub_qos,
         std::bind(&PclConv::baristaPclCallback, this, std::placeholders::_1));
 
     RCLCPP_INFO(this->get_logger(),

@@ -16,7 +16,7 @@ class CupHolderDetection(Node):
         pcl_qos_profile = QoSProfile(
             history=QoSHistoryPolicy.KEEP_LAST,
             depth=10,
-            reliability=QoSReliabilityPolicy.BEST_EFFORT
+            reliability=QoSReliabilityPolicy.RELIABLE
         )
         self.pc_sub = self.create_subscription(PointCloud2, '/D415/barista_points', self.callback, pcl_qos_profile)
         self.tray_marker_pub = self.create_publisher(MarkerArray, '/tray_marker', 10)

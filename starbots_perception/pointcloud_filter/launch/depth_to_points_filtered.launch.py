@@ -46,4 +46,10 @@ def generate_launch_description():
             ],
             output='screen',
         ),
+        launch_ros.actions.Node(
+            package='pointcloud_filter',
+            executable='pcl_qos_conv',
+            name='pcl_qos_conv',
+            output='screen',
+        ),
     ])

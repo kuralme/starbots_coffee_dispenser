@@ -32,9 +32,16 @@ def generate_launch_description():
                         ('rgb/camera_info', '/D415/aligned_depth_to_color/camera_info'),
                         ('rgb/image_rect_color', '/D415/color/image_raw'),
                         ('depth_registered/image_rect', '/D415/aligned_depth_to_color/image_raw'),
-                        ('points', '/D415/barista_points')],
+                        ('points', '/D415/barista_points_be')],
                 ),
             ],
+            output='screen',
+        ),
+
+        launch_ros.actions.Node(
+            package='pointcloud_filter',
+            executable='pcl_qos_conv',
+            name='pcl_qos_conv',
             output='screen',
         ),
     ])
