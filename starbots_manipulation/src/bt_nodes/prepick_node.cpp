@@ -12,12 +12,12 @@ BT::NodeStatus PrePick::tick() {
   RCLCPP_INFO(LOGGER, "Going to Pre-pick Pose: [%.3f, %.3f, %.3f]",
               prepick_pos.x, prepick_pos.y, prepick_pos.z);
 
-  // Timeout after 20 seconds to avoid hanging indefinitely
+  // Timeout to avoid hanging indefinitely
   auto future_result = std::async(std::launch::async, [&]() {
     return robot_->executeKinematicsPlan(prepick_pos.x, prepick_pos.y,
                                          prepick_pos.z);
   });
-  if (future_result.wait_for(std::chrono::seconds(20)) !=
+  if (future_result.wait_for(std::chrono::seconds(40)) !=
           std::future_status::ready ||
       !future_result.get()) {
     RCLCPP_ERROR(LOGGER, "Prepick: Kinematics plan failed or timed out.");

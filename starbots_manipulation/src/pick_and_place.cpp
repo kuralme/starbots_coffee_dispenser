@@ -66,8 +66,8 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
       move_group_node_->create_client<std_srvs::srv::Empty>("/clear_octomap");
 
   // Hardcoded coffee cup position
-  cup_position_.x = 0.222; // guess 0.23
-  cup_position_.y = 0.333; // guess 0.33
+  cup_position_.x = 0.222; // guess 0.222
+  cup_position_.y = 0.33;  // guess 0.33
   cup_position_.z = 0.07;
 
   createSceneObjects();
@@ -123,6 +123,16 @@ bool PickAndPlace::gotoPredefined(std::string pose_name) {
     }
   } else {
     return false;
+  }
+}
+void PickAndPlace::ensureElbowUp() {
+  auto robot_state = move_group_robot_->getCurrentState();
+  std::vector<double> joint_values;
+  robot_state->copyJointGroupPositions(move_group_robot_->getName(),
+                                       joint_values);
+  if (joint_values[2] < 0.0) {
+    RCLCPP_INFO(LOGGER, "Elbow down detected.");
+    gotoPredefined("quick_pick");
   }
 }
 bool PickAndPlace::executeKinematicsPlan(float pos_x, float pos_y,
@@ -222,19 +232,15 @@ void PickAndPlace::executeGripperPlan(std::string pose_name) {
 }
 void PickAndPlace::gripperGrasp() {
   // Close the gripper gradually by incrementing the gripper joint position
-  float gripper_value = 0.3;
+  float gripper_value = 0.25;
   MoveGroupInterface::Plan gripper_plan;
   joint_group_positions_gripper_[2] = gripper_value;
   move_group_gripper_->setJointValueTarget(joint_group_positions_gripper_);
-  RCLCPP_INFO(LOGGER, "Closing gripper: %.3f.", gripper_value);
-  if (move_group_gripper_->plan(gripper_plan) ==
+  if (!move_group_gripper_->plan(gripper_plan) ==
           moveit::core::MoveItErrorCode::SUCCESS &&
-      move_group_gripper_->execute(gripper_plan) ==
+      !move_group_gripper_->execute(gripper_plan) ==
           moveit::core::MoveItErrorCode::SUCCESS) {
-    gripper_value += 0.001;
-  } else {
     RCLCPP_ERROR(LOGGER, "Failed to close gripper. Aborting.");
-    // rclcpp::shutdown();
   }
 }
 
@@ -279,35 +285,35 @@ void PickAndPlace::createSceneObjects() {
   counter_pose.orientation.w = 1.0;
   counter_pose.position.x = 0.25;
   counter_pose.position.y = 0.30;
-  counter_pose.position.z = -0.03;
+  counter_pose.position.z = -0.035;
   std::vector<double> counter_dimensions = {0.68, 1.6,
-                                            0.06}; // {length, width, height}
+                                            0.07}; // {length, width, height}
   const moveit_msgs::msg::CollisionObject coffee_counter =
       createCollisionObject("coffee_counter", "box", counter_dimensions,
                             counter_pose);
 
   geometry_msgs::msg::Pose clamp1_pose;
   clamp1_pose.orientation.w = 1.0;
-  clamp1_pose.position.x = -0.08;
+  clamp1_pose.position.x = -0.09;
   clamp1_pose.position.y = 0.48;
-  clamp1_pose.position.z = -0.03;
-  std::vector<double> clamp1_dim = {0.06, 0.02,
-                                    0.11}; // {length, width, height}
+  clamp1_pose.position.z = -0.035;
+  std::vector<double> clamp1_dim = {0.08, 0.02,
+                                    0.12}; // {length, width, height}
   const moveit_msgs::msg::CollisionObject clamp1 =
       createCollisionObject("clamp1", "box", clamp1_dim, clamp1_pose);
 
   geometry_msgs::msg::Pose clamp2_pose;
   tf2::Quaternion q;
-  q.setRPY(0, 0, -M_PI / 5.);
+  q.setRPY(0, 0, -M_PI / 6.);
   clamp2_pose.orientation.x = q.x();
   clamp2_pose.orientation.y = q.y();
   clamp2_pose.orientation.z = q.z();
   clamp2_pose.orientation.w = q.w();
-  clamp2_pose.position.x = -0.08;
+  clamp2_pose.position.x = -0.09;
   clamp2_pose.position.y = 0.14;
-  clamp2_pose.position.z = -0.03;
-  std::vector<double> clamp2_dimentions = {0.06, 0.02,
-                                           0.11}; // {length, width, height}
+  clamp2_pose.position.z = -0.035;
+  std::vector<double> clamp2_dimentions = {0.08, 0.02,
+                                           0.12}; // {length, width, height}
   const moveit_msgs::msg::CollisionObject clamp2 =
       createCollisionObject("clamp2", "box", clamp2_dimentions, clamp2_pose);
 
@@ -319,6 +325,15 @@ void PickAndPlace::createSceneObjects() {
   std::vector<double> wall_dim = {1.5, 0.1, 1.6}; // {length, width, height}
   const moveit_msgs::msg::CollisionObject wall =
       createCollisionObject("wall", "box", wall_dim, wall_pose);
+
+  geometry_msgs::msg::Pose cam_pose;
+  cam_pose.orientation.w = 1.0;
+  cam_pose.position.x = -0.4;
+  cam_pose.position.y = -0.35;
+  cam_pose.position.z = 0.4;
+  std::vector<double> cam_dim = {0.12, 0.1, 0.05}; // {length, width, height}
+  const moveit_msgs::msg::CollisionObject camera =
+      createCollisionObject("camera", "box", cam_dim, cam_pose);
 
   geometry_msgs::msg::Pose machine_pose;
   machine_pose.orientation.w = 1.0;
@@ -344,6 +359,7 @@ void PickAndPlace::createSceneObjects() {
   collision_objects.push_back(coffee_counter);
   collision_objects.push_back(clamp1);
   collision_objects.push_back(clamp2);
+  collision_objects.push_back(camera);
   collision_objects.push_back(coffee_machine);
   collision_objects.push_back(cup_dispenser);
 

@@ -13,6 +13,8 @@ BT::NodeStatus PrePlace::tick() {
   goal_position.z += .58;
 
   robot_->createOrientationConstraint();
+  robot_->ensureElbowUp(); // Elbow-up for better planning when reaching close
+                           // targets
   RCLCPP_INFO(LOGGER, "Going to the Pre-placing Pose: [%.3f, %.3f, %.3f]",
               goal_position.x, goal_position.y, goal_position.z);
 
@@ -21,7 +23,7 @@ BT::NodeStatus PrePlace::tick() {
                                          goal_position.z);
   });
   // Timeout defined to avoid hanging indefinitely
-  if (future_result.wait_for(std::chrono::seconds(40)) !=
+  if (future_result.wait_for(std::chrono::seconds(50)) !=
           std::future_status::ready ||
       !future_result.get()) {
 

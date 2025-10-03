@@ -43,6 +43,7 @@ public:
   void executeCartesianPlan(float x_delta, float y_delta, float z_delta);
   void executeGripperPlan(std::string pose_name);
   void gripperGrasp();
+  void ensureElbowUp();
   void attachCollisionObject(const std::string &object_id);
   void detachCollisionObject(const std::string &object_id);
   void createSceneObjects();
