@@ -79,17 +79,28 @@
         },
         "/starbots_dispenser/display_contacts": {
           "visible": false
+        },
+        "/starbots_detection/cup_holder_markers": {
+          "visible": true,
+          "namespaces": {
+            "hough": {
+              "visible": false
+            },
+            "pcl": {
+              "visible": false
+            }
+          }
         }
       },
       "cameraState": {
         "perspective": true,
-        "distance": 1.7948966386113767,
-        "phi": 58.24159037379437,
-        "thetaOffset": 107.21875587077139,
+        "distance": 1.538899505528234,
+        "phi": 50.83410381865896,
+        "thetaOffset": 123.18504069862334,
         "targetOffset": [
-          -0.21216546951666232,
-          0.3582153697784547,
-          0.12508387567304344
+          -0.1720619459185907,
+          0.33502829294909947,
+          0.12508387567304324
         ],
         "target": [
           0,
@@ -112,7 +123,7 @@
           "visible": true,
           "lineWidth": 0.5,
           "axisScale": 0.3,
-          "labelSize": 0.03
+          "labelSize": 0.02
         }
       },
       "transforms": {
@@ -355,12 +366,12 @@
         "poseEstimateThetaDeviation": 0.26179939
       },
       "imageMode": {
-        "imageTopic": "/camera_depth_sensor/image_raw",
+        "imageTopic": "/starbots_detection/tray_cam_annotated",
         "calibrationTopic": "/camera_depth_sensor/camera_info"
       },
-      "foxglovePanelTitle": "Counter Camera"
+      "foxglovePanelTitle": "Barista Cam Detection"
     },
-    "Image!32f041e": {
+    "Image!28d09mc": {
       "cameraState": {
         "distance": 20,
         "perspective": true,
@@ -401,10 +412,10 @@
         "poseEstimateThetaDeviation": 0.26179939
       },
       "imageMode": {
-        "imageTopic": "/wrist_rgbd_depth_sensor/image_raw",
-        "calibrationTopic": "/wrist_rgbd_depth_sensor/camera_info"
+        "imageTopic": "/camera_depth_sensor/image_raw",
+        "calibrationTopic": "/camera_depth_sensor/camera_info"
       },
-      "foxglovePanelTitle": "Barista Camera"
+      "foxglovePanelTitle": "Counter Camera"
     },
     "StateTransitions!zl1vfg": {
       "paths": [
@@ -429,14 +440,14 @@
         "first": "CallService!3jm0wum",
         "second": {
           "first": "Image!1xbsj5h",
-          "second": "Image!32f041e",
+          "second": "Image!28d09mc",
           "direction": "row"
         },
         "direction": "column",
         "splitPercentage": 66.11039794608473
       },
       "direction": "row",
-      "splitPercentage": 53.44418052256532
+      "splitPercentage": 60.31613976705491
     },
     "second": "StateTransitions!zl1vfg",
     "direction": "column",
