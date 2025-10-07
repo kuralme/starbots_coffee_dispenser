@@ -65,13 +65,13 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
   sub_options.callback_group = callback_group;
 
   objpose_sub_ = move_group_node_->create_subscription<
-      starbots_detection_msgs::msg::DetectedObjects>(
-      "/cup_detected", 10,
-      std::bind(&PickAndPlace::objectDetectionCallback, this, _1),
+      starbots_detection_msgs::msg::DetectedCup>(
+      "/starbots_detection/cup_detected", 10,
+      std::bind(&PickAndPlace::cupDetectionCallback, this, _1),
       sub_options);
   holepose_sub_ = move_group_node_->create_subscription<
       starbots_detection_msgs::msg::DetectedCupholders>(
-      "/cup_holder_detected", 100,
+      "/starbots_detection/cup_holders_detected", 100,
       std::bind(&PickAndPlace::holeDetectionCallback, this, _1), sub_options);
   octo_client_ =
       move_group_node_->create_client<std_srvs::srv::Empty>("/clear_octomap");
@@ -85,8 +85,8 @@ PickAndPlace::~PickAndPlace()
   RCLCPP_INFO(LOGGER, "Class Terminated: UR3e Coffee Dispenser");
 }
 
-void PickAndPlace::objectDetectionCallback(
-    const starbots_detection_msgs::msg::DetectedObjects::SharedPtr msg)
+void PickAndPlace::cupDetectionCallback(
+    const starbots_detection_msgs::msg::DetectedCup::SharedPtr msg)
 {
   if (!obj_pose_received_)
   {
@@ -108,22 +108,22 @@ void PickAndPlace::objectDetectionCallback(
 void PickAndPlace::holeDetectionCallback(
     const starbots_detection_msgs::msg::DetectedCupholders::SharedPtr msg)
 {
-  if (!goal_poses_received_)
+  // if (!goal_poses_received_)
+  // {
+  for (const auto &cupholder : msg->cup_holders)
   {
-    for (const auto &cupholder : msg->cup_holders)
-    {
-      goal_poses_.push_back(cupholder.position);
+    goal_poses_.push_back(cupholder.position);
 
-      // RCLCPP_INFO(LOGGER, "===========================");
-      // RCLCPP_INFO(LOGGER, "Cupholder ID: %u", cupholder.cupholder_id);
-      // RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)", cupholder.position.x, cupholder.position.y, cupholder.position.z);
-      // RCLCPP_INFO(LOGGER, "Radius: %.2f", cupholder.radius);
-      // RCLCPP_INFO(LOGGER, "Height: %.2f", cupholder.height);
-      // }
-      // RCLCPP_INFO(LOGGER, "===========================");
-      goal_poses_received_ = true;
-    }
+    // RCLCPP_INFO(LOGGER, "===========================");
+    // RCLCPP_INFO(LOGGER, "Cupholder ID: %u", cupholder.cupholder_id);
+    // RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)", cupholder.position.x, cupholder.position.y, cupholder.position.z);
+    // RCLCPP_INFO(LOGGER, "Radius: %.2f", cupholder.radius);
+    // RCLCPP_INFO(LOGGER, "Height: %.2f", cupholder.height);
+    // }
+    // RCLCPP_INFO(LOGGER, "===========================");
+    goal_poses_received_ = true;
   }
+  // }
 }
 
 void PickAndPlace::gotoPredefined(std::string pose_name)

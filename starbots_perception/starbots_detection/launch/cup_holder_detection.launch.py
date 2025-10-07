@@ -10,7 +10,7 @@ def generate_launch_description():
 
     cup_holder_detection_node = Node(
         package = 'starbots_detection',
-        executable = 'cup_holder_detection',
+        executable = 'cup_holder_pcl',
         name = 'cup_holder_detection',
         output = 'screen',
         parameters = [{'use_sim_time': True}],

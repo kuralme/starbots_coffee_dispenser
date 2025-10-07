@@ -25,7 +25,8 @@ setup(
     entry_points={
         'console_scripts': [
             'cup_detection = starbots_detection.cup_detection:main',
-            'cup_holder_detection= starbots_detection.cup_holder_detection:main',
+            'cup_holder_pcl = starbots_detection.cup_holder_pcl:main',
+            'cup_holder_pipeline = starbots_detection.cup_holder_pipeline:main',
         ],
     },
 )

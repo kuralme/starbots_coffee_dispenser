@@ -9,18 +9,21 @@ def generate_launch_description():
         name = 'pointcloud_filter',
         output = 'screen',
     )
+    
     cup_detection_node = Node(
         package = 'starbots_detection',
         executable = 'cup_detection',
         name = 'cup_detection',
+        namespace='starbots_detection',
         output = 'screen',
         parameters = [{'use_sim_time': True}],
         arguments=['--ros-args', '--log-level', 'error'],
     )
     cup_holder_detection_node = Node(
         package = 'starbots_detection',
-        executable = 'cup_holder_detection',
+        executable = 'cup_holder_pipeline',
         name = 'cup_holder_detection',
+        namespace='starbots_detection',
         output = 'screen',
         parameters = [{'use_sim_time': True}],
         arguments=['--ros-args', '--log-level', 'error'],

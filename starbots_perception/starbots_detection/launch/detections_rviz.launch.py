@@ -24,13 +24,22 @@ def generate_launch_description():
         arguments=['--ros-args', '--log-level', 'warn'],
     )
 
-    cup_holder_detection_node = Node(
+    cup_holder_detection_pcl_node = Node(
         package = 'starbots_detection',
-        executable = 'cup_holder_detection',
-        name = 'cup_holder_detection',
+        executable = 'cup_holder_pcl',
+        name = 'cup_holder_pcl',
         output = 'screen',
         parameters = [{'use_sim_time': True}],
         arguments=['--ros-args', '--log-level', 'warn'],
+    )
+
+    cup_holder_detection_hough_node = Node(
+        package = 'starbots_detection',
+        executable = 'cup_holder_pipeline',
+        name = 'cup_holder_pipeline',
+        output = 'screen',
+        parameters = [{'use_sim_time': True}],
+        arguments=['--ros-args', '--log-level', 'info'],
     )
 
     rviz_node = Node(
@@ -45,6 +54,7 @@ def generate_launch_description():
     return LaunchDescription([
         pointcloud_filter_node,
         cup_detection_node,
-        cup_holder_detection_node,
+        cup_holder_detection_pcl_node,
+        cup_holder_detection_hough_node,
         rviz_node
     ])

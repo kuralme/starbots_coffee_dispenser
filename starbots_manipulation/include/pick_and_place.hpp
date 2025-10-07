@@ -17,7 +17,7 @@
 #include <visualization_msgs/msg/marker.hpp>
 #include <starbots_detection_msgs/msg/detected_cupholder.hpp>
 #include <starbots_detection_msgs/msg/detected_cupholders.hpp>
-#include <starbots_detection_msgs/msg/detected_objects.hpp>
+#include <starbots_detection_msgs/msg/detected_cup.hpp>
 #include <starbots_detection_msgs/msg/detected_surfaces.hpp>
 #include <starbots_manipulation/srv/deliver_cup.hpp>
 
@@ -40,7 +40,7 @@ public:
     void gotoPredefined(std::string pose_name);
     // void handleService(const std::shared_ptr<DeliverCup::Request> request, std::shared_ptr<DeliverCup::Response> response);
     void clearOctomap();
-    void objectDetectionCallback(const starbots_detection_msgs::msg::DetectedObjects::SharedPtr msg);
+    void cupDetectionCallback(const starbots_detection_msgs::msg::DetectedCup::SharedPtr msg);
     void holeDetectionCallback(const starbots_detection_msgs::msg::DetectedCupholders::SharedPtr msg);
     void setupJointTarget(float angle0, float angle1, float angle2, float angle3, float angle4, float angle5);
     bool ensureElbowUp();
@@ -64,7 +64,7 @@ public:
     moveit::core::RobotStatePtr robot_current_state_, gripper_current_state_;
     std::vector<double> joint_group_positions_robot_, joint_group_positions_gripper_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr constraint_marker_pub_;
-    rclcpp::Subscription<starbots_detection_msgs::msg::DetectedObjects>::SharedPtr objpose_sub_;
+    rclcpp::Subscription<starbots_detection_msgs::msg::DetectedCup>::SharedPtr objpose_sub_;
     rclcpp::Subscription<starbots_detection_msgs::msg::DetectedCupholders>::SharedPtr holepose_sub_;
     rclcpp::Service<DeliverCup>::SharedPtr service_server_;
     rclcpp::Client<std_srvs::srv::Empty>::SharedPtr octo_client_;

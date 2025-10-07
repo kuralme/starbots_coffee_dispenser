@@ -9,9 +9,9 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker, MarkerArray
 from starbots_detection_msgs.msg import DetectedSurfaces, DetectedCupholder, DetectedCupholders
 
-class CupHolderDetection(Node):
+class CupHolderDetectionPCL(Node):
     def __init__(self) -> None:
-        super().__init__('cup_holder_detection_node')
+        super().__init__('pcl_cup_holder_detection_node')
         self.pc_sub = self.create_subscription(PointCloud2, '/wrist_rgbd_depth_sensor/points_filtered', self.callback, 10)
         self.tray_marker_pub = self.create_publisher(MarkerArray, '/tray_marker', 10)
         self.cupholder_marker_pub = self.create_publisher(MarkerArray, '/cup_holder_markers', 10)
@@ -33,13 +33,9 @@ class CupHolderDetection(Node):
             cupholder_cloud = self.filter_below_surface(filtered_cloud, surface_centroids[0])
             cup_holder_centroids, cup_holder_dimensions = self.extract_cylinders(cupholder_cloud, filtered_cloud)
 
-            # Publish detected tray markers and info
-            self.pub_surface_marker(surface_centroids, surface_dimensions)
-            self.pub_surface_detected(surface_centroids, surface_dimensions)
-
-            # Publish detected cup holder markers and info
-            self.pub_cup_holder_markers(cup_holder_centroids, cup_holder_dimensions)
-            self.pub_cup_holder_detected(cup_holder_centroids, cup_holder_dimensions)
+            # Publish detected tray & cupholders markers and ROS2 msg
+            self.pub_tray_detected(surface_centroids, surface_dimensions)
+            self.pub_cup_holders(cup_holder_centroids, cup_holder_dimensions)
 
         except Exception as e:
             self.get_logger().error(f"Error in callback: {e}")
@@ -266,9 +262,10 @@ class CupHolderDetection(Node):
 
         return cupholder_centroids, cupholder_dimensions
 
-    def pub_surface_marker(self, surface_centroids: List[List[float]], surface_dimensions: List[List[float]]) -> None:
+    def pub_tray_detected(self, surface_centroids: List[List[float]], surface_dimensions: List[List[float]]) -> None:
         """Publishes the detected cylindrical surface (coffee tray) as cylinder markers"""
         marker_array = MarkerArray()
+        surface_msg = DetectedSurfaces()
 
         for idx, (centroid, dimensions) in enumerate(zip(surface_centroids, surface_dimensions)):
             radius = float(dimensions[0]) / 2
@@ -290,35 +287,30 @@ class CupHolderDetection(Node):
             cylinder_marker.color.g = 1.0
             cylinder_marker.color.b = 0.0
             cylinder_marker.color.a = 0.4  # Semi-transparent
-
             marker_array.markers.append(cylinder_marker)
 
-        # if marker_array.markers:
-        self.tray_marker_pub.publish(marker_array)
- 
-    def pub_surface_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
-        """Publishes the detected surface information"""
-        surface_msg = DetectedSurfaces()
-
-        for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
+            # ROS message for detected tray surface
             surface_msg.surface_id = idx
             surface_msg.position.x = centroid[0]
             surface_msg.position.y = centroid[1] + 0.018
             surface_msg.position.z = centroid[2]
-            surface_msg.height = dimension[0]
-            surface_msg.width = dimension[1]
-        
-        self.tray_detected_pub.publish(surface_msg)
+            surface_msg.height = dimensions[0]
+            surface_msg.width = dimensions[1]
 
-    def pub_cup_holder_markers(self, cupholder_centroids: List[List[float]], cupholder_dimensions: List[List[float]]) -> None:
-        """Publishes the detected cylindrical cupholder as markers."""
+        self.tray_detected_pub.publish(surface_msg)
+        self.tray_marker_pub.publish(marker_array)
+
+    def pub_cup_holders(self, cupholder_centroids: List[List[float]], cupholder_dimensions: List[List[float]]) -> None:
+        """Publishes the detected cupholders as markers and ROS2 msg"""
         marker_array = MarkerArray()
         text_height_offset = 0.06
+        cupholders_msg = DetectedCupholders()
         
         for idx, (centroid, dimensions) in enumerate(zip(cupholder_centroids, cupholder_dimensions)):
             radius = float(dimensions[0]) / 2
             height = 0.035
 
+            # Create the marker of the cupholder
             cylinder_marker = Marker()
             cylinder_marker.header.frame_id = "base_link"
             cylinder_marker.id = idx
@@ -356,30 +348,26 @@ class CupHolderDetection(Node):
             text_marker.color.b = 1.0
             text_marker.color.a = 1.0
             marker_array.markers.append(text_marker)
+            
+            # ROS message for detected cupholder
+            cupholder = DetectedCupholder()
+            cupholder.cupholder_id = idx
+            cupholder.position = Point(x=(centroid[0] - 0.0055), y=(centroid[1] - 0.013), z=(centroid[2] + 0.01))
+            cupholder.radius = float(dimensions[0]) / 2
+            cupholder.height = dimensions[1]
+            cupholders_msg.cup_holders.append(cupholder)
+
+        self.cupholder_detected_pub.publish(cupholders_msg)
 
         if marker_array.markers:
             self.cupholder_marker_pub.publish(marker_array)
         else:
             self.cupholder_marker_pub.publish(MarkerArray())
             self.get_logger().warning("No cup holder markers to publish.")
-
-    def pub_cup_holder_detected(self, centroids: List[List[float]], dimensions: List[List[float]]) -> None:
-        """Publishes detected cupholder information of cupholders"""
-        
-        cupholders_msg = DetectedCupholders()
-        for idx, (centroid, dimension) in enumerate(zip(centroids, dimensions)):
-            cupholder = DetectedCupholder()
-            cupholder.cupholder_id = idx
-            cupholder.position = Point(x=(centroid[0] - 0.0055), y=(centroid[1] - 0.013), z=(centroid[2] + 0.01))
-            cupholder.radius = float(dimension[0]) / 2
-            cupholder.height = dimension[1]
-            cupholders_msg.cup_holders.append(cupholder)
-
-        self.cupholder_detected_pub.publish(cupholders_msg)
-
+            
 def main(args=None) -> None:
     rclpy.init(args=args)
-    cup_holder_detection = CupHolderDetection()
+    cup_holder_detection = CupHolderDetectionPCL()
     rclpy.spin(cup_holder_detection)
     rclpy.shutdown()
 

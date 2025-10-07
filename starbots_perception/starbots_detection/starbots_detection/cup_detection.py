@@ -6,17 +6,17 @@ import pcl
 import numpy as np
 import tf2_ros
 from tf2_ros import TransformException, ConnectivityException
-from starbots_detection_msgs.msg import DetectedSurfaces, DetectedObjects
+from starbots_detection_msgs.msg import DetectedSurfaces, DetectedCup
 from typing import List, Tuple, Union
 
-class ObjectDetection(Node):
+class CupDetection(Node):
     def __init__(self) -> None:
         super().__init__('cup_detection_node')
         self.pc_sub = self.create_subscription(PointCloud2, '/camera_depth_sensor/points_filtered', self.callback, 10)
-        self.table_marker_pub = self.create_publisher(MarkerArray, '/table_marker', 10)
-        self.objects_marker_pub = self.create_publisher(MarkerArray, '/cup_marker', 10)
-        self.table_detected_pub = self.create_publisher(DetectedSurfaces, '/table_detected', 10)
-        self.object_detected_pub = self.create_publisher(DetectedObjects, '/cup_detected', 10)
+        self.table_marker_pub = self.create_publisher(MarkerArray, 'table_marker', 10)
+        self.objects_marker_pub = self.create_publisher(MarkerArray, 'cup_marker', 10)
+        self.table_detected_pub = self.create_publisher(DetectedSurfaces, 'table_detected', 10)
+        self.object_detected_pub = self.create_publisher(DetectedCup, 'cup_detected', 10)
         self.marker_id = 0
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
@@ -284,7 +284,7 @@ class ObjectDetection(Node):
             if diameter > 0.1 or diameter < 0.06 or dimension[2] < 0.05 or dimension[2] > 0.11:
                 continue
             
-            object_msg = DetectedObjects()
+            object_msg = DetectedCup()
             object_msg.object_id = idx
             object_msg.position.x = centroid[0] - 0.0213
             object_msg.position.y = centroid[1] - 0.017
@@ -296,8 +296,8 @@ class ObjectDetection(Node):
 
 def main(args=None) -> None:
     rclpy.init(args=args)
-    object_detection = ObjectDetection()
-    rclpy.spin(object_detection)
+    cup_detection = CupDetection()
+    rclpy.spin(cup_detection)
     rclpy.shutdown()
 
 if __name__ == '__main__':
