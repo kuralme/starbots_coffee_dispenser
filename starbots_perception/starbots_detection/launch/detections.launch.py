@@ -7,6 +7,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
     
+    rviz_config = os.path.join(get_package_share_directory('starbots_detection'),'rviz','detection.rviz')
     pointcloud_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
@@ -16,16 +17,26 @@ def generate_launch_description():
             )
         )
     )
-    cup_holder_detection_node = Node(
+    cup_holder_detection_pipeline_node = Node(
         package = 'starbots_detection',
-        executable = 'cup_holder_detection',
-        name = 'cup_holder_detection',
+        executable = 'cup_holder_pipeline',
+        name = 'cup_holder_detection_pipeline',
+        namespace='starbots_detection',
         output = 'screen',
         parameters = [{'use_sim_time': False}],
-        arguments=['--ros-args', '--log-level', 'error'],
+        arguments=['--ros-args', '--log-level', 'info'],
+    )
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
+        arguments=['-d', rviz_config, '--ros-args', '--log-level', 'info'],
+        parameters=[{'use_sim_time': False}],
     )
     
     return LaunchDescription([
         pointcloud_launch,
-        cup_holder_detection_node,
+        cup_holder_detection_pipeline_node,
+        rviz_node
     ])

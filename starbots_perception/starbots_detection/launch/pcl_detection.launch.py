@@ -7,7 +7,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
     
-    rviz_config = os.path.join(get_package_share_directory('starbots_detection'),'rviz','detections.rviz')
+    rviz_config = os.path.join(get_package_share_directory('starbots_detection'),'rviz','pcl_detection.rviz')
 
     pointcloud_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -20,7 +20,7 @@ def generate_launch_description():
     )
     cup_holder_detection_node = Node(
         package = 'starbots_detection',
-        executable = 'cup_holder_detection',
+        executable = 'cup_holder_pcl',
         name = 'cup_holder_detection',
         output = 'screen',
         parameters = [{'use_sim_time': False}],
