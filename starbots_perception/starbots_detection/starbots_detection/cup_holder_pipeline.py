@@ -45,6 +45,11 @@ class CupHolderDetection(Node):
         self.min_depth_m = 0.02
         self.max_depth_m = 3.0
 
+        # Fusing settings
+        self.weight_hough = 0.4
+        self.weight_pcl = 0.6
+        self.fuse_threshold = 0.03 # 3 cm
+
         # Hough params
         self.dp = 1.6
         self.minDist = 20
@@ -128,17 +133,12 @@ class CupHolderDetection(Node):
                 try:
                     tf = self.tf_buffer.lookup_transform('base_link', cam_frame, rclpy.time.Time())
                     ps_out = tf2_geometry_msgs.do_transform_point(ps, tf)
-
-                    # Natural offset based on camera pov
-                    # ps_out.point.x += 0.008
-                    # ps_out.point.y -= 0.013
-                    # ps_out.point.z += 0.024
-
                     self.hough_centroids.append([ps_out.point.x, ps_out.point.y, ps_out.point.z])
                 except Exception as e:
                     self.get_logger().warn(f"TF transform failed: {e}")
                     continue
         
+        # Remove occupied holes using pcl holes
         self.hough_centroids = [
             h for h in self.hough_centroids
             if not any(np.linalg.norm(np.array(h) - np.array(occ)) < 0.04 for occ in self.occupied_pcl_centroids)
@@ -188,15 +188,11 @@ class CupHolderDetection(Node):
         elif not self.hough_centroids:
             fused = self.pc_centroids
         else:
-            weight_hough = 0.3
-            weight_pcl = 0.7
-            threshold = 0.03 # 3 cm
-
             for h in self.hough_centroids:
                 for p in self.pc_centroids:
                     dist = np.linalg.norm(np.array(h) - np.array(p))
-                    if dist < threshold:
-                        wavg = [(h_i * weight_hough + p_i * weight_pcl) for h_i, p_i in zip(h, p)]
+                    if dist < self.fuse_threshold:
+                        wavg = [(h_i * self.weight_hough + p_i * self.weight_pcl) for h_i, p_i in zip(h, p)]
                         is_occupied = any(np.linalg.norm(np.array(wavg) - np.array(occ)) < 0.04 for occ in self.occupied_pcl_centroids)
                         if not is_occupied:
                             fused.append(wavg)
@@ -431,11 +427,6 @@ class CupHolderDetection(Node):
             if len(points_above) > 10:
                 self.get_logger().info(f"Skipping cluster {idx+1}: likely occupied by a cup.")
                 continue
-
-            # Natural offset based of the camera pov
-            # centroid[0] -= 0.0055
-            # centroid[1] -= 0.005
-            # centroid[2] += 0.01
                 
             # Filter by cupholder dimensions
             if min_radius <= radius <= max_radius and min_height <= height <= max_height:
@@ -509,8 +500,7 @@ class CupHolderDetection(Node):
         Publishes both visualization markers and DetectedCupholders ROS message for 'fused' method.
         Markers are under different namespaces.
         """
-        # Sorted for enumerate to keep track of original indices
-        
+        # Keep track of original indices
         matched_centroids = self.match_detections_to_previous(centroids)
 
         marker_array = MarkerArray()
@@ -525,7 +515,11 @@ class CupHolderDetection(Node):
                 radius = float(dimensions[assigned_id][0]) / 2
                 height = float(dimensions[assigned_id][1])
 
-            # Cylinder marker
+            # Natural offset based of the camera pov
+            centroid[0] += 0.0057
+            centroid[1] -= 0.001
+
+            # Hole marker
             marker = Marker()
             marker.ns = method
             marker.header.frame_id = "base_link"
@@ -550,7 +544,7 @@ class CupHolderDetection(Node):
             elif method == 'fused':
                 marker.color.r, marker.color.g, marker.color.b = (1.0, 0.0, 0.0)
 
-                # ID text marker
+                # Hole ID marker
                 text_marker = Marker()
                 text_marker.header.frame_id = "base_link"
                 text_marker.header.stamp = now
@@ -572,10 +566,7 @@ class CupHolderDetection(Node):
                 text_marker.color.a = 1.0
                 marker_array.markers.append(text_marker)
 
-            marker_array.markers.append(marker)
-
-            # ROS message for 'fused'
-            if method == 'fused':
+                # Populate detection ROS2 message
                 obj = DetectedCupholder()
                 obj.cupholder_id = assigned_id
                 obj.position = Point(x=centroid[0], y=centroid[1], z=centroid[2])
@@ -583,8 +574,12 @@ class CupHolderDetection(Node):
                 obj.height = height
                 cupholders_msg.cup_holders.append(obj)
 
+            marker_array.markers.append(marker)
+
+
         self.cupholder_marker_pub.publish(marker_array)
-        if method == 'fused': # Only publish cupholders message for 'fused'
+        if method == 'fused': # Only publish cupholders message for 'fused'# Sort the cupholders by cupholder_id before publishing
+            cupholders_msg.cup_holders = sorted(cupholders_msg.cup_holders, key=lambda x: x.cupholder_id)
             cupholders_msg.header = Header(stamp=now, frame_id="base_link")
             self.cupholder_pub.publish(cupholders_msg)
             
