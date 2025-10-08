@@ -7,26 +7,22 @@ BT::PortsList Place::providedPorts() { return {}; }
 
 BT::NodeStatus Place::tick() {
 
+  auto blackboard_ = config().blackboard;
+  auto request =
+      blackboard_->get<std::shared_ptr<DeliverCup::Request>>("request");
+  auto goal_position = robot_->goal_poses_[request->goal_cup_holder];
+  goal_position.z += .3;
+
   RCLCPP_INFO(LOGGER, "Approaching to place...");
 
-  geometry_msgs::msg::Pose robot_pose =
-      robot_->move_group_robot_->getCurrentPose().pose;
   robot_->createOrientationConstraint();
-  robot_->move_group_robot_->setPlanningTime(5.0);
-
-  if (!robot_->executeKinematicsPlan(robot_pose.position.x,
-                                     robot_pose.position.y,
-                                     robot_pose.position.z - 0.230) &&
-      !robot_->executeKinematicsPlan(robot_pose.position.x,
-                                     robot_pose.position.y,
-                                     robot_pose.position.z - 0.215) &&
-      !robot_->executeKinematicsPlan(robot_pose.position.x,
-                                     robot_pose.position.y,
-                                     robot_pose.position.z - 0.200)) {
+  robot_->move_group_robot_->setPlanningTime(10.0);
+  if (!robot_->executeKinematicsPlan(goal_position.x, goal_position.y,
+                                     goal_position.z, 5)) {
     RCLCPP_ERROR(LOGGER, "Place kinematics plan failed!");
     robot_->move_group_robot_->stop();
     robot_->clearOrientationConstraints();
-    robot_->move_group_robot_->setPlanningTime(20.0); // For future runs
+    robot_->move_group_robot_->setPlanningTime(20.0); // Default for next
     return BT::NodeStatus::FAILURE;
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -36,19 +32,12 @@ BT::NodeStatus Place::tick() {
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
   RCLCPP_INFO(LOGGER, "Retreating...");
-  if (!robot_->executeKinematicsPlan(robot_pose.position.x,
-                                     robot_pose.position.y,
-                                     robot_pose.position.z) &&
-      !robot_->executeKinematicsPlan(robot_pose.position.x,
-                                     robot_pose.position.y,
-                                     robot_pose.position.z - 0.02) &&
-      !robot_->executeKinematicsPlan(robot_pose.position.x,
-                                     robot_pose.position.y,
-                                     robot_pose.position.z + 0.02)) {
+  if (!robot_->executeKinematicsPlan(goal_position.x, goal_position.y,
+                                     goal_position.z + .2, 10)) {
     RCLCPP_ERROR(LOGGER, "Retreat kinematics plan failed!");
     robot_->move_group_robot_->stop();
     robot_->clearOrientationConstraints();
-    robot_->move_group_robot_->setPlanningTime(20.0); // For future runs
+    robot_->move_group_robot_->setPlanningTime(20.0); // Default for next
     return BT::NodeStatus::FAILURE;
   }
 

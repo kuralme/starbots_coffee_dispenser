@@ -4,6 +4,7 @@
 #include "geometry_msgs/msg/detail/point__struct.hpp"
 #include "geometry_msgs/msg/detail/pose__struct.hpp"
 #include <chrono>
+#include <cstddef>
 #include <geometry_msgs/msg/point.hpp>
 #include <memory>
 #include <moveit/move_group_interface/move_group_interface.h>
@@ -39,7 +40,8 @@ public:
   bool gotoPredefined(std::string pose_name);
   void holeDetectionCallback(
       const starbots_detection_msgs::msg::DetectedCupholders::SharedPtr msg);
-  bool executeKinematicsPlan(float pos_x, float pos_y, float pos_z);
+  bool executeKinematicsPlan(float pos_x, float pos_y, float pos_z,
+                             size_t max_attempts = 1);
   void executeCartesianPlan(float x_delta, float y_delta, float z_delta);
   void executeGripperPlan(std::string pose_name);
   void gripperGrasp();
@@ -72,7 +74,7 @@ public:
   moveit_msgs::msg::Constraints path_constraints_;
   geometry_msgs::msg::Point cup_position_;
   std::vector<geometry_msgs::msg::Point> goal_poses_;
-  bool goal_poses_received_;
+  bool update_goals_;
 };
 
 #endif // PICK_AND_PLACE_HPP

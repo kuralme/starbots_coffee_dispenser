@@ -7,24 +7,22 @@ ValidateDetection::ValidateDetection(const std::string &name,
 BT::PortsList ValidateDetection::providedPorts() { return {}; }
 
 BT::NodeStatus ValidateDetection::tick() {
+  robot_->update_goals_ = true; // Enable to populate detection
   int no_detection_count = 0;
   const int max_attempts = 5;
-  const std::chrono::milliseconds wait_time(3000);
 
-  while (!robot_->goal_poses_received_) {
+  while (robot_->goal_poses_.empty()) {
     RCLCPP_WARN(LOGGER, "Detection data not received yet (attempt %d/%d)",
                 no_detection_count + 1, max_attempts);
-    std::this_thread::sleep_for(wait_time);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
     no_detection_count++;
 
     if (no_detection_count >= max_attempts) {
       RCLCPP_ERROR(LOGGER, "Detection timeout after %d attempts", max_attempts);
+      robot_->update_goals_ = false;
       return BT::NodeStatus::FAILURE;
     }
   }
-
-  // Reset the place_failed flag for consecutive attempts
-  auto blackboard_ = config().blackboard;
-  blackboard_->set("place_failed", false);
+  robot_->update_goals_ = false;
   return BT::NodeStatus::SUCCESS;
 }

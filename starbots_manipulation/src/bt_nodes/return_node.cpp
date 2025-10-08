@@ -6,11 +6,10 @@ Return::Return(const std::string &name, const BT::NodeConfig &config,
 BT::PortsList Return::providedPorts() { return {}; }
 
 BT::NodeStatus Return::tick() {
-  robot_->goal_poses_received_ = false;
+  robot_->goal_poses_.clear();
   robot_->gotoPredefined("quick_pick");
 
-  bool place_failed = false;
   auto blackboard_ = config().blackboard;
-  blackboard_->get("place_failed", place_failed);
+  auto place_failed = blackboard_->get<bool>("place_failed");
   return place_failed ? BT::NodeStatus::FAILURE : BT::NodeStatus::SUCCESS;
 }

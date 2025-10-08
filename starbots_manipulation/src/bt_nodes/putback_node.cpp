@@ -44,14 +44,14 @@ BT::NodeStatus PutBack::tick() {
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-  robot_->executeCartesianPlan(+0.000, +0.000, -0.075);
+  robot_->executeCartesianPlan(+0.000, +0.000, -0.105);
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
   robot_->executeGripperPlan("gripper_open");
   robot_->detachCollisionObject("coffee_cup");
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-  robot_->executeCartesianPlan(+0.000, +0.000, +0.075);
+  robot_->executeCartesianPlan(+0.000, +0.000, +0.105);
   robot_->clearOrientationConstraints();
   return BT::NodeStatus::SUCCESS;
 }

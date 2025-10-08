@@ -2,7 +2,7 @@
 
 PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
     : Node("starbots_delivery_service_server", node_options),
-      goal_poses_received_(false) {
+      update_goals_(false) {
 
   RCLCPP_INFO(LOGGER, "Initializing Starbots UR3e Coffee Dispenser...");
   this->declare_parameter("automatically_declare_parameters_from_overrides",
@@ -60,18 +60,19 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
   // Prepare ROS2 communiation
   holepose_sub_ = move_group_node_->create_subscription<
       starbots_detection_msgs::msg::DetectedCupholders>(
-      "/cup_holder_detected", 100,
+      "/starbots_detection/cup_holders_detected", 100,
       std::bind(&PickAndPlace::holeDetectionCallback, this, _1));
   octo_client_ =
       move_group_node_->create_client<std_srvs::srv::Empty>("/clear_octomap");
 
   // Hardcoded coffee cup position
-  cup_position_.x = 0.222; // guess 0.222
+  cup_position_.x = 0.218; // guess 0.22
   cup_position_.y = 0.33;  // guess 0.33
-  cup_position_.z = 0.07;
+  cup_position_.z = 0.035;
 
   createSceneObjects();
   if (gotoPredefined("quick_pick")) {
+    executeGripperPlan("gripper_open");
     RCLCPP_INFO(LOGGER, "UR3e ready for coffee delivery");
   } else {
     RCLCPP_ERROR(LOGGER, "UR3e not ready for coffee delivery!");
@@ -83,20 +84,18 @@ PickAndPlace::~PickAndPlace() {
 
 void PickAndPlace::holeDetectionCallback(
     const starbots_detection_msgs::msg::DetectedCupholders::SharedPtr msg) {
-  //   if (!goal_poses_received_) {
-  for (const auto &cupholder : msg->cup_holders) {
-    goal_poses_.push_back(cupholder.position);
-    // RCLCPP_INFO(LOGGER, "===========================");
-    // RCLCPP_INFO(LOGGER, "Cupholder ID: %u", cupholder.cupholder_id);
-    // RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)",
-    // cupholder.position.x, cupholder.position.y,
-    // cupholder.position.z);
-    // RCLCPP_INFO(LOGGER, "Radius: %.2f", cupholder.radius);
-    // RCLCPP_INFO(LOGGER, "Height: %.2f", cupholder.height);
+  if (update_goals_) {
+    for (const auto &cupholder : msg->cup_holders) {
+      goal_poses_.push_back(cupholder.position);
+      RCLCPP_INFO(LOGGER, "===========================");
+      RCLCPP_INFO(LOGGER, "Cupholder ID: %u", cupholder.cupholder_id);
+      RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)", cupholder.position.x,
+                  cupholder.position.y, cupholder.position.z);
+      RCLCPP_INFO(LOGGER, "Radius: %.2f", cupholder.radius);
+      RCLCPP_INFO(LOGGER, "Height: %.2f", cupholder.height);
+    }
+    RCLCPP_INFO(LOGGER, "===========================");
   }
-  //   RCLCPP_INFO(LOGGER, "===========================");
-  goal_poses_received_ = true;
-  //   }
 }
 bool PickAndPlace::gotoPredefined(std::string pose_name) {
   // Move robot(joints) to predefined configuration
@@ -135,9 +134,8 @@ void PickAndPlace::ensureElbowUp() {
     gotoPredefined("quick_pick");
   }
 }
-bool PickAndPlace::executeKinematicsPlan(float pos_x, float pos_y,
-                                         float pos_z) {
-
+bool PickAndPlace::executeKinematicsPlan(float pos_x, float pos_y, float pos_z,
+                                         size_t max_attempts) {
   move_group_robot_->clearPoseTargets();
   robot_current_state_ = move_group_robot_->getCurrentState(10);
   move_group_robot_->setStartStateToCurrentState();
@@ -153,29 +151,46 @@ bool PickAndPlace::executeKinematicsPlan(float pos_x, float pos_y,
   move_group_robot_->setPoseTarget(target_pose);
 
   MoveGroupInterface::Plan kinematics_trajectory_plan;
-  bool plan_success_robot =
-      (move_group_robot_->plan(kinematics_trajectory_plan) ==
-       moveit::core::MoveItErrorCode::SUCCESS);
 
-  if (plan_success_robot) {
-    size_t num_points =
-        kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
-    RCLCPP_INFO(LOGGER, "Trajectory has %zu points", num_points);
-    if (num_points > 3) {
-      move_group_robot_->execute(kinematics_trajectory_plan);
-      move_group_robot_->clearPoseTargets();
-      return true;
-    } else {
-      RCLCPP_WARN(LOGGER, "Trajectory too short — nothing to execute.");
-      move_group_robot_->clearPoseTargets();
-      return false;
+  bool plan_success_robot = false;
+  size_t attempt = 0;
+  const float step_size = 0.005; // Adjust increment step
+  float adjusted_z = pos_z;
+
+  while (attempt < max_attempts) {
+    plan_success_robot = (move_group_robot_->plan(kinematics_trajectory_plan) ==
+                          moveit::core::MoveItErrorCode::SUCCESS);
+
+    if (plan_success_robot) {
+      size_t num_points =
+          kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
+      RCLCPP_INFO(LOGGER, "Trajectory has %zu points", num_points);
+
+      if (num_points > 3) {
+        move_group_robot_->execute(kinematics_trajectory_plan);
+        move_group_robot_->clearPoseTargets();
+        return true;
+      } else {
+        RCLCPP_WARN(LOGGER, "Trajectory too short — nothing to execute.");
+        move_group_robot_->clearPoseTargets();
+        return false;
+      }
     }
-  } else {
-    RCLCPP_WARN(LOGGER, "Planning failed — no execution.");
-    move_group_robot_->clearPoseTargets();
-    return false;
+
+    // Adjust z position and retry with slightly higher z
+    adjusted_z += step_size;
+    target_pose.position.z = adjusted_z;
+    move_group_robot_->setPoseTarget(target_pose);
+    ++attempt;
+    RCLCPP_WARN(LOGGER, "Planning attempt %zu failed. Trying z = %.3f", attempt,
+                adjusted_z);
   }
+
+  RCLCPP_ERROR(LOGGER, "All planning attempts failed!");
+  move_group_robot_->clearPoseTargets();
+  return false;
 }
+
 void PickAndPlace::executeCartesianPlan(float x_delta, float y_delta,
                                         float z_delta) {
 
@@ -211,7 +226,6 @@ void PickAndPlace::executeCartesianPlan(float x_delta, float y_delta,
     move_group_robot_->execute(cartesian_trajectory_plan);
   } else {
     cartesian_waypoints.clear();
-    // throw std::runtime_error("Cartesian planning failed !");
   }
   cartesian_waypoints.clear();
 }
@@ -231,24 +245,47 @@ void PickAndPlace::executeGripperPlan(std::string pose_name) {
   }
 }
 void PickAndPlace::gripperGrasp() {
-  // Close the gripper gradually by incrementing the gripper joint position
-  float gripper_value = 0.25;
-  MoveGroupInterface::Plan gripper_plan;
-  joint_group_positions_gripper_[2] = gripper_value;
-  move_group_gripper_->setJointValueTarget(joint_group_positions_gripper_);
-  if (!move_group_gripper_->plan(gripper_plan) ==
-          moveit::core::MoveItErrorCode::SUCCESS &&
-      !move_group_gripper_->execute(gripper_plan) ==
-          moveit::core::MoveItErrorCode::SUCCESS) {
-    RCLCPP_ERROR(LOGGER, "Failed to close gripper. Aborting.");
+  // Incrementally close the gripper
+  const float target_value = 0.22;
+  const float step_large = 0.2;
+  const float step_small = 0.02;
+
+  for (float gripper_value = 0.0; gripper_value <= target_value;) {
+    float step;
+    if (gripper_value < 0.18)
+      step = step_large;
+    else
+      step = step_small;
+
+    gripper_value += step;
+    if (gripper_value > target_value)
+      gripper_value = target_value;
+
+    joint_group_positions_gripper_[2] = gripper_value;
+    move_group_gripper_->setJointValueTarget(joint_group_positions_gripper_);
+
+    MoveGroupInterface::Plan plan;
+    bool success = move_group_gripper_->plan(plan) ==
+                   moveit::core::MoveItErrorCode::SUCCESS;
+
+    if (success) {
+      move_group_gripper_->execute(plan);
+    } else {
+      RCLCPP_ERROR(LOGGER, "Failed to plan gripper motion at value: %.3f",
+                   gripper_value);
+      break;
+    }
+
+    if (gripper_value >= target_value)
+      break;
   }
 }
 
 void PickAndPlace::attachCollisionObject(const std::string &object_id) {
-  // Add the cup to the planning scene
+  // Add the cup to the planning scene and disable collision with gripper
   geometry_msgs::msg::Pose cup_pose;
   cup_pose.position = cup_position_;
-  std::vector<double> cup_dimensions = {0.11, 0.04}; // {height, width}
+  std::vector<double> cup_dimensions = {0.07, 0.032}; // {height, width}
   moveit_msgs::msg::CollisionObject coffee_cup =
       createCollisionObject(object_id, "cylinder", cup_dimensions, cup_pose);
 
@@ -260,8 +297,34 @@ void PickAndPlace::attachCollisionObject(const std::string &object_id) {
                                  "robotiq_85_left_finger_tip_link"};
   moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
   planning_scene_interface.applyAttachedCollisionObject(attached_object);
-
   RCLCPP_INFO(LOGGER, "Cup attached to gripper");
+
+  //   // Gripper links to allow collision with
+  //   std::vector<std::string> gripper_links = {
+  //       "robotiq_85_left_finger_link",
+  //       "robotiq_85_right_finger_link",
+  //       "robotiq_85_left_knuckle_link",
+  //       "robotiq_85_right_knuckle_link",
+  //       "robotiq_85_left_inner_knuckle_link",
+  //       "robotiq_85_right_inner_knuckle_link",
+  //       "robotiq_85_base_link",
+  //   };
+
+  //   moveit_msgs::msg::PlanningScene planning_scene;
+  //   planning_scene.is_diff = true;
+  //   for (const auto &link : gripper_links) {
+  //     moveit_msgs::msg::AllowedCollisionEntry entry;
+  //     entry.enabled.resize(1);
+  //     entry.enabled[0] = true;
+
+  //     planning_scene.allowed_collision_matrix.entry_names.push_back(link);
+  //     planning_scene.allowed_collision_matrix.entry_values.push_back(entry);
+  //     planning_scene.allowed_collision_matrix.default_entry_names.push_back(
+  //         object_id);
+  //     planning_scene.allowed_collision_matrix.default_entry_values.push_back(
+  //         true);
+  //   }
+  //   planning_scene_interface.applyPlanningScene(planning_scene);
 }
 void PickAndPlace::detachCollisionObject(const std::string &object_id) {
   // Detach the cup from the gripper
@@ -295,7 +358,7 @@ void PickAndPlace::createSceneObjects() {
   geometry_msgs::msg::Pose clamp1_pose;
   clamp1_pose.orientation.w = 1.0;
   clamp1_pose.position.x = -0.09;
-  clamp1_pose.position.y = 0.48;
+  clamp1_pose.position.y = 0.50;
   clamp1_pose.position.z = -0.035;
   std::vector<double> clamp1_dim = {0.08, 0.02,
                                     0.12}; // {length, width, height}
@@ -310,7 +373,7 @@ void PickAndPlace::createSceneObjects() {
   clamp2_pose.orientation.z = q.z();
   clamp2_pose.orientation.w = q.w();
   clamp2_pose.position.x = -0.09;
-  clamp2_pose.position.y = 0.14;
+  clamp2_pose.position.y = 0.15;
   clamp2_pose.position.z = -0.035;
   std::vector<double> clamp2_dimentions = {0.08, 0.02,
                                            0.12}; // {length, width, height}
@@ -328,10 +391,10 @@ void PickAndPlace::createSceneObjects() {
 
   geometry_msgs::msg::Pose cam_pose;
   cam_pose.orientation.w = 1.0;
-  cam_pose.position.x = -0.4;
-  cam_pose.position.y = -0.35;
+  cam_pose.position.x = -0.41;
+  cam_pose.position.y = -0.27;
   cam_pose.position.z = 0.4;
-  std::vector<double> cam_dim = {0.12, 0.1, 0.05}; // {length, width, height}
+  std::vector<double> cam_dim = {0.12, 0.05, 0.05}; // {length, width, height}
   const moveit_msgs::msg::CollisionObject camera =
       createCollisionObject("camera", "box", cam_dim, cam_pose);
 

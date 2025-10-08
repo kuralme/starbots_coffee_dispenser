@@ -72,6 +72,8 @@ int main(int argc, char **argv) {
                            std::shared_ptr<DeliverCup::Response> res) {
         auto blackboard = tree.rootBlackboard();
         blackboard->set("request", req);
+        blackboard->set("place_failed",
+                        false); // Reset the flag that is used for fallback
 
         BT::NodeStatus status = tree.tickWhileRunning();
         res->result = (status == BT::NodeStatus::SUCCESS)
