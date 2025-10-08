@@ -53,10 +53,11 @@ def generate_launch_description():
             )
         )
     )
-    cup_holder_detection_node = Node(
+    cup_holder_detection_pipeline_node = Node(
         package = 'starbots_detection',
-        executable = 'cup_holder_detection',
-        name = 'cup_holder_detection',
+        executable = 'cup_holder_pipeline',
+        name = 'cup_holder_detection_pipeline',
+        namespace='starbots_detection',
         output = 'screen',
         parameters = [{'use_sim_time': False}],
         arguments=['--ros-args', '--log-level', 'error'],
@@ -73,7 +74,7 @@ def generate_launch_description():
     ld = LaunchDescription()
     ld.add_action(move_group_node)
     ld.add_action(pointcloud_launch)
-    ld.add_action(cup_holder_detection_node)
+    ld.add_action(cup_holder_detection_pipeline_node)
     ld.add_action(delayed_manipulation_node)
     ld.add_action(rviz_node)
     return ld
