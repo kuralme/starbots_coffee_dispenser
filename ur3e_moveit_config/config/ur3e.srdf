@@ -47,7 +47,7 @@
         <joint name="robotiq_85_left_knuckle_joint" value="0.78"/>
     </group_state>
     <group_state name="gripper_grasp" group="gripper">
-        <joint name="robotiq_85_left_knuckle_joint" value="0.2"/>
+        <joint name="robotiq_85_left_knuckle_joint" value="0.22"/>
     </group_state>
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
     <end_effector name="gripper_ee" parent_link="wrist_3_link" group="gripper" parent_group="ur_manipulator"/>
