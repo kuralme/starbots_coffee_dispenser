@@ -84,17 +84,15 @@ class CupHolderDetection(Node):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         annotated = img.copy()
 
+        # Crop right 1/4 part of Gray for processing
         h_img, w_img = gray.shape[:2]
-
-        # --- Crop right 1/3 for processing, keep original for annotation ---
-        crop_w = 2 * w_img // 3
+        crop_w = 3 * w_img // 4
         proc_gray = gray[:, :crop_w]
-        x_off = 0  # cropped from left, so x stays same
 
         # Gaussian blur
         k = self.gauss_k if (self.gauss_k % 2 == 1) else self.gauss_k + 1
         gray_blur = cv2.GaussianBlur(proc_gray, (k, k), 0) if k > 1 else proc_gray
-
+        
         # Hough Circles
         circles = cv2.HoughCircles(
             gray_blur, cv2.HOUGH_GRADIENT,
@@ -112,7 +110,7 @@ class CupHolderDetection(Node):
             for c in circles:
                 u_local, v_local = int(round(c[0])), int(round(c[1]))
                 r_px = float(c[2])
-                u = u_local + x_off  # x offset (still 0 here, but kept for future flexibility)
+                u = u_local
                 v = v_local
 
                 # Draw on full image
@@ -503,10 +501,16 @@ class CupHolderDetection(Node):
         # Keep track of original indices
         matched_centroids = self.match_detections_to_previous(centroids)
 
+        # General X correction
+        x_values = [c[0] for _, c in matched_centroids]
+        x_center = sum(x_values) / len(x_values)
+        correction_factor = 0.1
+
         marker_array = MarkerArray()
         cupholders_msg = DetectedCupholders()
         now = self.get_clock().now().to_msg()
         text_height_offset = 0.1
+
 
         for assigned_id, centroid in matched_centroids:
             radius = 0.035
@@ -516,7 +520,7 @@ class CupHolderDetection(Node):
                 height = float(dimensions[assigned_id][1])
 
             # Natural offset based of the camera pov
-            centroid[0] += 0.0057
+            centroid[0] += 0.005
             centroid[1] -= 0.001
 
             # Hole marker
@@ -567,9 +571,11 @@ class CupHolderDetection(Node):
                 marker_array.markers.append(text_marker)
 
                 # Populate detection ROS2 message
+                adjusted_x = centroid[0] - (centroid[0] - x_center) * correction_factor
+
                 obj = DetectedCupholder()
                 obj.cupholder_id = assigned_id
-                obj.position = Point(x=centroid[0], y=centroid[1], z=centroid[2])
+                obj.position = Point(x=adjusted_x, y=centroid[1], z=centroid[2])
                 obj.radius = radius
                 obj.height = height
                 cupholders_msg.cup_holders.append(obj)
@@ -578,7 +584,7 @@ class CupHolderDetection(Node):
 
 
         self.cupholder_marker_pub.publish(marker_array)
-        if method == 'fused': # Only publish cupholders message for 'fused'# Sort the cupholders by cupholder_id before publishing
+        if method == 'fused': # Only publish cupholders message for 'fused' and sort
             cupholders_msg.cup_holders = sorted(cupholders_msg.cup_holders, key=lambda x: x.cupholder_id)
             cupholders_msg.header = Header(stamp=now, frame_id="base_link")
             self.cupholder_pub.publish(cupholders_msg)
