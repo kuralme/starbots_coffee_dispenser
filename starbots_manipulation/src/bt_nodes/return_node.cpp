@@ -7,7 +7,14 @@ BT::PortsList Return::providedPorts() { return {}; }
 
 BT::NodeStatus Return::tick() {
   robot_->goal_poses_.clear();
-  robot_->gotoPredefined("quick_pick");
+  if (!robot_->gotoPredefined("quick_pick")) {
+    robot_->move_group_robot_->stop();
+    robot_->clearOrientationConstraints();
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    robot_->gotoPredefined("home");
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    robot_->gotoPredefined("quick_pick");
+  }
 
   auto blackboard_ = config().blackboard;
   auto place_failed = blackboard_->get<bool>("place_failed");
