@@ -1,14 +1,5 @@
 {
   "configById": {
-    "CallService!3jm0wum": {
-      "requestPayload": "{\n  \"goal_cup_holder\": 0\n}",
-      "layout": "vertical",
-      "timeoutSeconds": 500,
-      "foxglovePanelTitle": "Coffee Delivery Service",
-      "serviceName": "/deliver_coffee",
-      "buttonTooltip": "Enter target hole & Order Coffee",
-      "buttonText": "Order Coffee"
-    },
     "3D!19idsu8": {
       "topics": {
         "/camera_depth_sensor/points": {
@@ -94,17 +85,28 @@
           "colorField": "rgb",
           "colorMode": "rgb",
           "colorMap": "turbo"
+        },
+        "/starbots_detection/cup_holder_markers": {
+          "visible": true,
+          "namespaces": {
+            "hough": {
+              "visible": false
+            },
+            "pcl": {
+              "visible": false
+            }
+          }
         }
       },
       "cameraState": {
         "perspective": true,
-        "distance": 2.093479094461925,
-        "phi": 57.137599472897215,
-        "thetaOffset": 124.22121825009759,
+        "distance": 2.0934790944614665,
+        "phi": 61.85660167392753,
+        "thetaOffset": 130.89473255677126,
         "targetOffset": [
-          -0.33088832883480196,
-          0.29149178113116747,
-          0.1250838756730441
+          0.05692301274994941,
+          0.10726897602720012,
+          0.1250838756730442
         ],
         "target": [
           0,
@@ -126,8 +128,8 @@
         "transforms": {
           "visible": true,
           "lineWidth": 0.5,
-          "axisScale": 0.5,
-          "labelSize": 0.04
+          "labelSize": 0.03,
+          "axisSize": 0.1
         }
       },
       "transforms": {
@@ -195,10 +197,10 @@
           "visible": true
         },
         "frame:upper_arm_link": {
-          "visible": true
+          "visible": false
         },
         "frame:forearm_link": {
-          "visible": true
+          "visible": false
         },
         "frame:wrist_1_link": {
           "visible": true
@@ -280,6 +282,48 @@
         },
         "frame:camera_camera_link": {
           "visible": true
+        },
+        "frame:aruco_link": {
+          "visible": false
+        },
+        "frame:robotiq_85_left_inner_knuckle_link": {
+          "visible": false
+        },
+        "frame:robotiq_85_left_finger_tip_link": {
+          "visible": true
+        },
+        "frame:robotiq_85_left_knuckle_link": {
+          "visible": false
+        },
+        "frame:robotiq_85_left_finger_link": {
+          "visible": false
+        },
+        "frame:robotiq_85_right_inner_knuckle_link": {
+          "visible": false
+        },
+        "frame:robotiq_85_right_finger_tip_link": {
+          "visible": false
+        },
+        "frame:robotiq_85_right_knuckle_link": {
+          "visible": false
+        },
+        "frame:robotiq_85_right_finger_link": {
+          "visible": false
+        },
+        "frame:D415_color_frame": {
+          "visible": false
+        },
+        "frame:D415_color_optical_frame": {
+          "visible": false
+        },
+        "frame:D415_depth_frame": {
+          "visible": false
+        },
+        "frame:D415_depth_optical_frame": {
+          "visible": false
+        },
+        "frame:D415_link": {
+          "visible": true
         }
       },
       "layers": {
@@ -320,7 +364,108 @@
       "imageMode": {},
       "followTf": "base_link"
     },
+    "CallService!3jm0wum": {
+      "requestPayload": "{\n  \"goal_cup_holder\": 0\n}",
+      "layout": "vertical",
+      "timeoutSeconds": 500,
+      "foxglovePanelTitle": "Coffee Delivery Service",
+      "serviceName": "/deliver_coffee",
+      "buttonTooltip": "Enter target hole & Order Coffee",
+      "buttonText": "Order Coffee"
+    },
+    "Image!21vy45r": {
+      "imageMode": {
+        "imageTopic": "/starbots_detection/barista_cam_annotated",
+        "calibrationTopic": "/D415/color/camera_info"
+      },
+      "cameraState": {
+        "distance": 20,
+        "perspective": true,
+        "phi": 60,
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOffset": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "thetaOffset": 45,
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "scene": {},
+      "transforms": {},
+      "topics": {},
+      "layers": {},
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "foxglovePanelTitle": "Barista tray Detections"
+    },
     "Image!46fjbv8": {
+      "cameraState": {
+        "distance": 20,
+        "perspective": true,
+        "phi": 60,
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOffset": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "thetaOffset": 45,
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "scene": {},
+      "transforms": {},
+      "topics": {},
+      "layers": {},
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "imageMode": {
+        "imageTopic": "/D415/color/image_raw",
+        "calibrationTopic": "/D415/color/camera_info"
+      },
+      "foxglovePanelTitle": "Barista tray cam"
+    },
+    "Image!18v4ue9": {
       "cameraState": {
         "distance": 20,
         "perspective": true,
@@ -366,68 +511,46 @@
       },
       "foxglovePanelTitle": "Barista tray depth cam"
     },
-    "Image!21vy45r": {
-      "imageMode": {
-        "imageTopic": "/D415/color/image_raw",
-        "calibrationTopic": "/D415/color/camera_info"
-      },
-      "cameraState": {
-        "distance": 20,
-        "perspective": true,
-        "phi": 60,
-        "target": [
-          0,
-          0,
-          0
-        ],
-        "targetOffset": [
-          0,
-          0,
-          0
-        ],
-        "targetOrientation": [
-          0,
-          0,
-          0,
-          1
-        ],
-        "thetaOffset": 45,
-        "fovy": 45,
-        "near": 0.5,
-        "far": 5000
-      },
-      "followMode": "follow-pose",
-      "scene": {},
-      "transforms": {},
-      "topics": {},
-      "layers": {},
-      "publish": {
-        "type": "point",
-        "poseTopic": "/move_base_simple/goal",
-        "pointTopic": "/clicked_point",
-        "poseEstimateTopic": "/initialpose",
-        "poseEstimateXDeviation": 0.5,
-        "poseEstimateYDeviation": 0.5,
-        "poseEstimateThetaDeviation": 0.26179939
-      },
-      "foxglovePanelTitle": "Barista tray cam"
+    "StateTransitions!2czkeo0": {
+      "paths": [
+        {
+          "value": "/bt_node_status.data",
+          "timestampMethod": "receiveTime",
+          "customStates": {
+            "type": "discrete",
+            "states": []
+          }
+        }
+      ],
+      "isSynced": true,
+      "xAxisLabel": "Behaviour Status",
+      "foxglovePanelTitle": "State transitions"
     }
   },
   "layout": {
-    "direction": "row",
-    "first": "CallService!3jm0wum",
-    "second": {
-      "first": "3D!19idsu8",
+    "first": {
+      "first": {
+        "first": "3D!19idsu8",
+        "second": "CallService!3jm0wum",
+        "direction": "row",
+        "splitPercentage": 76.51080859506709
+      },
       "second": {
-        "first": "Image!46fjbv8",
-        "second": "Image!21vy45r",
+        "first": "Image!21vy45r",
+        "second": {
+          "first": "Image!46fjbv8",
+          "second": "Image!18v4ue9",
+          "direction": "row"
+        },
         "direction": "column",
-        "splitPercentage": 36.312849162011176
+        "splitPercentage": 71.09905020352784
       },
       "direction": "row",
-      "splitPercentage": 62.650602409638566
+      "splitPercentage": 74.97027348394768
     },
-    "splitPercentage": 16.11177170035672
+    "second": "StateTransitions!2czkeo0",
+    "direction": "column",
+    "splitPercentage": 82.3463687150838
   },
   "globalVariables": {},
   "playbackConfig": {
