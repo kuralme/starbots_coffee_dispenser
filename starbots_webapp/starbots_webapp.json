@@ -100,13 +100,13 @@
       },
       "cameraState": {
         "perspective": true,
-        "distance": 2.0934790944614665,
-        "phi": 61.85660167392753,
-        "thetaOffset": 130.89473255677126,
+        "distance": 2.093479094460732,
+        "phi": 57.61410677449069,
+        "thetaOffset": 105.0655282431589,
         "targetOffset": [
-          0.05692301274994941,
-          0.10726897602720012,
-          0.1250838756730442
+          0.13692168585831568,
+          0.6166874514379147,
+          0.1250838756730446
         ],
         "target": [
           0,
@@ -365,13 +365,21 @@
       "followTf": "base_link"
     },
     "CallService!3jm0wum": {
-      "requestPayload": "{\n  \"goal_cup_holder\": 0\n}",
+      "requestPayload": "{\n  \"goal_cup_holder\": 1\n}",
       "layout": "vertical",
       "timeoutSeconds": 500,
       "foxglovePanelTitle": "Coffee Delivery Service",
       "serviceName": "/deliver_coffee",
       "buttonTooltip": "Enter target hole & Order Coffee",
       "buttonText": "Order Coffee"
+    },
+    "RawMessages!9z4qhd": {
+      "diffEnabled": false,
+      "diffMethod": "custom",
+      "diffTopicPath": "",
+      "showFullMessageForDiff": false,
+      "topicPath": "/robot_status_feedback",
+      "fontSize": 12
     },
     "Image!21vy45r": {
       "imageMode": {
@@ -419,97 +427,17 @@
       },
       "foxglovePanelTitle": "Barista tray Detections"
     },
-    "Image!46fjbv8": {
-      "cameraState": {
-        "distance": 20,
-        "perspective": true,
-        "phi": 60,
-        "target": [
-          0,
-          0,
-          0
-        ],
-        "targetOffset": [
-          0,
-          0,
-          0
-        ],
-        "targetOrientation": [
-          0,
-          0,
-          0,
-          1
-        ],
-        "thetaOffset": 45,
-        "fovy": 45,
-        "near": 0.5,
-        "far": 5000
-      },
-      "followMode": "follow-pose",
-      "scene": {},
-      "transforms": {},
-      "topics": {},
-      "layers": {},
-      "publish": {
-        "type": "point",
-        "poseTopic": "/move_base_simple/goal",
-        "pointTopic": "/clicked_point",
-        "poseEstimateTopic": "/initialpose",
-        "poseEstimateXDeviation": 0.5,
-        "poseEstimateYDeviation": 0.5,
-        "poseEstimateThetaDeviation": 0.26179939
-      },
-      "imageMode": {
-        "imageTopic": "/D415/color/image_raw",
-        "calibrationTopic": "/D415/color/camera_info"
-      },
-      "foxglovePanelTitle": "Barista tray cam"
-    },
-    "Image!18v4ue9": {
-      "cameraState": {
-        "distance": 20,
-        "perspective": true,
-        "phi": 60,
-        "target": [
-          0,
-          0,
-          0
-        ],
-        "targetOffset": [
-          0,
-          0,
-          0
-        ],
-        "targetOrientation": [
-          0,
-          0,
-          0,
-          1
-        ],
-        "thetaOffset": 45,
-        "fovy": 45,
-        "near": 0.5,
-        "far": 5000
-      },
-      "followMode": "follow-pose",
-      "scene": {},
-      "transforms": {},
-      "topics": {},
-      "layers": {},
-      "publish": {
-        "type": "point",
-        "poseTopic": "/move_base_simple/goal",
-        "pointTopic": "/clicked_point",
-        "poseEstimateTopic": "/initialpose",
-        "poseEstimateXDeviation": 0.5,
-        "poseEstimateYDeviation": 0.5,
-        "poseEstimateThetaDeviation": 0.26179939
-      },
-      "imageMode": {
-        "imageTopic": "/D415/aligned_depth_to_color/image_raw",
-        "calibrationTopic": "/D415/aligned_depth_to_color/camera_info"
-      },
-      "foxglovePanelTitle": "Barista tray depth cam"
+    "RosOut!w67823": {
+      "searchTerms": [],
+      "minLogLevel": 2,
+      "nameFilter": {
+        "foxglove_bridge": {
+          "visible": false
+        },
+        "scaled_joint_trajectory_controller": {
+          "visible": false
+        }
+      }
     },
     "StateTransitions!2czkeo0": {
       "paths": [
@@ -531,26 +459,27 @@
     "first": {
       "first": {
         "first": "3D!19idsu8",
-        "second": "CallService!3jm0wum",
+        "second": {
+          "first": "CallService!3jm0wum",
+          "second": "RawMessages!9z4qhd",
+          "direction": "column",
+          "splitPercentage": 76.77165354330707
+        },
         "direction": "row",
-        "splitPercentage": 76.51080859506709
+        "splitPercentage": 74.22053231939162
       },
       "second": {
         "first": "Image!21vy45r",
-        "second": {
-          "first": "Image!46fjbv8",
-          "second": "Image!18v4ue9",
-          "direction": "row"
-        },
+        "second": "RosOut!w67823",
         "direction": "column",
-        "splitPercentage": 71.09905020352784
+        "splitPercentage": 62.7296587926509
       },
       "direction": "row",
-      "splitPercentage": 74.97027348394768
+      "splitPercentage": 78.1807372175981
     },
     "second": "StateTransitions!2czkeo0",
     "direction": "column",
-    "splitPercentage": 82.3463687150838
+    "splitPercentage": 85.13966480446928
   },
   "globalVariables": {},
   "playbackConfig": {
