@@ -11,21 +11,16 @@ BT::NodeStatus Place::tick() {
   auto request =
       blackboard_->get<std::shared_ptr<DeliverCup::Request>>("request");
   auto prepick_position = robot_->goal_poses_[request->goal_cup_holder];
-  prepick_position.z += .3;
-  prepick_position.x = std::clamp(prepick_position.x, -1.,
-                                  -0.35); // Added due to robot limitations
+  prepick_position.z += .29;
 
-  RCLCPP_INFO(LOGGER, "Approaching to place...");
+  robot_->publishStatus("Approaching to place...", "INFO");
 
   robot_->createOrientationConstraint();
-  robot_->move_group_robot_->setPlanningTime(10.0);
+  robot_->move_group_robot_->setPlanningTime(5.0);
   if (!robot_->executeKinematicsPlan(prepick_position.x, prepick_position.y,
                                      prepick_position.z, 5)) {
-    RCLCPP_ERROR(LOGGER, "Place kinematics plan failed!");
-    robot_->move_group_robot_->stop();
-    robot_->clearOrientationConstraints();
-    robot_->move_group_robot_->setPlanningTime(20.0); // Default for next
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    robot_->publishStatus("Attempts to place failed!", "ERROR");
+    robot_->defaultPlanningSettings();
     return BT::NodeStatus::FAILURE;
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -36,17 +31,12 @@ BT::NodeStatus Place::tick() {
 
   RCLCPP_INFO(LOGGER, "Retreating...");
   if (!robot_->executeKinematicsPlan(prepick_position.x, prepick_position.y,
-                                     prepick_position.z + .23, 10)) {
-    RCLCPP_ERROR(LOGGER, "Retreat kinematics plan failed!");
-    robot_->move_group_robot_->stop();
-    robot_->clearOrientationConstraints();
-    robot_->move_group_robot_->setPlanningTime(20.0); // Default for next
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                                     prepick_position.z + .23, 5)) {
+    robot_->publishStatus("Attempts to retreat failed!", "ERROR");
+    robot_->defaultPlanningSettings();
     return BT::NodeStatus::FAILURE;
   }
 
-  robot_->clearOrientationConstraints();
-  robot_->move_group_robot_->setPlanningTime(20.0); // Default
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  robot_->defaultPlanningSettings();
   return BT::NodeStatus::SUCCESS;
 }

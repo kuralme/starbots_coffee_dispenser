@@ -6,6 +6,9 @@ Return::Return(const std::string &name, const BT::NodeConfig &config,
 BT::PortsList Return::providedPorts() { return {}; }
 
 BT::NodeStatus Return::tick() {
+
+  robot_->publishStatus("Returning to quick-pick position", "INFO");
+
   robot_->goal_poses_.clear();
   if (!robot_->gotoPredefined("quick_pick")) {
     robot_->move_group_robot_->stop();
@@ -15,6 +18,7 @@ BT::NodeStatus Return::tick() {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     robot_->gotoPredefined("quick_pick");
   }
+  robot_->publishStatus("Done.", "INFO");
 
   auto blackboard_ = config().blackboard;
   auto place_failed = blackboard_->get<bool>("place_failed");

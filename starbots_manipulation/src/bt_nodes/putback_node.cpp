@@ -10,7 +10,8 @@ BT::NodeStatus PutBack::tick() {
   auto blackboard_ = config().blackboard;
   blackboard_->set("place_failed", true);
 
-  RCLCPP_INFO(LOGGER, "Putting the cup back to original position");
+  robot_->publishStatus("Putting the cup back to original position", "WARN");
+
   geometry_msgs::msg::Point prepick_pos = robot_->cup_position_;
   prepick_pos.z += 0.3;
 
@@ -35,10 +36,8 @@ BT::NodeStatus PutBack::tick() {
         throw std::runtime_error("pre-pick");
       }
     } catch (const std::exception &e) {
-      RCLCPP_ERROR(LOGGER, "PutBack: attempts to reach %s pose failed",
-                   e.what());
-      robot_->move_group_robot_->stop();
-      robot_->clearOrientationConstraints();
+      robot_->publishStatus("Attemps to putback failed!", "ERROR");
+      robot_->defaultPlanningSettings();
       return BT::NodeStatus::FAILURE;
     }
   }
@@ -50,6 +49,8 @@ BT::NodeStatus PutBack::tick() {
   robot_->executeGripperPlan("gripper_open");
   robot_->detachCollisionObject("coffee_cup");
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  robot_->publishStatus("Cup is back at original position", "INFO");
 
   robot_->executeCartesianPlan(+0.000, +0.000, +0.105);
   robot_->clearOrientationConstraints();

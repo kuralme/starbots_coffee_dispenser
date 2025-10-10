@@ -1,4 +1,5 @@
 #include "pick_and_place.hpp"
+#include "std_msgs/msg/detail/string__struct.hpp"
 
 PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
     : Node("starbots_delivery_service_server", node_options),
@@ -58,9 +59,11 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
   move_group_robot_->setPlanningTime(20.0);
 
   // Prepare ROS2 communiation
+  status_pub_ = move_group_node_->create_publisher<std_msgs::msg::String>(
+      "/robot_status_feedback", 10);
   holepose_sub_ = move_group_node_->create_subscription<
       starbots_detection_msgs::msg::DetectedCupholders>(
-      "/starbots_detection/cup_holders_detected", 100,
+      "/starbots_detection/cup_holders_detected", 10,
       std::bind(&PickAndPlace::holeDetectionCallback, this, _1));
   octo_client_ =
       move_group_node_->create_client<std_srvs::srv::Empty>("/clear_octomap");
@@ -73,9 +76,9 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
   createSceneObjects();
   if (gotoPredefined("quick_pick")) {
     executeGripperPlan("gripper_open");
-    RCLCPP_INFO(LOGGER, "UR3e ready for coffee delivery");
+    publishStatus("UR3e ready for coffee delivery", "INFO");
   } else {
-    RCLCPP_ERROR(LOGGER, "UR3e not ready for coffee delivery!");
+    publishStatus("UR3e NOT ready for coffee delivery!", "ERROR");
   }
 }
 PickAndPlace::~PickAndPlace() {
@@ -95,6 +98,28 @@ void PickAndPlace::holeDetectionCallback(
       RCLCPP_INFO(LOGGER, "Height: %.2f", cupholder.height);
     }
     RCLCPP_INFO(LOGGER, "===========================");
+  }
+}
+void PickAndPlace::publishStatus(
+    const std::string &msg_data, const std::string &log_level,
+    const std::optional<geometry_msgs::msg::Point> &goal) {
+  std_msgs::msg::String msg;
+  msg.data = msg_data;
+  status_pub_->publish(msg);
+
+  // Log the message based on the specified log level
+  if (log_level == "ERROR") {
+    RCLCPP_ERROR(LOGGER, "%s", msg.data.c_str());
+  } else if (log_level == "WARN") {
+    RCLCPP_WARN(LOGGER, "%s", msg.data.c_str());
+  } else { // INFO default
+    if (goal.has_value()) {
+      const auto &pt = goal.value();
+      RCLCPP_INFO(LOGGER, "%s: [%.3f, %.3f, %.3f]", msg.data.c_str(), pt.x,
+                  pt.y, pt.z);
+    } else {
+      RCLCPP_INFO(LOGGER, "%s", msg.data.c_str());
+    }
   }
 }
 bool PickAndPlace::gotoPredefined(std::string pose_name) {
@@ -124,16 +149,6 @@ bool PickAndPlace::gotoPredefined(std::string pose_name) {
     return false;
   }
 }
-void PickAndPlace::ensureElbowUp() {
-  auto robot_state = move_group_robot_->getCurrentState();
-  std::vector<double> joint_values;
-  robot_state->copyJointGroupPositions(move_group_robot_->getName(),
-                                       joint_values);
-  if (joint_values[2] < 0.0) {
-    RCLCPP_INFO(LOGGER, "Elbow down detected.");
-    gotoPredefined("quick_pick");
-  }
-}
 bool PickAndPlace::executeKinematicsPlan(float pos_x, float pos_y, float pos_z,
                                          size_t max_attempts) {
   move_group_robot_->clearPoseTargets();
@@ -154,7 +169,7 @@ bool PickAndPlace::executeKinematicsPlan(float pos_x, float pos_y, float pos_z,
 
   bool plan_success_robot = false;
   size_t attempt = 0;
-  const float step_size = 0.005; // Adjust increment step
+  const float step_size = 0.007; // Adjust increment step
   float adjusted_z = pos_z;
 
   while (attempt < max_attempts) {
@@ -298,33 +313,6 @@ void PickAndPlace::attachCollisionObject(const std::string &object_id) {
   moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
   planning_scene_interface.applyAttachedCollisionObject(attached_object);
   RCLCPP_INFO(LOGGER, "Cup attached to gripper");
-
-  //   // Gripper links to allow collision with
-  //   std::vector<std::string> gripper_links = {
-  //       "robotiq_85_left_finger_link",
-  //       "robotiq_85_right_finger_link",
-  //       "robotiq_85_left_knuckle_link",
-  //       "robotiq_85_right_knuckle_link",
-  //       "robotiq_85_left_inner_knuckle_link",
-  //       "robotiq_85_right_inner_knuckle_link",
-  //       "robotiq_85_base_link",
-  //   };
-
-  //   moveit_msgs::msg::PlanningScene planning_scene;
-  //   planning_scene.is_diff = true;
-  //   for (const auto &link : gripper_links) {
-  //     moveit_msgs::msg::AllowedCollisionEntry entry;
-  //     entry.enabled.resize(1);
-  //     entry.enabled[0] = true;
-
-  //     planning_scene.allowed_collision_matrix.entry_names.push_back(link);
-  //     planning_scene.allowed_collision_matrix.entry_values.push_back(entry);
-  //     planning_scene.allowed_collision_matrix.default_entry_names.push_back(
-  //         object_id);
-  //     planning_scene.allowed_collision_matrix.default_entry_values.push_back(
-  //         true);
-  //   }
-  //   planning_scene_interface.applyPlanningScene(planning_scene);
 }
 void PickAndPlace::detachCollisionObject(const std::string &object_id) {
   // Detach the cup from the gripper
@@ -519,4 +507,10 @@ void PickAndPlace::clearOrientationConstraints() {
   move_group_robot_->setPathConstraints(path_constraints_);
   move_group_robot_->setPlannerId("BiTRRTkConfigDefault");
   RCLCPP_INFO(LOGGER, "Cleared Orientation constraints");
+}
+void PickAndPlace::defaultPlanningSettings() {
+  move_group_robot_->stop();
+  clearOrientationConstraints();
+  move_group_robot_->setPlanningTime(20.0);
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }

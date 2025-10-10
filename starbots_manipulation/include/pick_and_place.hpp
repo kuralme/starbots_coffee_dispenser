@@ -3,6 +3,7 @@
 
 #include "geometry_msgs/msg/detail/point__struct.hpp"
 #include "geometry_msgs/msg/detail/pose__struct.hpp"
+#include "std_msgs/msg/detail/string__struct.hpp"
 #include <chrono>
 #include <cstddef>
 #include <geometry_msgs/msg/point.hpp>
@@ -12,12 +13,14 @@
 #include <moveit_msgs/msg/display_robot_state.hpp>
 #include <moveit_msgs/msg/display_trajectory.hpp>
 #include <moveit_msgs/msg/position_constraint.hpp>
+#include <optional>
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <starbots_detection_msgs/msg/detected_cupholder.hpp>
 #include <starbots_detection_msgs/msg/detected_cupholders.hpp>
 #include <starbots_detection_msgs/msg/detected_objects.hpp>
 #include <starbots_detection_msgs/msg/detected_surfaces.hpp>
 #include <starbots_manipulation/srv/deliver_cup.hpp>
+#include <std_msgs/msg/string.hpp>
 #include <std_srvs/srv/empty.hpp>
 #include <vector>
 #include <visualization_msgs/msg/marker.hpp>
@@ -45,7 +48,6 @@ public:
   void executeCartesianPlan(float x_delta, float y_delta, float z_delta);
   void executeGripperPlan(std::string pose_name);
   void gripperGrasp();
-  void ensureElbowUp();
   void attachCollisionObject(const std::string &object_id);
   void detachCollisionObject(const std::string &object_id);
   void createSceneObjects();
@@ -56,7 +58,11 @@ public:
   void createTrajectoryConstraint();
   void createOrientationConstraint();
   void clearOrientationConstraints();
+  void defaultPlanningSettings();
   void clearOctomap();
+  void publishStatus(
+      const std::string &msg_data, const std::string &log_level = "INFO",
+      const std::optional<geometry_msgs::msg::Point> &goal = std::nullopt);
 
   rclcpp::Node::SharedPtr move_group_node_;
   std::shared_ptr<MoveGroupInterface> move_group_robot_, move_group_gripper_;
@@ -66,8 +72,7 @@ public:
   std::vector<double> joint_group_positions_robot_,
       joint_group_positions_gripper_;
   rclcpp::Client<std_srvs::srv::Empty>::SharedPtr octo_client_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
-      constraint_marker_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr status_pub_;
   rclcpp::Subscription<starbots_detection_msgs::msg::DetectedCupholders>::
       SharedPtr holepose_sub_;
   rclcpp::Service<DeliverCup>::SharedPtr service_server_;
