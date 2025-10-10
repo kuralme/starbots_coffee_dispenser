@@ -13,6 +13,7 @@ from std_msgs.msg import Header
 from sensor_msgs.msg import PointCloud2, Image, CameraInfo
 from geometry_msgs.msg import Point, PointStamped
 from visualization_msgs.msg import Marker, MarkerArray
+from builtin_interfaces.msg import Duration
 from starbots_detection_msgs.msg import DetectedSurfaces, DetectedCupholder, DetectedCupholders
 
 class CupHolderDetection(Node):
@@ -502,9 +503,12 @@ class CupHolderDetection(Node):
         matched_centroids = self.match_detections_to_previous(centroids)
 
         # General X correction
-        x_values = [c[0] for _, c in matched_centroids]
-        x_center = sum(x_values) / len(x_values)
         correction_factor = 0.1
+        x_values = [c[0] for _, c in matched_centroids]
+        if not x_values:
+            self.get_logger().warn(f"No matched centroids found for method '{method}'. Skipping publish.")
+            return
+        x_center = sum(x_values) / len(x_values)
 
         marker_array = MarkerArray()
         cupholders_msg = DetectedCupholders()
@@ -521,13 +525,14 @@ class CupHolderDetection(Node):
 
             # Natural offset based of the camera pov
             centroid[0] += 0.005
-            centroid[1] -= 0.001
+            centroid[1] -= 0.002
 
             # Hole marker
             marker = Marker()
             marker.ns = method
             marker.header.frame_id = "base_link"
             marker.header.stamp = now
+            marker.lifetime = Duration(sec=2)
             marker.id = assigned_id
             marker.type = Marker.CYLINDER
             marker.action = Marker.ADD
@@ -556,6 +561,7 @@ class CupHolderDetection(Node):
                 text_marker.type = Marker.TEXT_VIEW_FACING
                 text_marker.id = 1000 + assigned_id  # Offset to avoid conflicts
                 text_marker.text = str(assigned_id)
+                text_marker.lifetime = Duration(sec=2)
                 text_marker.action = Marker.ADD
                 text_marker.pose.position.x = centroid[0]
                 text_marker.pose.position.y = centroid[1]
