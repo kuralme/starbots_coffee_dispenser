@@ -38,16 +38,27 @@ using DeliverCup = starbots_manipulation::srv::DeliverCup;
 class PickAndPlace : public rclcpp::Node {
 public:
   PickAndPlace(const rclcpp::NodeOptions &node_options = rclcpp::NodeOptions{});
-  ~PickAndPlace();
+  ~PickAndPlace() noexcept;
 
-  bool gotoPredefined(std::string pose_name);
+  void publishStatus(
+      const std::string &msg_data, const std::string &log_level = "INFO",
+      const std::optional<geometry_msgs::msg::Point> &goal = std::nullopt);
   void holeDetectionCallback(
       const starbots_detection_msgs::msg::DetectedCupholders::SharedPtr msg);
-  bool executeKinematicsPlan(float pos_x, float pos_y, float pos_z,
-                             size_t max_attempts = 1);
-  void executeCartesianPlan(float x_delta, float y_delta, float z_delta);
-  void executeGripperPlan(std::string pose_name);
+  bool gotoPredefined(const std::string &pose_name);
+  [[nodiscard]] bool executeKinematicsPlan(const double &pos_x,
+                                           const double &pos_y,
+                                           const double &pos_z,
+                                           const int &max_attempts = 1);
+  void executeCartesianPlan(const double &x_delta, const double &y_delta,
+                            const double &z_delta);
+  void executeGripperPlan(const std::string &pose_name);
   void gripperGrasp();
+  void createTrajectoryConstraint();
+  void createOrientationConstraint();
+  void clearOrientationConstraints();
+  void defaultPlanningSettings();
+  void clearOctomap();
   void attachCollisionObject(const std::string &object_id);
   void detachCollisionObject(const std::string &object_id);
   void createSceneObjects();
@@ -55,14 +66,6 @@ public:
   createCollisionObject(const std::string &object_id, const std::string &type,
                         const std::vector<double> &dimensions,
                         const geometry_msgs::msg::Pose &pose);
-  void createTrajectoryConstraint();
-  void createOrientationConstraint();
-  void clearOrientationConstraints();
-  void defaultPlanningSettings();
-  void clearOctomap();
-  void publishStatus(
-      const std::string &msg_data, const std::string &log_level = "INFO",
-      const std::optional<geometry_msgs::msg::Point> &goal = std::nullopt);
 
   rclcpp::Node::SharedPtr move_group_node_;
   std::shared_ptr<MoveGroupInterface> move_group_robot_, move_group_gripper_;

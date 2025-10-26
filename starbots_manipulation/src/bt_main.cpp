@@ -58,7 +58,8 @@ int main(int argc, char **argv) {
         return std::make_unique<Return>(name, config, robot_node.get());
       });
 
-  std::string tree_file =
+  // Load BT from XML file
+  const std::string tree_file =
       ament_index_cpp::get_package_share_directory("starbots_manipulation") +
       "/bt_config/coffee_delivery_tree.xml";
   auto tree = factory.createTreeFromFile(tree_file);

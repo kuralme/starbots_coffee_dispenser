@@ -5,10 +5,11 @@ Place::Place(const std::string &name, const BT::NodeConfig &config,
     : BT::SyncActionNode(name, config), robot_(robot) {}
 BT::PortsList Place::providedPorts() { return {}; }
 
-BT::NodeStatus Place::tick() {
+BT::NodeStatus Place::tick()
+{
 
-  auto blackboard_ = config().blackboard;
-  auto request =
+  const auto blackboard_ = config().blackboard;
+  const auto request =
       blackboard_->get<std::shared_ptr<DeliverCup::Request>>("request");
   auto prepick_position = robot_->goal_poses_[request->goal_cup_holder];
   prepick_position.z += .29;
@@ -18,7 +19,8 @@ BT::NodeStatus Place::tick() {
   robot_->createOrientationConstraint();
   robot_->move_group_robot_->setPlanningTime(5.0);
   if (!robot_->executeKinematicsPlan(prepick_position.x, prepick_position.y,
-                                     prepick_position.z, 5)) {
+                                     prepick_position.z, 5))
+  {
     robot_->publishStatus("Attempts to place failed!", "ERROR");
     robot_->defaultPlanningSettings();
     return BT::NodeStatus::FAILURE;
@@ -31,7 +33,8 @@ BT::NodeStatus Place::tick() {
 
   RCLCPP_INFO(LOGGER, "Retreating...");
   if (!robot_->executeKinematicsPlan(prepick_position.x, prepick_position.y,
-                                     prepick_position.z + .23, 5)) {
+                                     prepick_position.z + .23, 5))
+  {
     robot_->publishStatus("Attempts to retreat failed!", "ERROR");
     robot_->defaultPlanningSettings();
     return BT::NodeStatus::FAILURE;
