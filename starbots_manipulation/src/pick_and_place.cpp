@@ -64,6 +64,8 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
   rclcpp::SubscriptionOptions sub_options;
   sub_options.callback_group = callback_group;
 
+  status_pub_ = move_group_node_->create_publisher<std_msgs::msg::String>(
+      "/robot_status_feedback", 10);
   objpose_sub_ = move_group_node_->create_subscription<
       starbots_detection_msgs::msg::DetectedCup>(
       "/starbots_detection/cup_detected", 10,
@@ -80,7 +82,7 @@ PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
   gotoPredefined("quick_pick");
   RCLCPP_INFO(LOGGER, "UR3e ready for coffee delivery");
 }
-PickAndPlace::~PickAndPlace()
+PickAndPlace::~PickAndPlace() noexcept
 {
   RCLCPP_INFO(LOGGER, "Class Terminated: UR3e Coffee Dispenser");
 }
@@ -126,7 +128,38 @@ void PickAndPlace::holeDetectionCallback(
   // }
 }
 
-void PickAndPlace::gotoPredefined(std::string pose_name)
+void PickAndPlace::publishStatus(
+    const std::string &msg_data, const std::string &log_level,
+    const std::optional<geometry_msgs::msg::Point> &goal)
+{
+  std_msgs::msg::String msg;
+  msg.data = msg_data;
+  status_pub_->publish(msg);
+
+  // Log the message based on the specified log level
+  if (log_level == "ERROR")
+  {
+    RCLCPP_ERROR(LOGGER, "%s", msg.data.c_str());
+  }
+  else if (log_level == "WARN")
+  {
+    RCLCPP_WARN(LOGGER, "%s", msg.data.c_str());
+  }
+  else
+  { // INFO default
+    if (goal.has_value())
+    {
+      const auto &pt = goal.value();
+      RCLCPP_INFO(LOGGER, "%s: [%.3f, %.3f, %.3f]", msg.data.c_str(), pt.x,
+                  pt.y, pt.z);
+    }
+    else
+    {
+      RCLCPP_INFO(LOGGER, "%s", msg.data.c_str());
+    }
+  }
+}
+bool PickAndPlace::gotoPredefined(const std::string &pose_name)
 {
   // Move robot(joints) to predefined home configuration
   RCLCPP_INFO(LOGGER, "Going to '%s' Pose...", pose_name.c_str());
@@ -135,20 +168,25 @@ void PickAndPlace::gotoPredefined(std::string pose_name)
   move_group_robot_->setStartStateToCurrentState();
 
   MoveGroupInterface::Plan kinematics_trajectory_plan;
-  bool plan_success_robot_ =
+  const bool plan_success_robot_ =
       (move_group_robot_->plan(kinematics_trajectory_plan) ==
        moveit::core::MoveItErrorCode::SUCCESS);
   if (plan_success_robot_)
   {
-    size_t num_points =
+    const int num_points =
         kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
     if (num_points > 1)
     {
-      move_group_robot_->execute(kinematics_trajectory_plan);
+      if (move_group_robot_->execute(kinematics_trajectory_plan) ==
+          moveit::core::MoveItErrorCode::SUCCESS)
+        return true;
+      else
+        return false;
     }
     else
     {
       RCLCPP_INFO(LOGGER, "Already at the '%s' pose.", pose_name.c_str());
+      return true;
     }
   }
 }
@@ -168,7 +206,8 @@ bool PickAndPlace::ensureElbowUp()
     return true;
   }
 }
-bool PickAndPlace::executeKinematicsPlan(float pos_x, float pos_y, float pos_z)
+bool PickAndPlace::executeKinematicsPlan(const double &pos_x, const double &pos_y, const double &pos_z,
+                                         const int &max_attempts)
 {
   move_group_robot_->clearPoseTargets();
   robot_current_state_ = move_group_robot_->getCurrentState(10);
@@ -185,33 +224,49 @@ bool PickAndPlace::executeKinematicsPlan(float pos_x, float pos_y, float pos_z)
   move_group_robot_->setPoseTarget(target_pose);
 
   MoveGroupInterface::Plan kinematics_trajectory_plan;
-  bool plan_success_robot_ =
-      (move_group_robot_->plan(kinematics_trajectory_plan) ==
-       moveit::core::MoveItErrorCode::SUCCESS);
 
-  if (plan_success_robot_)
+  const float step_size = 0.006; // Adjust increment step
+  int attempt = 0;
+  float adjusted_z = pos_z;
+
+  while (attempt < max_attempts)
   {
-    size_t num_points =
-        kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
-    RCLCPP_INFO(LOGGER, "Trajectory has %zu points", num_points);
-    if (num_points > 3)
+    const bool plan_success_robot = move_group_robot_->plan(kinematics_trajectory_plan) ==
+                                    moveit::core::MoveItErrorCode::SUCCESS;
+
+    if (plan_success_robot)
     {
-      move_group_robot_->execute(kinematics_trajectory_plan);
-      return true;
+      const int num_points =
+          kinematics_trajectory_plan.trajectory_.joint_trajectory.points.size();
+      RCLCPP_INFO(LOGGER, "Trajectory has %d points", num_points);
+
+      if (num_points > 3)
+      {
+        move_group_robot_->execute(kinematics_trajectory_plan);
+        move_group_robot_->clearPoseTargets();
+        return true;
+      }
+      else
+      {
+        RCLCPP_WARN(LOGGER, "Trajectory too short — nothing to execute.");
+        move_group_robot_->clearPoseTargets();
+      }
     }
-    else
-    {
-      RCLCPP_WARN(LOGGER, "Trajectory too short — nothing to execute.");
-      return false;
-    }
+
+    // Adjust z position and retry with slightly higher z
+    adjusted_z += step_size;
+    target_pose.position.z = adjusted_z;
+    move_group_robot_->setPoseTarget(target_pose);
+    ++attempt;
+    RCLCPP_WARN(LOGGER, "Planning attempt %d failed. Trying z = %.3f", attempt,
+                adjusted_z);
   }
-  else
-  {
-    RCLCPP_ERROR(LOGGER, "Planning failed — no execution.");
-    return false;
-  }
+
+  RCLCPP_ERROR(LOGGER, "All planning attempts failed!");
+  move_group_robot_->clearPoseTargets();
+  return false;
 }
-void PickAndPlace::executeCartesianPlan(float x_delta, float y_delta, float z_delta)
+void PickAndPlace::executeCartesianPlan(const double &x_delta, const double &y_delta, const double &z_delta)
 {
   move_group_robot_->clearPoseTargets();
   robot_current_state_ = move_group_robot_->getCurrentState(10);
@@ -235,7 +290,7 @@ void PickAndPlace::executeCartesianPlan(float x_delta, float y_delta, float z_de
   const double jump_threshold_ = 0.0;
   const double end_effector_step_ = 0.01;
   moveit_msgs::msg::RobotTrajectory cartesian_trajectory_plan_;
-  double plan_fraction_robot_ = move_group_robot_->computeCartesianPath(
+  const double plan_fraction_robot_ = move_group_robot_->computeCartesianPath(
       cartesian_waypoints, end_effector_step_, jump_threshold_,
       cartesian_trajectory_plan_);
 
@@ -252,12 +307,12 @@ void PickAndPlace::executeCartesianPlan(float x_delta, float y_delta, float z_de
   cartesian_waypoints.clear();
 }
 
-void PickAndPlace::executeGripperPlan(std::string pose_name)
+void PickAndPlace::executeGripperPlan(const std::string &pose_name)
 {
   MoveGroupInterface::Plan gripper_trajectory_plan;
   move_group_gripper_->setNamedTarget(pose_name);
 
-  bool plan_success_gripper_ =
+  const bool plan_success_gripper_ =
       (move_group_gripper_->plan(gripper_trajectory_plan) ==
        moveit::core::MoveItErrorCode::SUCCESS);
 
@@ -274,10 +329,10 @@ void PickAndPlace::executeGripperPlan(std::string pose_name)
 void PickAndPlace::closeGripperIncremental()
 {
   float gripper_value = 0.4;
-  const float target_value = -0.01;
-  const float step_large = 0.09;
+  const float target_value = 0.01;
+  const float step_large = 0.16;
   const float step_medium = 0.03;
-  const float step_small = 0.015;
+  const float step_small = 0.01;
 
   while (gripper_value > target_value)
   {
@@ -285,8 +340,8 @@ void PickAndPlace::closeGripperIncremental()
     move_group_gripper_->setJointValueTarget(joint_group_positions_gripper_);
 
     MoveGroupInterface::Plan plan;
-    bool success = move_group_gripper_->plan(plan) ==
-                   moveit::core::MoveItErrorCode::SUCCESS;
+    const bool success = move_group_gripper_->plan(plan) ==
+                         moveit::core::MoveItErrorCode::SUCCESS;
 
     if (success)
     {
@@ -302,7 +357,7 @@ void PickAndPlace::closeGripperIncremental()
     // Dynamically reduce step size for precision
     if (gripper_value > 0.1)
       gripper_value -= step_large;
-    else if (gripper_value > 0.02)
+    else if (gripper_value > 0.03)
       gripper_value -= step_medium;
     else
       gripper_value -= step_small;
@@ -448,6 +503,13 @@ void PickAndPlace::clearOrientationConstraints()
   move_group_robot_->setPathConstraints(path_constraints_);
   move_group_robot_->setPlannerId("BiTRRTkConfigDefault");
   RCLCPP_INFO(LOGGER, "Cleared Orientation constraints");
+}
+void PickAndPlace::defaultPlanningSettings()
+{
+  move_group_robot_->stop();
+  clearOrientationConstraints();
+  move_group_robot_->setPlanningTime(20.0);
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
 void PickAndPlace::displayBoxConstraint(
     const geometry_msgs::msg::Pose &pose,

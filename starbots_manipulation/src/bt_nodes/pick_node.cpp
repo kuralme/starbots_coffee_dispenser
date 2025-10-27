@@ -6,7 +6,7 @@ BT::PortsList Pick::providedPorts() { return {}; }
 
 BT::NodeStatus Pick::tick()
 {
-    RCLCPP_INFO(LOGGER, "Approaching to pick...");
+    robot_->publishStatus("Approaching to pick...", "INFO");
     robot_->executeGripperPlan("gripper_open");
     robot_->clearOctomap();
     robot_->executeCartesianPlan(+0.000, +0.000, -0.079);
@@ -14,6 +14,7 @@ BT::NodeStatus Pick::tick()
 
     robot_->closeGripperIncremental();
     robot_->attachObject();
+    robot_->publishStatus("Cup is picked", "INFO");
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     robot_->executeCartesianPlan(+0.000, +0.000, +0.079);

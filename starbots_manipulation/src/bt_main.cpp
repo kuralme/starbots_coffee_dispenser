@@ -60,8 +60,9 @@ int main(int argc, char **argv)
                                     });
 
     // Load BT from XML file
-    std::string bt_config_dir = ament_index_cpp::get_package_share_directory("starbots_manipulation") + "/bt_config/";
-    std::string tree_file = bt_config_dir + "/coffee_delivery_tree.xml";
+    const std::string tree_file =
+        ament_index_cpp::get_package_share_directory("starbots_manipulation") +
+        "/bt_config/coffee_delivery_tree.xml";
     auto tree = factory.createTreeFromFile(tree_file);
     BT::Groot2Publisher publisher(tree);
     // Extract the tree model for Groot2
@@ -79,6 +80,8 @@ int main(int argc, char **argv)
         {
             auto blackboard = tree.rootBlackboard();
             blackboard->set("request", req);
+            blackboard->set("place_failed",
+                            false); // Reset the flag that is used for fallback
 
             BT::NodeStatus status = tree.tickWhileRunning();
             res->result = (status == BT::NodeStatus::SUCCESS) ? "Coffee Delivery successful" : "Coffee Delivery failed";

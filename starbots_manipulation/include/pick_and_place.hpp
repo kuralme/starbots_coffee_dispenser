@@ -14,6 +14,8 @@
 #include <moveit_msgs/msg/position_constraint.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <std_srvs/srv/empty.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <starbots_detection_msgs/msg/detected_cupholder.hpp>
 #include <starbots_detection_msgs/msg/detected_cupholders.hpp>
@@ -35,27 +37,30 @@ class PickAndPlace : public rclcpp::Node
 {
 public:
     PickAndPlace(const rclcpp::NodeOptions &node_options = rclcpp::NodeOptions());
-    ~PickAndPlace();
+    ~PickAndPlace() noexcept;
 
-    void gotoPredefined(std::string pose_name);
-    // void handleService(const std::shared_ptr<DeliverCup::Request> request, std::shared_ptr<DeliverCup::Response> response);
-    void clearOctomap();
     void cupDetectionCallback(const starbots_detection_msgs::msg::DetectedCup::SharedPtr msg);
     void holeDetectionCallback(const starbots_detection_msgs::msg::DetectedCupholders::SharedPtr msg);
-    void setupJointTarget(float angle0, float angle1, float angle2, float angle3, float angle4, float angle5);
+    void setupJointTarget(const double &angle0, const double &angle1, const double &angle2, const double &angle3, const double &angle4, const double &angle5);
     bool ensureElbowUp();
-    bool executeKinematicsPlan(float pos_x, float pos_y, float pos_z);
-    void executeCartesianPlan(float x_delta, float y_delta, float z_delta);
-    void executeGripperPlan(std::string pose_name);
+    [[nodiscard]] bool gotoPredefined(const std::string &pose_name);
+    [[nodiscard]] bool executeKinematicsPlan(const double &pos_x, const double &pos_y, const double &pos_z, const int &max_attempts = 1);
+    void executeCartesianPlan(const double &x_delta, const double &y_delta, const double &z_delta);
+    void executeGripperPlan(const std::string &pose_name);
     void closeGripperIncremental();
     void attachObject();
     void detachObject();
+    void clearOctomap();
     void createSceneObjects();
     void createTrajectoryConstraint();
     void createOrientationConstraint();
     void clearOrientationConstraints();
+    void defaultPlanningSettings();
     void displayBoxConstraint(const geometry_msgs::msg::Pose &pose,
                               const rosidl_runtime_cpp::BoundedVector<double, 3, std::allocator<double>> &dimensions);
+    void publishStatus(
+        const std::string &msg_data, const std::string &log_level = "INFO",
+        const std::optional<geometry_msgs::msg::Point> &goal = std::nullopt);
 
     // Member variables
     rclcpp::Node::SharedPtr move_group_node_;
@@ -64,6 +69,7 @@ public:
     moveit::core::RobotStatePtr robot_current_state_, gripper_current_state_;
     std::vector<double> joint_group_positions_robot_, joint_group_positions_gripper_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr constraint_marker_pub_;
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr status_pub_;
     rclcpp::Subscription<starbots_detection_msgs::msg::DetectedCup>::SharedPtr objpose_sub_;
     rclcpp::Subscription<starbots_detection_msgs::msg::DetectedCupholders>::SharedPtr holepose_sub_;
     rclcpp::Service<DeliverCup>::SharedPtr service_server_;

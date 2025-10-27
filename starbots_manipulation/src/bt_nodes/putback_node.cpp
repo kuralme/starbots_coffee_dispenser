@@ -6,9 +6,13 @@ BT::PortsList PutBack::providedPorts() { return {}; }
 
 BT::NodeStatus PutBack::tick()
 {
+    auto blackboard_ = config().blackboard;
+    blackboard_->set("place_failed", true);
+
     auto prepick_pos = robot_->obj_position_;
     prepick_pos.z += .3;
-    RCLCPP_INFO(LOGGER, "Putting the cup back to original position");
+
+    robot_->publishStatus("Placement failed. Putting the cup back to original position", "WARN");
 
     robot_->createOrientationConstraint();
     robot_->move_group_robot_->clearPoseTargets();
@@ -20,10 +24,9 @@ BT::NodeStatus PutBack::tick()
     robot_->executeGripperPlan("gripper_open");
     robot_->detachObject();
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
     robot_->executeCartesianPlan(+0.000, +0.000, +0.079);
     robot_->clearOrientationConstraints();
 
-    auto blackboard_ = config().blackboard;
-    blackboard_->set("place_failed", true);
     return BT::NodeStatus::SUCCESS;
 }

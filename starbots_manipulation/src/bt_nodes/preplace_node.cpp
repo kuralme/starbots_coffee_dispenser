@@ -6,19 +6,18 @@ BT::PortsList PrePlace::providedPorts() { return {}; }
 
 BT::NodeStatus PrePlace::tick()
 {
-    auto blackboard_ = config().blackboard;
-    auto request = blackboard_->get<std::shared_ptr<DeliverCup::Request>>("request");
-    auto goal_position = robot_->goal_poses_[request->goal_cup_holder];
-    goal_position.z += .55;
+    const auto blackboard_ = config().blackboard;
+    const auto request = blackboard_->get<std::shared_ptr<DeliverCup::Request>>("request");
+    auto preplace_position = robot_->goal_poses_[request->goal_cup_holder];
+    preplace_position.z += .55;
 
     robot_->createOrientationConstraint();
     robot_->ensureElbowUp(); // Elbow-up for better planning when reaching close targets
-    RCLCPP_INFO(LOGGER, "Going to the Pre-placing Pose: [%.3f, %.3f, %.3f]",
-                goal_position.x, goal_position.y, goal_position.z);
+    robot_->publishStatus("Going to the Pre-place Pose", "INFO", preplace_position);
 
     // Timeout to avoid hanging indefinitely
     auto future_result = std::async(std::launch::async, [&]()
-                                    { return robot_->executeKinematicsPlan(goal_position.x, goal_position.y, goal_position.z); });
+                                    { return robot_->executeKinematicsPlan(preplace_position.x, preplace_position.y, preplace_position.z); });
     if (future_result.wait_for(std::chrono::seconds(40)) != std::future_status::ready || !future_result.get())
     {
         RCLCPP_ERROR(LOGGER, "PrePlace: Kinematics plan failed or timed out.");
