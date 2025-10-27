@@ -8,6 +8,7 @@ import tf2_ros
 from tf2_ros import TransformException, ConnectivityException
 from starbots_detection_msgs.msg import DetectedSurfaces, DetectedCup
 from typing import List, Tuple, Union
+from builtin_interfaces.msg import Duration
 
 class CupDetection(Node):
     def __init__(self) -> None:
@@ -255,9 +256,10 @@ class CupDetection(Node):
             marker = Marker()
             marker.header.frame_id = "base_link"
             marker.id = idx
+            marker.lifetime = Duration(sec=2)
             marker.type = Marker.CYLINDER
             marker.action = Marker.ADD
-            marker.pose.position.x = centroid[0] - 0.0213
+            marker.pose.position.x = centroid[0] - 0.02
             marker.pose.position.y = centroid[1] - 0.015
             marker.pose.position.z = centroid[2] - 0.01
             marker.pose.orientation.w = 1.0
@@ -286,7 +288,7 @@ class CupDetection(Node):
             
             object_msg = DetectedCup()
             object_msg.object_id = idx
-            object_msg.position.x = centroid[0] - 0.0213
+            object_msg.position.x = centroid[0] - 0.02
             object_msg.position.y = centroid[1] - 0.017
             object_msg.position.z = centroid[2]
             object_msg.width = diameter

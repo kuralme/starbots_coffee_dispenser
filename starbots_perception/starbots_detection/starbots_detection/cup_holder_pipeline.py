@@ -13,6 +13,7 @@ from std_msgs.msg import Header
 from sensor_msgs.msg import PointCloud2, Image, CameraInfo
 from geometry_msgs.msg import Point, PointStamped
 from visualization_msgs.msg import Marker, MarkerArray
+from builtin_interfaces.msg import Duration
 from starbots_detection_msgs.msg import DetectedSurfaces, DetectedCupholder, DetectedCupholders
 
 class CupHolderDetection(Node):
@@ -524,6 +525,7 @@ class CupHolderDetection(Node):
             marker.ns = method
             marker.header.frame_id = "base_link"
             marker.header.stamp = now
+            marker.lifetime = Duration(sec=2)
             marker.id = assigned_id
             marker.type = Marker.CYLINDER
             marker.action = Marker.ADD
@@ -548,6 +550,7 @@ class CupHolderDetection(Node):
                 text_marker = Marker()
                 text_marker.header.frame_id = "base_link"
                 text_marker.header.stamp = now
+                text_marker.lifetime = Duration(sec=2)
                 text_marker.ns = 'enum'
                 text_marker.type = Marker.TEXT_VIEW_FACING
                 text_marker.id = 1000 + assigned_id  # Offset to avoid conflicts
@@ -579,6 +582,7 @@ class CupHolderDetection(Node):
 
         self.cupholder_marker_pub.publish(marker_array)
         if method == 'fused': # Only publish cupholders message for 'fused'
+            cupholders_msg.cup_holders = sorted(cupholders_msg.cup_holders, key=lambda x: x.cupholder_id)
             cupholders_msg.header = Header(stamp=now, frame_id="base_link")
             self.cupholder_pub.publish(cupholders_msg)
             
