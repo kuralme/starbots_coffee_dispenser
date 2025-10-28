@@ -2,16 +2,16 @@
 
 ## Overview
 
-Starbots Coffee Dispenser is a robotics **simulation** project that performs a complete Pick and Place task using the **UR3e robotic arm**, designed to operate in both Gazebo simulation and on a real-world setup. The system enables the robot to autonomously locate a coffee cup, pick it up, and place it on a coffee tray mounted on a Barista robot, simulating a real-world coffee-serving interaction.
+Starbots Coffee Dispenser is a robotics project that performs a complete Pick and Place task using the **UR3e robotic arm**, designed to operate in both Gazebo simulation and on a real-world setup. The system enables the robot to autonomously locate a coffee cup, pick it up, and place it on a coffee tray mounted on a Barista robot, simulating a real-world coffee-serving interaction.
 
-The project integrates **MoveIt2** for motion planning and execution, and employs perception pipeline with object detection and point cloud processing to locate and interact with objects in the environment. Point cloud data is also used to construct an **OctoMap**, enabling MoveIt2 to consider the surrounding environment as part of its collision-aware planning. The current branch supports seamless operation in  Gazebo simulation setup.
+The project integrates the **MoveIt2** C++ API for motion planning and execution, while using a Python-based perception pipeline for **object detection** and **point cloud processing**. This perception system identifies and locates objects in the environment, and the point cloud data is further used to build an **OctoMap**. The OctoMap enables MoveIt2 to perform collision-aware planning by considering the surrounding environment. The current branch supports seamless operation within a Gazebo simulation setup.
 
-To orchestrate the robot's high-level behavior, the system uses a **Behavior Tree (BT)**-based control logic. This modular and reactive framework manages task execution, such as cup detection, picking, placing, and error handling, ensuring robust and flexible control over the coffee delivery process.
+To oversee the robot's high-level behavior, the system employs a custom **Behavior Tree (BT)**-based control logic. This modular and reactive framework manages task execution — including cup detection, picking, placing, and error handling — ensuring robust and flexible control throughout the coffee delivery process.
 
 This system is built on ROS 2 and offers modular launch files to execute the full task pipeline — from perception and planning to actuation in a simulated environment. Additionally, Docker is used to build and containerize the system, and Docker Compose is leveraged to manage and start the multiple services, ensuring a consistent and efficient deployment across different setups.
 
 ---
-[![Sim video](./media/coffee_delivery_sim.gif)](https://www.youtube.com/watch?v=bQpeCSoZZug)
+[![Sim video](./media/final_sim.gif)](https://youtu.be/4XE2JNb8slM)
 
 ## Prerequisites
 
