@@ -94,13 +94,13 @@
       },
       "cameraState": {
         "perspective": true,
-        "distance": 1.538899505528234,
-        "phi": 50.83410381865896,
-        "thetaOffset": 123.18504069862334,
+        "distance": 2.2036622046914283,
+        "phi": 50.83410381865953,
+        "thetaOffset": 123.18504069862324,
         "targetOffset": [
-          -0.1720619459185907,
-          0.33502829294909947,
-          0.12508387567304324
+          -0.15085054907495504,
+          0.3414666028128276,
+          0.12508387567304322
         ],
         "target": [
           0,
@@ -122,8 +122,8 @@
         "transforms": {
           "visible": true,
           "lineWidth": 0.5,
-          "axisScale": 0.3,
-          "labelSize": 0.02
+          "labelSize": 0.02,
+          "axisSize": 0.06
         }
       },
       "transforms": {
@@ -325,6 +325,14 @@
       "buttonTooltip": "Enter target hole & Order Coffee",
       "buttonText": "Order Coffee"
     },
+    "RawMessages!12kbr7u": {
+      "diffEnabled": false,
+      "diffMethod": "custom",
+      "diffTopicPath": "",
+      "showFullMessageForDiff": false,
+      "topicPath": "/robot_status_feedback",
+      "fontSize": 12
+    },
     "Image!1xbsj5h": {
       "cameraState": {
         "distance": 20,
@@ -437,21 +445,26 @@
     "first": {
       "first": "3D!19idsu8",
       "second": {
-        "first": "CallService!3jm0wum",
+        "first": {
+          "first": "CallService!3jm0wum",
+          "second": "RawMessages!12kbr7u",
+          "direction": "column",
+          "splitPercentage": 70.90909090909093
+        },
         "second": {
           "first": "Image!1xbsj5h",
           "second": "Image!28d09mc",
           "direction": "row"
         },
         "direction": "column",
-        "splitPercentage": 66.11039794608473
+        "splitPercentage": 71.59390995337918
       },
       "direction": "row",
       "splitPercentage": 60.31613976705491
     },
     "second": "StateTransitions!zl1vfg",
     "direction": "column",
-    "splitPercentage": 83.40163934426229
+    "splitPercentage": 84.31845597104946
   },
   "globalVariables": {},
   "playbackConfig": {
