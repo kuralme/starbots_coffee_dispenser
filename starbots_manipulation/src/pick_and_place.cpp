@@ -2,7 +2,7 @@
 
 PickAndPlace::PickAndPlace(const rclcpp::NodeOptions &node_options)
     : Node("starbots_delivery_service_server", node_options),
-      obj_pose_received_(false), goal_poses_received_(false)
+      obj_pose_received_(false), update_goals_(false)
 {
   RCLCPP_INFO(LOGGER, "Initializing Starbots UR3e Coffee Dispenser...");
   this->declare_parameter("automatically_declare_parameters_from_overrides",
@@ -110,22 +110,21 @@ void PickAndPlace::cupDetectionCallback(
 void PickAndPlace::holeDetectionCallback(
     const starbots_detection_msgs::msg::DetectedCupholders::SharedPtr msg)
 {
-  // if (!goal_poses_received_)
-  // {
-  for (const auto &cupholder : msg->cup_holders)
+  if (update_goals_)
   {
-    goal_poses_.push_back(cupholder.position);
-
-    // RCLCPP_INFO(LOGGER, "===========================");
-    // RCLCPP_INFO(LOGGER, "Cupholder ID: %u", cupholder.cupholder_id);
-    // RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)", cupholder.position.x, cupholder.position.y, cupholder.position.z);
-    // RCLCPP_INFO(LOGGER, "Radius: %.2f", cupholder.radius);
-    // RCLCPP_INFO(LOGGER, "Height: %.2f", cupholder.height);
-    // }
-    // RCLCPP_INFO(LOGGER, "===========================");
-    goal_poses_received_ = true;
+    goal_poses_.clear();
+    for (const auto &cupholder : msg->cup_holders)
+    {
+      goal_poses_.push_back(cupholder.position);
+      RCLCPP_INFO(LOGGER, "===========================");
+      RCLCPP_INFO(LOGGER, "Cupholder ID: %u", cupholder.cupholder_id);
+      RCLCPP_INFO(LOGGER, "Position: (%.2f, %.2f, %.2f)", cupholder.position.x,
+                  cupholder.position.y, cupholder.position.z);
+      RCLCPP_INFO(LOGGER, "Radius: %.2f", cupholder.radius);
+      RCLCPP_INFO(LOGGER, "Height: %.2f", cupholder.height);
+    }
+    RCLCPP_INFO(LOGGER, "===========================");
   }
-  // }
 }
 
 void PickAndPlace::publishStatus(
@@ -329,7 +328,7 @@ void PickAndPlace::executeGripperPlan(const std::string &pose_name)
 void PickAndPlace::closeGripperIncremental()
 {
   float gripper_value = 0.4;
-  const float target_value = 0.01;
+  const float target_value = 0.015;
   const float step_large = 0.16;
   const float step_medium = 0.03;
   const float step_small = 0.01;
@@ -368,6 +367,72 @@ void PickAndPlace::closeGripperIncremental()
   }
 }
 
+void PickAndPlace::createTrajectoryConstraint()
+{
+  // Constraint for planning trajectory
+  shape_msgs::msg::SolidPrimitive box;
+  box.type = shape_msgs::msg::SolidPrimitive::BOX;
+  box.dimensions = {2.0, 2.0, 2.0};
+  geometry_msgs::msg::Pose box_pose;
+  box_pose.position.x = -0.1;
+  box_pose.position.y = 0.3;
+  box_pose.orientation.w = 1.0;
+  displayBoxConstraint(box_pose, box.dimensions);
+
+  moveit_msgs::msg::PositionConstraint box_constraint;
+  box_constraint.header.frame_id = move_group_robot_->getPlanningFrame();
+  box_constraint.link_name = move_group_robot_->getEndEffectorLink();
+  box_constraint.constraint_region.primitives.push_back(box);
+  box_constraint.constraint_region.primitive_poses.push_back(box_pose);
+  box_constraint.weight = 1.0;
+
+  path_constraints_.position_constraints.push_back(box_constraint);
+  move_group_robot_->setPathConstraints(path_constraints_);
+  move_group_robot_->setPlanningTime(20.0);
+}
+void PickAndPlace::createOrientationConstraint()
+{
+  // "Gripper pointing down" orientation constraint
+  moveit_msgs::msg::OrientationConstraint ocm;
+  ocm.link_name = move_group_robot_->getEndEffectorLink();
+  ocm.header.frame_id = move_group_robot_->getPlanningFrame();
+  tf2::Quaternion q;
+  q.setRPY(M_PI, 0, 0);
+  ocm.orientation.x = q.x();
+  ocm.orientation.y = q.y();
+  ocm.orientation.z = q.z();
+  ocm.orientation.w = q.w();
+  ocm.absolute_x_axis_tolerance = 0.1;
+  ocm.absolute_y_axis_tolerance = 0.1;
+  ocm.absolute_z_axis_tolerance = M_PI;
+  ocm.weight = 1.0;
+  path_constraints_.orientation_constraints.push_back(ocm);
+
+  // Changed planner for better orientation constrained planning
+  move_group_robot_->setPlannerId("KPIECEkConfigDefault");
+  move_group_robot_->setPathConstraints(path_constraints_);
+  RCLCPP_INFO(LOGGER, "Applied upright orientation constraint (Z down)");
+}
+void PickAndPlace::clearOrientationConstraints()
+{
+  // move_group_robot_->clearPathConstraints();
+  path_constraints_.orientation_constraints.clear();
+  move_group_robot_->setPathConstraints(path_constraints_);
+  move_group_robot_->setPlannerId("BiTRRTkConfigDefault");
+  RCLCPP_INFO(LOGGER, "Cleared Orientation constraints");
+}
+
+void PickAndPlace::clearOctomap()
+{
+  auto request = std::make_shared<std_srvs::srv::Empty::Request>();
+  if (!octo_client_->wait_for_service(std::chrono::seconds(2)))
+  {
+    RCLCPP_WARN(LOGGER, "clear_octomap service not available");
+    return;
+  }
+  auto future = octo_client_->async_send_request(request);
+  RCLCPP_INFO(LOGGER, "Octomap cleared!");
+}
 void PickAndPlace::attachObject()
 {
   // Add the cup to the planning scene
@@ -437,72 +502,6 @@ void PickAndPlace::createSceneObjects()
 
   moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
   planning_scene_interface.applyCollisionObject(collision_object);
-}
-
-void PickAndPlace::clearOctomap()
-{
-  auto request = std::make_shared<std_srvs::srv::Empty::Request>();
-  if (!octo_client_->wait_for_service(std::chrono::seconds(2)))
-  {
-    RCLCPP_WARN(LOGGER, "clear_octomap service not available");
-    return;
-  }
-  auto future = octo_client_->async_send_request(request);
-  RCLCPP_INFO(LOGGER, "Octomap cleared!");
-}
-void PickAndPlace::createTrajectoryConstraint()
-{
-  // Constraint for planning trajectory
-  shape_msgs::msg::SolidPrimitive box;
-  box.type = shape_msgs::msg::SolidPrimitive::BOX;
-  box.dimensions = {2.0, 2.0, 2.0};
-  geometry_msgs::msg::Pose box_pose;
-  box_pose.position.x = -0.1;
-  box_pose.position.y = 0.3;
-  box_pose.orientation.w = 1.0;
-  displayBoxConstraint(box_pose, box.dimensions);
-
-  moveit_msgs::msg::PositionConstraint box_constraint;
-  box_constraint.header.frame_id = move_group_robot_->getPlanningFrame();
-  box_constraint.link_name = move_group_robot_->getEndEffectorLink();
-  box_constraint.constraint_region.primitives.push_back(box);
-  box_constraint.constraint_region.primitive_poses.push_back(box_pose);
-  box_constraint.weight = 1.0;
-
-  path_constraints_.position_constraints.push_back(box_constraint);
-  move_group_robot_->setPathConstraints(path_constraints_);
-  move_group_robot_->setPlanningTime(20.0);
-}
-void PickAndPlace::createOrientationConstraint()
-{
-  // "Gripper pointing down" orientation constraint
-  moveit_msgs::msg::OrientationConstraint ocm;
-  ocm.link_name = move_group_robot_->getEndEffectorLink();
-  ocm.header.frame_id = move_group_robot_->getPlanningFrame();
-  tf2::Quaternion q;
-  q.setRPY(M_PI, 0, 0);
-  ocm.orientation.x = q.x();
-  ocm.orientation.y = q.y();
-  ocm.orientation.z = q.z();
-  ocm.orientation.w = q.w();
-  ocm.absolute_x_axis_tolerance = 0.1;
-  ocm.absolute_y_axis_tolerance = 0.1;
-  ocm.absolute_z_axis_tolerance = M_PI;
-  ocm.weight = 1.0;
-  path_constraints_.orientation_constraints.push_back(ocm);
-
-  // Changed planner for better orientation constrained planning
-  move_group_robot_->setPlannerId("KPIECEkConfigDefault");
-  move_group_robot_->setPathConstraints(path_constraints_);
-  RCLCPP_INFO(LOGGER, "Applied upright orientation constraint (Z down)");
-}
-void PickAndPlace::clearOrientationConstraints()
-{
-  // move_group_robot_->clearPathConstraints();
-  path_constraints_.orientation_constraints.clear();
-  move_group_robot_->setPathConstraints(path_constraints_);
-  move_group_robot_->setPlannerId("BiTRRTkConfigDefault");
-  RCLCPP_INFO(LOGGER, "Cleared Orientation constraints");
 }
 void PickAndPlace::defaultPlanningSettings()
 {

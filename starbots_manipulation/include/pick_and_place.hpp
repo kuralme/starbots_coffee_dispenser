@@ -80,7 +80,7 @@ public:
     geometry_msgs::msg::Point obj_position_;
     std::vector<geometry_msgs::msg::Point> goal_poses_;
     float obj_radius_, obj_thickness_, obj_height_;
-    bool obj_pose_received_, goal_poses_received_;
+    bool obj_pose_received_, update_goals_;
 };
 
 #endif // PICK_AND_PLACE_HPP

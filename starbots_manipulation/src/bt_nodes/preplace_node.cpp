@@ -12,7 +12,7 @@ BT::NodeStatus PrePlace::tick()
     preplace_position.z += .55;
 
     robot_->createOrientationConstraint();
-    robot_->ensureElbowUp(); // Elbow-up for better planning when reaching close targets
+    // robot_->ensureElbowUp(); // Elbow-up for better planning when reaching close targets
     robot_->publishStatus("Going to the Pre-place Pose", "INFO", preplace_position);
 
     // Timeout to avoid hanging indefinitely
