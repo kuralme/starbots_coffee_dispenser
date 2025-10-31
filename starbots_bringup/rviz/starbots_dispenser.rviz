@@ -5,8 +5,8 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
+        - /TF1
         - /TF1/Frames1
-        - /TF1/Tree1/world1
         - /CupholderMarkers1/Namespaces1
       Splitter Ratio: 0.5
     Tree Height: 142
@@ -27,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: BaristaPointCloud
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -100,6 +100,8 @@ Visualization Manager:
           Value: false
         tool0:
           Value: false
+        tool0_controller:
+          Value: false
         upper_arm_link:
           Value: false
         world:
@@ -109,7 +111,7 @@ Visualization Manager:
         wrist_2_link:
           Value: false
         wrist_3_link:
-          Value: false
+          Value: true
       Marker Scale: 0.30000001192092896
       Name: TF
       Show Arrows: true
@@ -126,7 +128,8 @@ Visualization Manager:
                 {}
           base_link:
             base:
-              {}
+              tool0_controller:
+                {}
             base_link_inertia:
               shoulder_link:
                 upper_arm_link:
@@ -434,10 +437,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5853970050811768
+      Pitch: 0.5303969383239746
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.700395107269287
+      Yaw: 2.32539439201355
     Saved: ~
 Window Geometry:
   BaristaCamDetections:
